@@ -1,0 +1,222 @@
+@hier
+╰─$object = "Object"
+@;
+
+@props $object
+  .h_blank = "  "
+  .h_more  = " │"
+  .h_only  = "╰─"
+  .h_first = "╰┬"
+  .h_mid   = " ├"
+  .h_last  = " ╰"
+@;
+
+@verb $object:descendants
+  {?root = #-1, ?show_obj = ""} = args;
+  os = {this:children(root)};
+  k = {E_NONE};
+  l = 1;
+  prefix = this.h_blank;
+  r = {};
+  while (1)
+    k[l..min(l, $)] = {length(os[l])};
+    while (k[l] <= 0)
+      l = l - 1;
+      if (l <= 0)
+        return r;
+      endif
+      prefix[$ - 1..$] = "";
+      if (prefix)
+        is_last = k[l] == length(os[l]);
+        prefix[$ - 1..$] = this.((k[l] == 1) ? is_last ? "h_only" | "h_first" | (is_last ? "h_last" | "h_mid"));
+      endif
+      r[1..0] = {show_obj ? this:(show_obj)(os[l][k[l]], prefix) | os[l][k[l]]};
+      k[l] = k[l] - 1;
+      if (prefix)
+        prefix[$ - 1..$] = this.h_more;
+      endif
+    endwhile
+    os[l + 1..min(l + 1, $)] = {children(os[l][k[l]])};
+    l = l + 1;
+    prefix[$ + 1..$] = this.h_blank;
+  endwhile
+@;
+
+@verb $object:show
+  {o, prefix} = args;
+  rflag = o.r ? "" | "-r";
+  flags = tostr(o.w ? "w" | "", o.f ? "f" | "", is_player(o) ? "u" | "", o.programmer ? "x" | "", o.wizard ? "z" | "");
+  return tostr(prefix, o, " ", rflag, @flags ? {"+", flags} | (rflag ? {""} | {"-"}), @valid(o.location) ? {"@", toint(o.location)} | {}, @(o.owner != $owner) ? {"o", toint(o.owner)} | {}, " \"", o.name, "\"");
+@;
+
+@verb $object:children
+  {parent} = args;
+  if (valid(parent))
+    return children(parent);
+  elseif (parent != $root)
+    return {};
+  else
+    roots = {};
+    for o in [#0..max_object()]
+      if (valid(o) && (!valid(parent(o))))
+        roots[$ + 1..$] = {o};
+      endif
+    endfor
+    return roots;
+  endif
+@;
+
+@verb $object:psave
+  ":psave(root,?props=properties(root),?clear=0)";
+  "save values of properties defined on root and any non-clear descendant values";
+  "root  - root object";
+  "props - names of properties to gather (default: all, i.e., properties(root))";
+  "clear - 1 = clear descendant properties after gathering values, 0 = dont";
+  "returns a plist: {p, {root, root.p, (desc, desc.p,)... },...}";
+  {root, ?props = {}, ?clear = 0} = args;
+  props = props || properties(root);
+  descs = $object:descendants(root);
+  save = {};
+  for p in (props)
+    vals = {root, root.(p)};
+    for d in (descs)
+      if (!is_clear_property(d, p))
+        vals[$ + 1..$] = {d, d.(p)};
+        clear && clear_property(d, p);
+      endif
+    endfor
+    save[$ + 1..$] = {p, vals};
+  endfor
+  return save;
+@;
+
+@verb $object:prestore
+  ":prestore(save,preclear)";
+  "write a value list produced by :psave() back into the object tree";
+  "save - {pname, {root, pval, (desc, pval,)...} ...}";
+  "preclear - 1 = clear all pname properties under remap(root) first before writing; 0 = dont";
+  {save, preclear} = args;
+  if (!save)
+    return;
+  endif
+  root = save[2][1];
+  descs = preclear ? $object:descendants(root) | {};
+  while (save)
+    {p, vals, @save} = save;
+    for d in (descs)
+      clear_property(d, p);
+    endfor
+    while (vals)
+      {d, v, @vals} = vals;
+      d.(p) = v;
+    endwhile
+  endwhile
+@;
+
+@verb $object:remap
+  {v, remap} = args;
+  {vn, l, v} = {{}, 1, {v}};
+  while (1)
+    if ((typeof(v[l]) == LIST) && v[l])
+      vn[l..$] = {{}};
+    else
+      r = (typeof(v[l]) == OBJ) ? $list:get(remap, v[l]) | v[l];
+      while (1)
+        if (l == 1)
+          return r;
+        endif
+        l = l - 1;
+        vn[l][1..0] = {r};
+        v[l][$..$] = {};
+        if (v[l])
+          break;
+        endif
+        r = vn[l];
+      endwhile
+    endif
+    v[l + 1..$] = {v[l][$]};
+    l = l + 1;
+  endwhile
+@;
+
+@verb $object:verb_home
+  return callers()[1][4];
+@;
+
+@verb $object:callable
+  {object, verbname} = args;
+  while (valid(object))
+    if (`index(verb_info(object, verbname)[2], "x") ! E_VERBNF => 0')
+      return {object};
+    endif
+    object = parent(object);
+  endwhile
+  return 0;
+  "Usage:  has_verb(object, verb)";
+  "Can OBJECT:VERB be called?  Return {location}, where location is the object that defines the verb, or 0 if the object doesn't have the verb.";
+@;
+
+@verb $object:all_properties
+  {o} = args;
+  r = properties(o);
+  while (valid(o = parent(o)))
+    r = {@properties(o), @r};
+  endwhile
+  return r;
+@;
+
+@verb $object:portable_names
+  {targets} = args;
+  worklist = {#0};
+  searched = {};
+  paths = {};
+  while ({?o, @worklist} = worklist)
+    searched[1..0] = {o};
+    for p in (valid(o) ? $object:all_properties(o) | {})
+      if (((!match(p, "^[a-z_][a-z0-9_]*$")) || (typeof(o1 = o.(p)) != OBJ)) || (o1 in searched))
+        continue;
+      endif
+      worklist[$ + 1..$] = {o1};
+      paths = $list:assoc_push(o1, paths, {p, o});
+    endfor
+  endwhile
+  names = {{#0, "#0"}};
+  s = {};
+  v = {};
+  worklist = (typeof(targets) != LIST) ? {targets} | targets;
+  while (worklist)
+    o = worklist[1];
+    if (o in v)
+      s[$ + 1..$] = {o};
+      worklist[1..1] = {};
+    else
+      v[1..1] = {o};
+      kids = {};
+      for po in (($list:assoc(o, paths) || {o})[2..$])
+        o2 = po[2];
+        if ((o2 in s) || (o2 in v))
+          continue;
+        endif
+        kids[$ + 1..$] = {o2};
+      endfor
+      worklist[1..0] = kids;
+    endif
+  endwhile
+  for o in (s)
+    if ($list:assoc(o, names))
+      continue;
+    endif
+    ns = {};
+    for po in (($list:assoc(o, paths) || {o})[2..$])
+      {p2, o2} = po;
+      for o2n in (($list:assoc(o2, names) || {o2})[2..$])
+        ns[$ + 1..$] = {(o2n == "#0") ? "$" + p2 | tostr(o2n, ".", p2)};
+      endfor
+    endfor
+    names = $list:assoc_set(o, names, @ns);
+  endfor
+  if (typeof(targets) != LIST)
+    return ($list:assoc(targets, names) || {targets})[2..$];
+  endif
+  return names;
+@;

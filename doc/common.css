@@ -1,0 +1,9 @@
+body { background-color : #eee; font-family:palatino; margin:.5in }
+pre { margin-left : 3em; }
+dl { margin-left: 2em; }
+// code { font-family: pt mono, monospace; }
+// var { font-family: pt mono, monospace; }
+// pre { font-family: pt mono, monospace; margin-bottom:0pt; }
+b { color:blue }
+
+.moo { font-variant: small-caps; }

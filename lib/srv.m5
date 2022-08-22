@@ -1,0 +1,214 @@
+@hier
+╰─$srv - "Server"
+@;
+
+@props $srv
+  .verbs = {"DONE", "FAIL", "CANT", "STATUS"}
+  .prefixes = {}
+  .id_data = {}
+  .conn_id = {}
+  .last_id = 0
+  ._cp_vars = {{"id_data", {}}, {"conn_id", {}}, {"last_id", 0}}
+@;
+
+@verb $srv:send
+  {who, @cmd_plist} = args;
+  notify(who, $cmd_unparser:($conn:listener(who).unparse)(@cmd_plist));
+@;
+
+@verb $srv:dport get_dport
+  if (a = $list:assoc($data_listener, listeners()))
+    {_, p, _} = a;
+  else
+    p = listen($data_listener, 0, 0);
+  endif
+  return (verb == "get_dport") ? $srv:send(player, "DPORT", "port", p) | p;
+@;
+
+@verb $srv:accept_pull
+  {pid, @vb_args} = args;
+  iobj = this:_inbound(pid);
+  return args;
+@;
+
+@verb $srv:accept_push
+@;
+
+@verb $srv:_inbound
+  {pid} = args;
+  `{p, id} = pid ! E_TYPE' || ({p, id} = {0, pid});
+  o = toobj(id);
+  $conn:is_connected(o) || raise(E_INVARG, "id not connected");
+  p && ((p == $conn:lport(o)) || raise(E_INVARG, "wrong p"));
+  return o;
+@;
+
+@verb $srv:_outbound
+  {pid, ?default_port, ?host = "localhost"} = args;
+  `{p, id} = pid ! E_TYPE' || ({p, id} = {default_port, pid});
+  o = open_network_connection(host, p, $data_listener);
+  set_connection_option(o, "hold-input", 1);
+  notify(o, tostr($data_listener.auth_code, ",", id));
+  $data_listener:set_auth_checked(1, o);
+  (read(o) == "") || raise(E_INVARG, "blank line expected");
+  return o;
+@;
+
+@verb $srv:#comment #unrecognized
+  if (verb == "#unrecognized")
+    notify(connected_players(1)[$], tostr(verb, " ", toliteral(args), " ", argstr));
+  endif
+@;
+
+@verb $srv:DONE FAIL CANT STATUS
+/* notify(connected_players(1)[$], tostr(verb, " ", toliteral(args))); */
+  if (verb == "DONE")
+    {id, ?msg = ""} = args;
+    status = 0;
+  else
+    {id, status, ?msg = ""} = args;
+    status = toint(status);
+  endif
+  id = toint(id);
+  if (!({?data, ?others} = $srv:_id_is_open(id)))
+    /* bogus id */
+  elseif (verb == "STATUS")
+    $srv.id_data = {id, $list:put(data, "status", status), @others};
+  else
+    $srv:id_close(id, "status", status, "msg", msg);
+  endif
+@;
+
+&| id lifecycle
+&| (1) $srv:next_id(tag,...) allocates and returns an id
+&|     current ('user') task is expected to call
+&|     $srv:send(...) and then suspend() to wait for
+&|     the server to create all necessary pipes on $data_listener
+&| (2) $srv:id_add_conn(id,tag,conn)
+&|     is called for each (authenticated) data connection that comes in
+&|     Once all of the tags have corresponding connections
+&|     the user task is resumed with a plist containing those connections
+&| (3) server may send a STATUS response
+&|     indicating that cmd being invoked (by PROC[2] or READ)
+&|     finished
+&| (4) user task calls $srv:wait_id(tag,...) or $srv:wait(conn)
+&|     to await final oucome; suspends until outcome is available
+&| (5) server sends final outcome via a DONE,FAIL,CANT
+&|     indicating that all processes have finished
+&|     $srv.id_data and $srv.conn_id are cleaned up
+
+
+&| next_id([@TAGS])
+&|   allocate a new id, waiting for TAGS (default {""})
+@verb $srv:next_id
+  id = $srv.last_id = $srv.last_id + 1;
+  data = {};
+  for a in (args)
+    data = {@data, a, 0};
+  endfor
+  $srv.id_data[1..0] = {id, {args ? "task" | "wtask", task_id(), @data}};
+  return id;
+@;
+
+@verb $srv:id_add_conn
+  {id, tag, conn} = args;
+  if (!({?data, ?others} = $srv:_id_is_open(id)))
+    return 0;
+  elseif (0 != ({c, data} = $list:get_delete(data, tag, -1))[1])
+    /* tag unexpected or connecting twice?; close */
+    $srv:id_close(id, "status", -2, "msg", tostr("bad tag: '", tag, "'"));
+    return 0;
+  elseif (!(0 in (data = {tag, conn, @data})))
+    /* all tags connected, yay */
+    ({task, data} = $list:get_delete(data, "task", 0))[1]
+     && resume(task, data);
+  endif
+  $srv.id_data = {id, data, @others};
+  $srv.conn_id = {conn, id, @$srv.conn_id};
+  return 1;
+@;
+
+@verb $srv:id_close
+  {id, @closedata} = args;
+  if (!({?data, ?others} = $srv:_id_is_open(id)))
+    return;
+  endif
+  cp = connected_players(1);
+  for c in (({_, _, data} = $list:mgetre_delete(data, "^[>]"))[1])
+    (c in cp) && boot_player(c);
+  endfor
+  {status, task, wtask, data} = $list:mget_delete(data, {"status", "task", "wtask"}, #0);
+  {nstatus, msg, closedata} = $list:mget_delete(closedata, {"status", "msg"}, "");
+  msg = status ? "abnormal exit" | msg;
+  data = {"status", status || nstatus || 0, "msg", msg, @closedata, @data};
+  if ((wtask != #0) || (task != #0))
+    if (task != #0)
+      resume(task, data);
+    endif
+    if (wtask != #0)
+      resume(wtask, data);
+    endif
+    $srv:_id_kill_conns(id);
+    $srv.id_data = others;
+  else
+    $srv.id_data = {@others, id, {"closed", 1, @data}};
+  endif
+@;
+
+@verb $srv:id_wait
+  {id, @opts} = args;
+  {replace, wtask, defer, opts} = $list:mget_delete(opts, {"wtask", "replace", "defer"}, 0);
+  if (replace && defer)
+    raise(E_INVARG, "replace and defer?");
+  elseif (opts)
+    raise(E_INVARG, tostr("unknown id_wait option: ", opts[1]));
+  endif
+  if (!({data, others} = $list:get_delete($srv.id_data, id, {}))[1])
+    raise(E_INVARG, tostr("invalid id: ", id));
+  endif
+  {closed, prev_wtask, data} = $list:mget_delete(data, {"closed", "wtask"}, 0);
+  if (!wtask)
+    wtask = task_id();
+  elseif (!$task_valid(wtask))
+    raise(E_INVARG, "invalid wtask: ", wtask);
+  endif
+  if (closed)
+    $srv:_id_kill_conns(id);
+    $srv.id_data = others;
+    if (wtask != task_id())
+      resume(wtask, data);
+      return {};
+    else
+      return data;
+    endif
+  elseif ((!prev_wtask) || ((replace && {`kill_task(prev_wtask) ! ANY'}) || ((!$task_valid(prev_wtask)) || (wtask == prev_wtask))))
+    data[1..0] = {"wtask", wtask};
+  elseif (defer)
+    data[1..0] = {"wtask", prev_wtask};
+  else
+    raise(E_INVARG, "already waited on");
+  endif
+  $srv.id_data = {id, data, @others};
+  return suspend();
+@;
+
+@verb $srv:_id_is_open
+  {id} = args;
+  if ((0 == ({data, others} = $list:get_delete($srv.id_data, id, 0))[1]) || $list:get(data, "closed", 0))
+    return {};
+  else
+    return {data, others};
+  endif
+@;
+
+@verb $srv:_id_kill_conns
+  {id} = args;
+  ci = $srv.conn_id;
+  while (i = (id in ci))
+    conn = ci[i - 1];
+    `boot_player(conn) ! ANY';
+    `flush_input(conn) ! ANY';
+    ci[i - 1..i] = {};
+  endwhile
+  $srv.conn_id = ci;
+@;

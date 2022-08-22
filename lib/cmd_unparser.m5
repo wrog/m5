@@ -1,0 +1,42 @@
+@hier
+╰─$cmd_unparser - "Unparsing Methods"
+@;
+
+@props $cmd_unparser
+  .sh_cmds = {
+    "YOUARE",    {"client_id"},
+    "DPORT",     {"port"},
+    "CONNECTED", {"id", "port"},
+    "WRITE",     {"id", "port", "file"},
+    "READ",      {"id", "port", "file"},
+    "ECHO",      {{"@", "args", {}}},
+    "WORDS",     {{"@", "args", {}}},
+    "PROC",      {"id", "port", "errs", {"@", "args", {}}},
+    "CMD",       {"id", {"@", "args", {}}}
+  }
+@;
+
+@verb $cmd_unparser:sh
+  {cmd, @plist} = args;
+  as = {};
+  for s in ($list:get(this.sh_cmds, cmd, E_NONE, "Unknown command: %0"))
+    {w, fname, dflt} = (typeof(s) == STR) ? {"!", s, E_NONE} | s;
+    {v, plist} = $list:get_delete(plist, fname, dflt, "Value for \"%0\" expected");
+    as[$ + 1..$] = (w != "@") ? {v} | v;
+  endfor
+  if (plist)
+    raise(E_INVARG, "Unknown field: " + toliteral(plist[1]));
+  endif
+  return tostr(cmd, " ", $string:sh_quote_args(@as));
+@;
+
+@verb $cmd_unparser:kwds
+  {keyword, @plist} = args;
+  s = keyword;
+  i = 1;
+  while (i < length(plist))
+    s = tostr(s, " ", plist[i], "=", plist[i + 1]);
+    i = i + 2;
+  endwhile
+  return s;
+@;

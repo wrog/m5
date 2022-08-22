@@ -1,0 +1,60 @@
+@hier
+╰─$seq = "Sequence"
+@;
+
+@props $seq
+  .minint = -9223372036854775808
+@;
+
+@verb $seq:add remove
+  "   add(seq,start[,end]) => seq with range added.";
+  "remove(seq,start[,end]) => seq with range removed.";
+  "  both assume start<=end.";
+  remove = verb == "remove";
+  {seq, start, ?end} = args;
+  s = (start == this.minint) ? 1 | $list:find_insert(seq, start - 1);
+  if (length(args) < 3)
+    return {@seq[1..s - 1], @((s + remove) % 2) ? {start} | {}};
+  else
+    e = $list:find_insert(seq, after = end + 1);
+    return {@seq[1..s - 1], @((s + remove) % 2) ? {start} | {}, @((e + remove) % 2) ? {after} | {}, @seq[e..$]};
+  endif
+@;
+
+@verb $seq:range
+  ":range(start,end) => sequence corresponding to [start..end] range";
+  {start, end} = args;
+  return (start <= end) ? {start, end + 1} | {};
+@;
+
+@verb $seq:contains
+  ":contains(seq,elt) => true iff elt is in seq.";
+  return ($list:find_insert(@args) + 1) % 2;
+@;
+
+@verb $seq:size
+  ":size(seq) => number of elements in seq";
+  "  for sequences consisting of more than half of the available range of integers, this returns a negative number = -(size of complement sequence)";
+  n = 0;
+  for i in (seq = args[1])
+    n = i - n;
+  endfor
+  return (length(seq) % 2) ? this.minint - n | n;
+@;
+
+@verb $seq:extract
+  {seq, array} = args;
+  if (alen = length(array))
+    e = $list:find_insert(seq, 1);
+    s = $list:find_insert(seq, alen);
+    seq = {@(e % 2) ? {} | {1}, @seq[e..s - 1], @(s % 2) ? {} | {alen + 1}};
+    ret = {};
+    for i in [1..length(seq) / 2]
+      ret = {@ret, @array[seq[(2 * i) - 1]..seq[2 * i] - 1]};
+    endfor
+    return ret;
+  else
+    return {};
+  endif
+  "extract(seq,array) => list of elements of array with indices in seq.";
+@;

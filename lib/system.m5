@@ -1,0 +1,154 @@
+@hier
+╰┬ROOT                - "Default Thing With Server Options"
+ │╰─SYS               - "Default System"
+ │  ╰─#0            +xz "System"
+ ╰ROOT.server_options - "Server Options"
+@;
+
+@props SYS
+  .root = #-1
+  .checkpoint_status = -1
+@;
+
+@props #0
+  .checkpoint_listeners = {}
+  .run_info = {}
+@;
+
+@props ROOT.server_options
+  .connect_timeout = -1
+  .fg_ticks = 1073741824
+  .bg_ticks = 1073741824
+  .fg_seconds = 10
+  .bg_seconds = 10
+@;
+
+@verb #0:server_started_user_hook
+@;
+
+@verb SYS:server_started
+  $checkpoint_status = 1;
+  for o in ($object:descendants(#-1))
+    `o:_pre_shutdown() ! E_VERBNF';
+  endfor
+  `({_, ri} = eval("return " + verb_code(#0, 1)[1]))[1] && ($run_info = ri) ! ANY';
+  `$listener.auth_code = $list:get($run_info, "auth_code", E_NONE) ! ANY';
+  this:server_started_user_hook();
+@;
+
+@verb SYS:read
+  return valid(dobj) ? dobj:_read() | read(dobj);
+@;
+
+@verb SYS:write
+  if (valid(iobj))
+    iobj:_notify(args[1]);
+  else
+    s = tostr(args[1]);
+    while (!notify(iobj, s, 1))
+      suspend(random(10) == 1);
+    endwhile
+  endif
+@;
+
+@verb SYS:handle_uncaught_error
+  {c, m, v, t, f} = args;
+  return `t[$][1]:(verb)(t, f, c, m, v) ! E_VERBNF';
+@;
+
+@verb SYS:handle_task_timeout
+  {r, t, f} = args;
+  return `t[$][1]:(verb)(t, f, -1, "Task ran out of " + r, r) ! E_VERBNF';
+@;
+
+@verb SYS:my_listener
+  return callers()[$][1];
+@;
+
+@verb SYS:checkpoint_started
+  clear_property(#0, "checkpoint_status");
+@;
+
+@verb SYS:write_lines
+  {lines, ?indent = ""} = args;
+  for l in (lines)
+    $write(indent + l);
+  endfor
+@;
+
+@verb SYS:read_lines
+  {?stop = E_NONE} = args;
+  lines = {};
+  try
+    while (stop != (l = $read()))
+      lines[$ + 1..$] = {l};
+    endwhile
+  finally
+    return lines;
+  endtry
+@;
+
+@verb SYS:task_valid
+  {task} = args;
+  return (task == task_id()) || ($list:assoc(task, queued_tasks()) && 1);
+@;
+
+@verb SYS:checkpoint_finished
+  $checkpoint_status = args[1];
+@;
+
+@verb #0:checkpoint_started
+  pass(@args);
+  $_hide_auth_suspend();
+@;
+
+@verb #0:_hide_auth_suspend
+  {?is_shutdown = 0} = args;
+  saves = {{"checkpoint_listeners", {#0, $checkpoint_listeners}}, {"run_info", {#0, $run_info}}};
+  $checkpoint_listeners = $run_info = {};
+  for o in ($object:descendants(#-1))
+    if (`(cpv = o._cp_vars) && 0 ! E_PROPNF => 1' || is_clear_property(o, "_cp_vars"))
+      continue;
+    endif
+    saves[$ + 1..$] = {$object:psave(o, $list:slice(cpv, 1), "clear")};
+    descs = $object:descendants(o);
+    for e in (cpv)
+      {p, v, ?flag = ""} = e;
+      o.(p) = v;
+      if (flag == "r")
+        for oo in (descs)
+          oo.(p) = v;
+        endfor
+      endif
+    endfor
+  endfor
+  if (!is_shutdown)
+    suspend(0);
+    for save in (saves)
+      $object:prestore(save, 0);
+    endfor
+    if (!is_clear_property(#0, "checkpoint_status"))
+      $_checkpoint_notify();
+    endif
+  endif
+@;
+
+@verb #0:shutdown
+  fork (0)
+    shutdown(@args);
+  endfork
+  $_hide_auth_suspend(1);
+@;
+
+@verb #0:_checkpoint_notify
+  cl = $checkpoint_listeners;
+  $checkpoint_listeners = {};
+  for l in (cl)
+    resume(l, $checkpoint_status);
+  endfor
+@;
+
+@verb #0:checkpoint_finished
+  pass(@args);
+  $_checkpoint_notify();
+@;

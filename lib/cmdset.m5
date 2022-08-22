@@ -1,0 +1,97 @@
+@hier
+╰─$cmdset - "Command Set"
+
+@props $cmdset
+  .verbs = {"list", "echo", "dump", "DONE", "FAIL", "CANT"}
+  .prefixes = {";", "eval", ":", "emote", "&", {"|", "#comment"}}
+@;
+
+@verb $cmdset:is_command
+  verb = args[1];
+  o = this;
+  while (valid(o))
+    try
+      if ((verb_args(o, verb) == {"any", "none", "any"}) && index(verb_info(o, verb)[2], "x"))
+        return verb;
+      endif
+    except (ANY)
+      "";
+    endtry
+    o = parent(o);
+  endwhile
+  return 0;
+@;
+
+@verb $cmdset:#unrecognized
+  notify(player, "??:  " + toliteral(args));
+@;
+
+@verb $cmdset:#comment
+@;
+
+@verb [ana] $cmdset:eval
+  {worked, value} = eval(args[1]);
+  if (worked)
+    notify(player, "=> " + toliteral(value));
+  else
+    for l in (value)
+      notify(player, l);
+    endfor
+  endif
+@;
+
+@verb [ana] $cmdset:list
+  {objverb} = args;
+  if (!(m = match(objverb, "%(^.*%):%(%([0-9]+%)%|[^:]+%)$")))
+    raise(E_INVARG, "object:verb expected");
+  endif
+  if (!({_, OBJ} = eval(substitute("return toobj(%1);", m)))[1])
+    raise(E_INVARG, "could not parse object");
+  endif
+  if (vn = substitute("%3", m))
+    vb = tonum(vn);
+  else
+    vb = substitute("%2", m);
+  endif
+  for l in (verb_code(OBJ, vb, 1, 1))
+    notify(player, l);
+  endfor
+@;
+
+@verb [ana] $cmdset:echo
+  notify(player, toliteral({argstr, @args}));
+@;
+
+@verb [ana] $cmdset:dump
+  {oname, ?o = 0} = args;
+  iobj = player;
+  o = eval(("return " + (o || oname)) + ";")[2];
+  no_props_yet = 1;
+  for p in ($object:all_properties(o))
+    clear = is_clear_property(o, p);
+    if (clear)
+      continue;
+    endif
+    if (no_props_yet)
+      $write("@props " + oname);
+      no_props_yet = 0;
+    endif
+    dot = (p in properties(o)) ? "." | ",";
+    pi = property_info(o, p);
+    pf = (pi[2] == "r") ? "" | (" +" + pi[2]);
+    $write(tostr("  ", (pi[1] != o.owner) ? " !!" | "", dot, p, " = ", toliteral(o.(p))));
+  endfor
+  if (!no_props_yet)
+    $write("@;");
+  endif
+  for v in [1..length(verbs(o))]
+    $write("");
+    vi = verb_info(o, v);
+    vf = (vi[2] == "rxd") ? "" | (" +" + vi[2]);
+    va = verb_args(o, v);
+    va = (va == {"this", "none", "this"}) ? "" | ((va == {"any", "none", "any"}) ? "[ana] " | "!!! ");
+    $write(tostr("@verb ", vf, va, oname, ":", vi[3]));
+    $write_lines(verb_code(o, v, 1, 1), "  ");
+    $write("@;");
+  endfor
+@;

@@ -1,0 +1,134 @@
+@hier
+╰─$dbsplitter
+@;
+
+@props $dbsplitter
+  .maxo_str = "~0a|LAST|~0a~0a0~0a0~0a-1~0a-1~0a-1~0a-1~0a-1~0a-1~0a0~0a0~0a0~0a#0:0~0a"
+  .maxo_ptree = {{"~0a",13,15,{n2={"~0a",1,12,{}},{"0",13,16,n={n2,z3={"0",13,16,{n2,{"0",1,54,{}},o3={"1",1,50,{}}}},o3}},o2={"1",21,25,z2={z={"0",1,20,{}},{"1",21,25,{z,{"1",21,25,{z,{"1",21,25,{z,{"1",21,25,{z,{"1",1,25,{}}}}}}}}}}}},{"|",1,9,{}},{"",1,0,{}}}},s={"#",1,66,{}},{"-",21,24,z2},{"0",16,16,{{"~0a",13,15,n},s,c={":",1,68,{}}}},o2,c,{"A",1,6,{}},{"L",1,5,{}},{"S",1,7,{}},t={"T",1,8,{}},{"|",4,4,{{"~0a",1,3,{}},t}}}
+  .cloc_str = ".~0a0 clocks~0a"
+  .cloc_ptree = {{"~0a",2,4,{p={".",1,1,{}},s={"s",1,12,{}}}},{" ",1,6,{}},p,{"0",1,5,{}},{"c",7,7,{{" ",1,6,{}},o={"o",1,9,{}}}},{"k",1,11,{}},{"l",1,8,{}},o,s}
+@;
+
+@verb $dbsplitter:_after_nl
+  {b, prev_nl, p} = args;
+  return ((p == 1) && prev_nl) || ((p > 3) && (b[p - 3..p - 1] == "~0a"));
+@;
+
+@verb $dbsplitter:_ends_with_str
+  {b, st, ?end = length(b)} = args;
+  return ((end >= length(st)) && (b[p = (end - length(st)) + 1..end] == st)) ? p | 0;
+@;
+
+@verb $dbsplitter:_ends_with_oidprefix
+  {b, oidst, ?end = length(b)} = args;
+  p = end;
+  while (((1 <= p) && ("0" <= b[p])) && (b[p] <= "9"))
+    p = p - 1;
+  endwhile
+  return (((1 <= p) && (b[p] == "#")) && (b[p..end] == oidst[1..min($, (end - p) + 1)])) ? p | 0;
+@;
+
+@verb $dbsplitter:_ends_with_prefix
+  {b, pname, ?pos = length(b)} = args;
+  tree = this.(pname + "_ptree");
+  st = this.(pname + "_str");
+  while ((tree && (pos > 0)) && ((({?c, ?ms, ?me, ?ntree} = $list:assoc(((pos > 2) && (b[pos - 2] == "~")) ? b[pos - 2..pos] | b[pos], tree)) && (b[max(1, pos - (me - ms))..pos] == st[ms..me])) || ({?c, ?ms, ?me, ?ntree} = $list:assoc("", tree))))
+    tree = ntree;
+    pos = ((pos - me) + ms) - 1;
+  endwhile
+  return tree ? 0 | pos;
+@;
+
+@verb $dbsplitter:find
+  {b, prev_nl, maxo} = args;
+  if (((p = this:_ends_with_prefix(b, "maxo")) && (p = this:_ends_with_str(b, maxo, p))) && this:_after_nl(b, prev_nl, p))
+    return p;
+  endif
+  if ((p = this:_ends_with_oidprefix(b, maxo)) && this:_after_nl(b, prev_nl, p))
+    return p;
+  endif
+  return 0;
+@;
+
+@verb $dbsplitter:write_top
+  pr = "";
+  while (!(i = index(r = $read(), "~0a")))
+    pr = pr + r;
+  endwhile
+  $write(pr = pr + r[1..i + 2]);
+  version = toint(pr[39..$ - 6]);
+  if (pr != tostr("** LambdaMOO Database, Format Version ", version, " **~0a"))
+    raise(E_INVARG, "bad database header");
+  endif
+  pr = r[i + 3..$];
+  while (!(i = index(pr, "~0a")))
+    pr = pr + $read();
+  endwhile
+  omax = toint(pr[1..i - 1]) - 1;
+  $write(tostr(omax, "~0a"));
+  pr[1..i + 2] = "";
+  prev_nl = 1;
+  omax = tostr("#", omax);
+  while (!((i = index(pr, this.maxo_str)) && (i = this:_ends_with_str(pr, omax, i - 1)) && this:_after_nl(pr, prev_nl, i)))
+    if (1 < (i = this:find(pr, prev_nl, omax) || (length(pr) + 1)))
+      $write(pr[1..i - 1]);
+      prev_nl = "~0a" == pr[max(1, i - 3)..i - 1];
+    endif
+    pr = pr[i..$] + $read();
+  endwhile
+  if (i > 1)
+    $write(pr[1..i - 1]);
+  endif
+  $write("#0:0~0a");
+  return {version, pr[i + length(omax) + length(this.maxo_str)..$]};
+@;
+
+@verb $dbsplitter:write_bot
+  {pr} = args;
+  prev_nl = 1;
+  while (!((i = index(pr, this.cloc_str)) && this:_after_nl(pr, prev_nl, i)))
+    if (!((i = this:_ends_with_prefix(pr, "cloc")) && this:_after_nl(pr, prev_nl, i)))
+      i = length(pr) + 1;
+    endif
+    if (1 < i)
+      $write(pr[1..i - 1]);
+      prev_nl = "~0a" == pr[max(1, i - 3)..i - 1];
+    endif
+    pr = pr[i..$] + $read();
+  endwhile
+  $write(tostr(pr[1..i - 1], this.cloc_str, "0 queued tasks~0a0 suspended tasks~0a"));
+@;
+
+@verb $dbsplitter:save
+  {outtmpl, ?infile = ""} = args;
+  if (!valid(max_object()))
+    reset_max_object();
+  endif
+  if (!(parent(m=max_object())==#-1 && m.name=="|LAST|" && !properties(m) && !verbs(m)))
+    create(#-1).name='|LAST|';
+  endif
+  dump_database();
+  $checkpoint_listeners[1..0]={task_id()};
+  suspend() || raise("checkpoint unsucessful");
+  shconn = $shell_listener.current;
+  dport = $srv:dport();
+  if (!infile)
+    $srv:send(shconn, "CMD", "id", $srv:next_id(), "args", {"eval", "'printf'", "'%s/ckpt'", "$run_dir"});
+    infile = $list:get(suspend(), "msg");
+  endif
+  $srv:send(shconn, "READ", "id", $srv:next_id("<"), "port", dport, "file", infile);
+  dobj = $list:get(suspend(), "<", E_NONE);
+  $srv:send(shconn, "WRITE", "id", $srv:next_id(">"), "port", dport, "file", outtmpl + ".top");
+  iobj = $list:get(suspend(), ">", E_NONE);
+  {v, lo} = $dbsplitter:write_top();
+  boot_player(iobj);
+  v || raise("stupid version " + v);
+  sw1 = $srv:id_wait($list:get($srv.conn_id, iobj, E_NONE));
+  $srv:send(shconn, "WRITE", "id", $srv:next_id(">"), "port", dport, "file", outtmpl + ".bot");
+  iobj = $list:get(w = suspend(), ">", E_NONE);
+  $dbsplitter:write_bot(lo);
+  boot_player(iobj);
+  sw2 = $srv:id_wait($list:get($srv.conn_id, iobj, E_NONE));
+  sr = $srv:id_wait($list:get($srv.conn_id, dobj, E_NONE));
+  return {sr, sw1, sw2};
+@;

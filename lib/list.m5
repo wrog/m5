@@ -1,0 +1,326 @@
+@hier
+╰─$list = "List Utilities"
+@;
+
+@verb $list:find_insert
+  "find_insert(sortedlist,key) => index of first element in sortedlist > key";
+  "  sortedlist is assumed to be sorted in increasing order and the number returned is anywhere from 1 to length(sortedlist)+1, inclusive.";
+  {lst, key} = args;
+  if ((r = length(lst)) < 25)
+    for l in [1..r]
+      if (lst[l] > key)
+        return l;
+      endif
+    endfor
+    return r + 1;
+  else
+    l = 1;
+    while (r >= l)
+      if (key < lst[i = (r + l) / 2])
+        r = i - 1;
+      else
+        l = i + 1;
+      endif
+    endwhile
+    return l;
+  endif
+@;
+
+@verb $list:assoc
+  "assoc(target,list[,index]) returns the first element of `list' whose own index-th element is target.  Index defaults to 1.";
+  "returns {} if no such element is found";
+  {target, thelist, ?indx = 1} = args;
+  for t in (thelist)
+    if ((typeof(t) == LIST) && `t[indx] == target ! E_RANGE => 0')
+      return t;
+    endif
+  endfor
+  return {};
+@;
+
+@verb $list:get get_delete
+  {plist, key, ?default = key, ?emsg = "Key %0 not found"} = args;
+  remove = verb != "get";
+  i = 1;
+  while (i < length(plist))
+    if (plist[i] == key)
+      return remove ? {plist[i + 1], {@plist[1..i - 1], @plist[i + 2..$]}} | plist[i + 1];
+    endif
+    i = i + 2;
+  endwhile
+  return (typeof(default) == ERR) ? raise(default, substitute(emsg, match(key, "^.*"))) | (remove ? {default, plist} | default);
+@;
+
+@verb $list:put
+  {plist, key, ?value} = args;
+  i = 1;
+  while (i < length(plist))
+    if (plist[i] == key)
+      break;
+    endif
+    i = i + 2;
+  endwhile
+  return {@(length(args) < 3) ? {} | {key, value}, @plist[1..i - 1], @plist[min($ + 1, i + 2)..$]};
+@;
+
+@verb $list:map_iter
+  {state, ?initialized = 0, @nvalues} = args;
+  {lst, n, nlst} = initialized ? state | {state, 0, {}};
+  n = n + 1;
+  nlst = {@nlst, @nvalues};
+  if (n > length(lst))
+    return {nlst, 0};
+  else
+    return {{lst, n, nlst}, 1, lst[n], n, length(nlst) + 1};
+  endif
+@;
+
+@verb $list:maptree_iter
+  {state, ?initialized = 0, @nvalues} = args;
+  {todo, ns, spine} = initialized ? state | {{state}, {1}, {{}}};
+  "At level k: spine[k] = {completed sublists at this level}; ns[($+1)-k] = number of values from todo yet to be visited that will be added to that list.  Level 1 is a fictitious list with one element, which we will be returning.";
+  while (1)
+    if (nvalues)
+      spine[$][$ + 1..$] = nvalues;
+    endif
+    while (ns[1] == 0)
+      ns[1..1] = {};
+      if (!ns)
+        return {spine[1], 0};
+      endif
+      spine[$ - 1..$] = {{@spine[$ - 1], spine[$]}};
+    endwhile
+    {v, @todo} = todo;
+    ns[1] = ns[1] - 1;
+    while (1)
+      if (typeof(v) != LIST)
+        return {{todo, ns, spine}, 1, v};
+      elseif (!v)
+        "v == {}";
+        "pretend we immediately got re-called with {{todo, ns, spine}, 1, {}}";
+        nvalues = {{}};
+        break;
+      endif
+      {v, @rest} = v;
+      todo = {@rest, @todo};
+      ns = {length(rest), @ns};
+      spine[$ + 1..$] = {{}};
+    endwhile
+  endwhile
+@;
+
+@verb $list:join
+  {?c = ",", lst} = args;
+  if (!lst)
+    return "";
+  endif
+  s = tostr(lst[1]);
+  for e in (lst[2..$])
+    s = tostr(s, c, e);
+  endfor
+  return s;
+@;
+
+@verb $list:mget mget_delete
+  {plist, keys, ?default = E_NONE} = args;
+  values = $list:make(length(keys), default);
+  i = 1;
+  {?ks = 0, ?keep} = (verb == "mget_delete") ? {1, {}} | {};
+  while (i < length(plist))
+    while (j = plist[i] in keys)
+      values[j] = plist[i + 1];
+      keys[j] = E_NONE;
+      if (ks && (ks <= i))
+        if (ks < i)
+          keep[$ + 1..$] = {ks, i};
+        endif
+        ks = i + 2;
+      endif
+    endwhile
+    i = i + 2;
+  endwhile
+  ((typeof(default) == ERR) && (j = default in values)) && raise(default, ("Key (" + keys[j]) + ") not found");
+  return ks ? {@values, $seq:extract(ks == i + 2 ? keep | {@keep, ks, i + 2}, plist)} | values;
+@;
+
+@verb $list:save restore
+  {plist, keys, @kvs} = args;
+  found = {};
+  i = 1;
+  while (i < length(kvs))
+    keys[$ + 1..$] = {kvs[i]};
+    i = i + 2;
+  endwhile
+  plist[1..{keep = $ ? {1, ($ + 1) - ($ % 2)} | {}, 0}[$]];
+  i = 1;
+  while (i < length(plist))
+    if (plist[i] in keys)
+      found[$ + 1..$] = plist[i..i + 1];
+      keep = $seq:remove(keep, i, i + 1);
+    endif
+    i = i + 2;
+  endwhile
+  plist = {@kvs, @$seq:extract(keep, plist)};
+  return (verb == "restore") ? plist | {plist, keys, @found};
+  "save(PLIST,KEYS,@KVS) -> {modified PLIST,KEYS,@previous KVS}";
+  "restore(PLIST,KEYS,@KVS) -> modified PLIST";
+  "intended usage:";
+  "   {plist,@save} = $list:save(plist,keys,k1,v1,...);";
+  "   ... do stuff...";
+  "   plist = $list:restore(plist,@save);";
+@;
+
+@verb $list:reverse
+  {l} = args;
+  if (length(l) > 50)
+    return {@this:reverse(l[($ / 2) + 1..$]), @this:reverse(l[1..$ / 2])};
+  endif
+  for a in ({l, l = {}}[1])
+    l = listinsert(l, a);
+  endfor
+  return l;
+@;
+
+@verb $list:sort_iter
+  {state, ?initialized = 0, ?lessthan} = args;
+  if (!initialized)
+    {ulist, stack} = {state, {}};
+    do_call = 1;
+  else
+    {sublists, @indices, flip, j, merged_list} = state;
+    if (flip ? lessthan | (!lessthan))
+      merged_list[1..0] = sublists[1 + flip][j + 1..indices[1 + flip]];
+      indices[1 + flip] = j;
+      flip = !flip;
+      j = indices[1 + flip];
+    endif
+    j = j - 1;
+    if (j)
+      return {{sublists, @indices, flip, j, merged_list}, 1, sublists[2][flip ? j | indices[2]], sublists[1][flip ? indices[1] | j]};
+    endif
+    sorted = {@sublists[2 - flip][1..indices[2 - flip]], @sublists[1 + flip][1..indices[1 + flip]], @merged_list};
+    stack = sublists[3];
+    do_call = 0;
+  endif
+  while (1)
+    if (do_call)
+      while (length(ulist) > 1)
+        {ulist, stack} = {ulist[1..$ / 2], {stack, 0, ulist[($ / 2) + 1..$]}};
+      endwhile
+      sorted = ulist;
+    endif
+    if (!stack)
+      return {sorted, 0};
+    elseif (stack[2])
+      {stack, left_sublist} = stack;
+      tail = {1, sorted[r = $], left_sublist[l = $]};
+      return {{{left_sublist, sorted, stack}, l, r, 0, l, {}}, @tail};
+    endif
+    ulist = stack[3];
+    stack[2..3] = {sorted};
+    do_call = 1;
+  endwhile
+  "usage:";
+  "  {state,?started=0,?lessthan=0}={lst};";
+  "  while (({state,started,?a,?b} = $list:sort_iter(state,started,lessthan))[2])";
+  "    lessthan = a < b;";
+  "  endwhile";
+  "  sorted=state;";
+@;
+
+@verb $list:permute_iter
+  {state, ?initialized = 0} = args;
+  if (!initialized)
+    lst = state;
+    prefix = {};
+    stack = {};
+  else
+    {prefix, stack} = state;
+    while (1)
+      if (!stack)
+        return {0, 0};
+      endif
+      {stack, lst, i} = stack;
+      prefix[$..$] = {};
+      if (i <= length(lst))
+        break;
+      endif
+    endwhile
+  endif
+  while (1)
+    if (initialized)
+      stack = {stack, lst, i + 1};
+      {prefix, lst} = {{@prefix, lst[i]}, listdelete(lst, i)};
+    else
+      initialized = 1;
+    endif
+    if (length(lst) <= 1)
+      return {{prefix, stack}, 1, {@prefix, @lst}};
+    endif
+    i = 1;
+  endwhile
+@;
+
+@verb $list:assoc_set assoc_shift assoc_push
+  {target, alist, @values} = args;
+  for i in [1..length(alist)]
+    if ((typeof(alist[i]) == LIST) && `alist[i][1] == target ! E_RANGE => 0')
+      return listset(alist, {target, @(verb == "assoc_set") ? values | ((verb == "assoc_shift") ? {@values, @alist[i][2..$]} | ((verb == "assoc_push") ? {@alist[i][2..$], @values} | raise(E_VERBNF)))}, i);
+    endif
+  endfor
+  return {{target, @values}, @alist};
+  ":assoc_set(target,list,@values) -> nlist such that :assoc(target,nlist) = {target,@values}";
+  ":assoc_shift -- prepend @values to target cell";
+  ":assoc_push  -- append  @values to target cell";
+@;
+
+&| :make(N[,ELT]) => {ELT,(N times)...}
+&| ELT defaults to 0
+@verb $list:make
+  {n, ?elt = 0} = args;
+  if (n < 0)
+    raise(E_INVARG);
+  endif
+  ret = {};
+  build = {elt};
+  while (1)
+    if (n % 2)
+      ret = {@ret, @build};
+    endif
+    if (n = n / 2)
+      build = {@build, @build};
+    else
+      return ret;
+    endif
+  endwhile
+@;
+
+@verb $list:mgetre mgetre_delete
+  {plist, re} = args;
+  keys = values = {};
+  i = 1;
+  {?ks = 0, ?keep} = (verb == "mgetre_delete") ? {1, {}} | {};
+  while (i < length(plist))
+    if (match(plist[i], re))
+      keys[$ + 1..$] = {plist[i]};
+      values[$ + 1..$] = {plist[i + 1]};
+      if (ks && (ks <= i))
+        if (ks < i)
+          keep[$ + 1..$] = {ks, i};
+        endif
+        ks = i + 2;
+      endif
+    endif
+    i = i + 2;
+  endwhile
+  return {values, keys, @ks ? {$seq:extract((ks == (i + 2)) ? keep | {@keep, ks, i + 2}, plist)} | {}};
+@;
+
+@verb $list:slice
+  {l, ?i = 1} = args;
+  slice = {};
+  for e in (l)
+    slice = {@slice, e[i]};
+  endfor
+  return slice;
+@;

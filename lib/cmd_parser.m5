@@ -1,0 +1,37 @@
+@hier
+╰─$cmd_parser - "Parsing Methods"
+@;
+
+@verb $cmd_parser:dispatch
+  {args, ?cmdset = caller.cmdset} = args;
+  argstr = $string:triml(argstr);
+  if (!argstr)
+    return {"#comment"};
+  elseif ((verb = $list:get(cmdset.prefixes, pr = argstr[1], 0)) && (typeof(verb) == STR || (verb = $list:get(verb, (pr = argstr[1..2])[2], 0))))
+    argstr = $string:triml(argstr[length(pr) + 1..$]);
+    return {verb, @this:(tostr("args", pr))(args, pr)};
+  elseif (args[1] in cmdset.verbs)
+    return {args[1], @this:(tostr("arg_", args[1]))(args)};
+  else
+    return {"#unrecognized", @args};
+  endif
+@;
+
+@verb $cmd_parser:args;
+  program = argstr + ";";
+  if (program[1] == ";")
+    return {program[2..$]};
+  elseif (match(program, "^ *%(if%|fork?%|return%|while%|try%)[^a-z0-9A-Z_]"))
+    return {program};
+  else
+    return {"return " + program};
+  endif
+@;
+
+@verb $cmd_parser:args*
+  return {argstr};
+@;
+
+@verb $cmd_parser:arg_*
+  return args[1][2..$];
+@;

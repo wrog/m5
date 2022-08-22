@@ -1,0 +1,132 @@
+@hier
+╰─o      = "Default Thing With Server Options"
+  ╰┬o    = "Default System"
+   │╰─#0 = "System"
+   ╰$listener          - "Listener"
+    ╰┬$shell_listener  - "Shell Listener"
+     ├$cmd_listener    - "Command Listener"
+     ╰$data_listener   - "Data Listener"
+@;
+
+@props $listener
+  .cmdset = #-1
+  .binary = 0
+  .auth_code = ""
+  .is_data_listener = 0
+  .bsave = {}
+  .unparse = ""
+  .auth_checks = {}
+  ._cp_vars = {{"auth_code", "", "c"}, {"bsave", {}, "r"}, {"auth_checks", {}, "r"}}
+@;
+
+@props $data_listener
+  ,binary = 1
+  ,is_data_listener = 1
+  ,bsave = {}
+  ,auth_checks = {}
+@;
+
+@props $cmd_listener
+  ,cmdset = $cmdset
+  ,unparse = "kwds"
+  ,bsave = {}
+  ,auth_checks = {}
+@;
+
+@props $shell_listener
+  ,cmdset = $srv
+  ,unparse = "sh"
+  ,bsave = {}
+  ,auth_checks = {}
+  ,_cp_vars = {{"current", #-1}}
+  .current = #-1
+@;
+
+@verb $listener:do_login_command
+  if (this:no_commands())
+    return;
+  endif
+  {verb, @args} = $cmd_parser:dispatch(args);
+  return this.cmdset:(verb)(@args);
+@;
+
+@verb $listener:do_redirections
+  "remove redirection arg and invoke appropriate $srv method with modified args and adjusted argstr";
+  return args;
+@;
+
+@verb $listener:no_commands
+  if (this:auth_checked())
+    return 0;
+  endif
+  if (this.binary)
+    if (!argstr)
+      set_connection_option(player, "binary", 1);
+    else
+      {prefix, plist} = $list:get_delete(this.bsave, player, "");
+      argstr = prefix + argstr;
+      if (!(m = match(argstr, "%(~0d%)?~0a")))
+        this.bsave = {player, argstr, @plist};
+        return 1;
+      endif
+      this.bsave = plist;
+      if (m[2] < length(argstr))
+        force_input(player, argstr[m[2] + 1..$], 1);
+      endif
+      argstr[m[1]..$] = "";
+    endif
+  endif
+  if (argstr)
+    this:set_auth_checked(1);
+    if (!((a = this:auth_match(argstr)) && this:init_connection(@a)))
+      boot_player(player);
+    endif
+  endif
+  return 1;
+@;
+
+@verb $listener:auth_match
+  {auth, ?id = "", ?tag = ""} = $string:split(args[1], ",");
+  return (auth == this.auth_code) && {1, @(!id) ? {} | {toint(id), @(!tag) ? {} | {tag}}};
+@;
+
+@verb $listener:init_connection
+  {_, @rest} = args;
+  if (rest || this.is_data_listener)
+    return 0;
+  endif
+  $srv:send(player, "YOUARE", "client_id", toint(player));
+  return 1;
+@;
+
+@verb $data_listener:init_connection
+  /* do not pass(@args) */
+  {_, ?id = 0, ?tag = ""} = args;
+  try
+    id || raise(E_NONE);
+    set_connection_option(player, "disable-oob", 1);
+    set_connection_option(player, "hold-input", 1);
+    if (id < 0)
+      port = $conn:lport(client = toobj(id));
+      $srv:send(client, "CONNECTED", "port", port, "id", toint(player));
+    else
+      $srv:id_add_conn(id, tag, player) || raise(E_NONE);
+    endif
+  except (ANY)
+    return 0;
+  endtry
+  return 1;
+@;
+
+@verb $shell_listener:init_connection
+  return pass(@args) && {this.current = player} && 1;
+@;
+
+@verb $listener:auth_checked
+  return $seq:contains(this.auth_checks, -toint(args ? args[1] | player));
+@;
+
+@verb $listener:set_auth_checked
+  {yes, ?who = player} = args;
+  this.auth_checks = $seq:(yes ? "add" | "remove")(this.auth_checks, i = -toint(who), i);
+@;

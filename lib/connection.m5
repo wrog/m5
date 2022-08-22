@@ -1,0 +1,28 @@
+@hier
+╰─$conn - "Connection"
+@;
+
+&| is_connected(CONN) -> CONN is a current open connection
+&|
+@verb $conn:ected is_connected
+  return args[1] in connected_players(1);
+@;
+
+&| lport(CONN) -> listening port for CONN
+&|
+@verb $conn:lport
+  m = match(connection_name(args[1]), "^port %([0-9]+%) from ");
+  return toint(substitute("%1", m));
+@;
+
+&| listener(CONN) -> listening object that accepted CONN
+&|   (even if object is no longer listening)
+&|
+@verb $conn:listener
+  for l in ({@$object:descendants($listener), $listener})
+    if (l:auth_checked(who))
+      return l;
+    endif
+  endfor
+  return #-1;
+@;

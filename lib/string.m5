@@ -1,0 +1,207 @@
+@hier
+╰─$string = "String"
+@;
+
+&| :triml(STRING [, SPACE])
+&|   returns STRING with leading instances of SPACE removed
+@verb $string:triml
+  {string, ?what = " "} = args;
+  m = match(string, tostr("[^", what, "]%|$"));
+  return string[m[1]..$];
+@;
+
+@verb $string:parse_bal*_closed
+  {close, rest, ?pstr = "", ?eatspace = 1} = args;
+  require_close = verb == "parse_bal_closed";
+  while (close)
+    if (!(m = match(rest, (close[1] == "\"") ? "^%([^\"\\]%|\\.%)*%(\"%) *" | tostr("^%([^", close[1], "[({\"`]*%)%([", close[1], "({`\"[]%) *"))))
+      return require_close ? raise(E_INVARG, close + " expected") | {close, "", pstr + rest};
+    elseif (rest[m[3][2][1]] == close[1])
+      close[1..1] = "";
+    else
+      close[1..0] = this:closer(rest[m[3][2][1]]);
+    endif
+    pstr = pstr + rest[1..m[3][2][2]];
+    rest[1..eatspace ? m[2] | m[3][2][2]] = "";
+  endwhile
+  return {@require_close ? {} | {""}, rest, pstr};
+@;
+
+@verb $string:closer
+  return (i = index("\"([{`", args[1][1])) ? "\")]}'"[i] | "";
+@;
+
+@verb $string:parse_flags
+  {STR, all, ?set = ""} = args;
+  for s in [1..length(set)]
+    if (!(i = index(all, set[s], 1)))
+      raise(E_INVARG, "unknown default flag: " + set[s]);
+    endif
+  endfor
+  enable = -1;
+  for s in [1..length(STR)]
+    if (i = index("-+", STR[s]))
+      enable = i - 1;
+    elseif (enable < 0)
+      return {};
+    elseif (!(i = index(all, STR[s], 1)))
+      s = s - 1;
+      break;
+    elseif (enable)
+      set[$ + 1..$] = STR[s];
+    else
+      while (i = index(set, STR[s], 1))
+        set[i..i] = "";
+      endwhile
+    endif
+  endfor
+  STR[1..s] = "";
+  s = length(all);
+  while (s > 0)
+    if (!index(set, all[s], 1))
+      all[s..s] = "";
+    endif
+    s = s - 1;
+  endwhile
+  return {all, $string:triml(STR)};
+@;
+
+@verb $string:parse_id
+  {rest, ?eatspace = 1} = args;
+  if (!(m = match(rest, "^%([_A-Z]%(%w%|_%)*%) *")))
+    return {};
+  else
+    rest[1..eatspace ? m[2] | m[3][1][2]] = "";
+    return {substitute("%1", m), rest};
+  endif
+@;
+
+@verb $string:parse_objref parse_verbref parse_propref
+  {rest} = args;
+  vpref = $list:get({"parse_verbref", ":", "parse_propref", ".", "parse_objref", ""}, verb);
+  idstart = argstart = -1;
+  if (m = match(rest, "^%(#[0-9]+%) *%|^%(%$ *%)?[_A-Z]"))
+    if (m[3][1][1])
+      {objref, rest} = {substitute("%1", m), rest[m[2] + 1..$]};
+    else
+      {objref, rest} = $string:parse_id(rest[m[2]..$]);
+      if (m[2] > 1)
+        objref = "$" + objref;
+        if (vpref)
+          idstart = 2;
+          argstart = length(objref) + 1;
+        endif
+      endif
+      if (rest[1..min(1, $)] == "(")
+        {rest, objref} = $string:parse_bal_closed(")", rest[2..$], objref + "(");
+      endif
+    endif
+  elseif (!(i = index("{(`", rest[1])))
+    return {};
+  else
+    {rest, objref} = $string:parse_bal_closed("})'"[i], rest[2..$], rest[1]);
+    if (i == 1)
+      (rest[1..min(1, $)] == "[") || raise(E_INVARG, "list expression needs index");
+      {rest, objref} = $string:parse_bal_closed("]", rest[2..$], objref + rest[1]);
+    endif
+  endif
+  while (rest)
+    vp = rest[1];
+    if (vp == "[")
+      {rest, objref} = $string:parse_bal_closed("]", rest[2..$], objref + vp);
+      idstart = argstart = -1;
+    elseif (!(m = match(rest, "[.:] *")))
+      break;
+    else
+      if (vpref == vp)
+        idstart = length(objref) + 2;
+      endif
+      if (rest[m[2] + 1..min(m[2] + 1, $)] == "(")
+        {rest, objref} = $string:parse_bal_closed(")", rest[m[2] + 2..$], (objref + vp) + "(");
+      else
+        {id, rest} = $string:parse_id(rest[m[2] + 1..$]);
+        objref = tostr(objref, vp, id);
+      endif
+      if (vpref == vp)
+        argstart = length(objref) + 1;
+      else
+        idstart = argstart = -1;
+      endif
+      if (vp == ":")
+        if (rest[1..min(1, $)] != "(")
+          if (vpref == ":")
+            break;
+          else
+            raise(E_INVARG, "verb call needs arguments");
+          endif
+        endif
+        {rest, objref} = $string:parse_bal_closed(")", rest[2..$], objref + "(");
+      endif
+    endif
+  endwhile
+  return {rest, @(!vpref) ? {objref} | ((idstart < 0) ? raise(E_INVARG, tostr((vpref == ".") ? "property" | "verb", " reference expected")) | {(idstart == 2) ? "#0" | objref[1..idstart - 2], @(vpref == ".") ? (argstart > length(objref)) ? {objref[idstart..$]} | raise(E_INVARG, "property reference has arguments?") | {objref[idstart..argstart - 1], objref[argstart..$]}})};
+@;
+
+@verb $string:match_endexpr
+  {rest} = args;
+  return (!rest) || (!(!match(rest, "%(![^=]%|=>%|[])|},;']%)")));
+@;
+
+@verb $string:explode split
+  {subject, ?breakit = {" "}} = args;
+  breakit = breakit[1];
+  subject = subject + breakit;
+  include_empties = verb == "split";
+  parts = {};
+  while (subject)
+    i = index(subject, breakit);
+    if (include_empties ? i | (i > 1))
+      parts = {@parts, subject[1..i - 1]};
+    endif
+    subject = subject[i + 1..$];
+  endwhile
+  return parts;
+@;
+
+@verb $string:sh_quote_args
+  rs = {};
+  for a in (args)
+    if (typeof(a) != STR)
+      a = toliteral(a);
+    endif
+    ra = "";
+    while (a && (m = match(a, "^%('*%)%([^']*%)")))
+      if (m[3][1][2] >= m[3][1][1])
+        ra = ra + substitute("\"%1\"", m);
+      endif
+      if (m[3][2][2] >= m[3][2][1])
+        ra = ra + substitute("'%2'", m);
+      endif
+      a[1..m[2]] = "";
+    endwhile
+    if (!ra)
+      ra = "''";
+    endif
+    rs[$ + 1..$] = {ra + " "};
+  endfor
+  return tostr(@rs);
+@;
+
+@verb $string:make
+  {n, ?char = " "} = args;
+  if (n < 0)
+    raise(E_INVARG);
+  endif
+  ret = "";
+  build = char;
+  while (1)
+    if (n % 2)
+      ret = ret + build;
+    endif
+    if (n = n / 2)
+      build = build + build;
+    else
+      return ret;
+    endif
+  endwhile
+@;
