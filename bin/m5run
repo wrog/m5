@@ -1,21 +1,19 @@
 #!/bin/sh
 #
-m5_legal_msg="$(cat <<'EOF'
+m5_legal_msg="$(cat <<'ENDLEGAL'
 Copyright 2022, Roger F. Crew.
 
-M5 is free software:
-You can redistribute it and/or modify it under either the terms of
-(*) the GNU General Public License as published by the Free Software
-    Foundation, version 2 <https://www.gnu.org/licenses/>, or
-(*) the Perl Artistic License, version 2
-    <https://www.perlfoundation.org/artistic-license-20.html>,
-or (at your option) any later version of either.
+M5 is free software:  You can redistribute it and/or modify it under
+either the terms of the GNU General Public License, version 2, or the
+Perl Artistic License, version 2, or (at your option) any later
+version of either.  For details, see <https://www.gnu.org/licenses/>
+or <https://www.perlfoundation.org/artistic-license-20.html>.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-EOF
+ENDLEGAL
 )"
 m5_version_major="0"
 m5_version_minor="1"
@@ -359,10 +357,11 @@ wait_log () {
 }
 
 sh_connect () {
-    mkfifo -m600 "${run_dir}/pipe_i" "${run_dir}/pipe_o" || die
-    ${netcat} "$@" <"${run_dir}/pipe_o" >"${run_dir}/pipe_i" &
-    exec 3>"${run_dir}/pipe_o" 4<"${run_dir}/pipe_i"
-    rm -f "${run_dir}/pipe_o" "${run_dir}/pipe_i"
+    local pi="${run_dir}/pipe_i" po="${run_dir}/pipe_o"
+    mkfifo -m600 "$pi" "$po" || die
+    ${netcat} "$@" <"$po" >"$pi" &
+    exec 3>"$po" 4<"$pi"
+    rm -f "$po" "$pi"
     if test -n "$auth_code" ; then
         printf "%s\n" "$auth_code" >&3
     fi

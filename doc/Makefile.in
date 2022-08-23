@@ -1,10 +1,10 @@
-
-srcdir = .
-top_srcdir = ..
-prefix = /usr/local
-datarootdir = ${prefix}/share
-datadir = ${datarootdir}
-infodir = ${datarootdir}/info
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+prefix = @prefix@
+datarootdir = @datarootdir@
+datadir = @datadir@
+infodir = @infodir@
 
 MI_OPTS = --fill-column 79 --no-split
 

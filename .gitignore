@@ -1,4 +1,10 @@
 doc/*.info
 doc/*.txt
 doc/html
-share/
+build-aux/
+.version
+config.log
+config.status
+configure
+autom4te.cache
+Makefile

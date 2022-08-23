@@ -5,9 +5,7 @@
 @settitle M5 Manual
 @c Uncomment the following line for two-sided printing.
 @c @setchapternewpage odd
-@macro m5version
-0.1
-@end macro
+@include .version
 @macro m5date
 June 2022
 @end macro
