@@ -1,0 +1,18 @@
+#!/bin/sh
+MOO="${MOO:-/home/moo/git/src/server/moo}"
+LIB="$(readlink -f "$0")"
+LIB="${LIB%/*}"
+LIB="${LIB%/*}"
+LIB="${LIB}/lib"
+{
+cat "${LIB}/Raw.db.top"
+printf 'fork shutdown_task (0) shutdown(); endfork '
+cat -
+printf "\n"
+cat "${LIB}/Raw.db.bot"
+} | $MOO /dev/stdin /dev/null -a 127.0.0.1 2>&1 | \
+sed -e '/[*][*][*] Opening temporary dump file: Permission denied/d' \
+    -e '/[*][*][*]/{s/^[^:]\+:..:..: //;p}' \
+    -e '0,/LISTEN: #0 now listening on/d' \
+    -e '/SHUTDOWN: shutdown()/,$d' \
+    -e 's/^[^:]\+:..:..: //' -e 's/> //'
