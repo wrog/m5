@@ -5,9 +5,12 @@
 @settitle M5 Manual
 @c Uncomment the following line for two-sided printing.
 @c @setchapternewpage odd
-@include .version
+@include version.texi
+@macro m5version
+@value{VERSION}
+@end macro
 @macro m5date
-June 2022
+@value{UPDATED-MONTH}
 @end macro
 @macro moo
 @sc{moo}
@@ -84,7 +87,6 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 @node Top
 @top M5 Manual
 @ifnothtml
-@ifset INFO
 @format
                      For M5 Version @m5version
                           @m5date
@@ -94,7 +96,6 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 
           Copyright @copyright{} 2022 by Roger F. Crew.
 @end format
-@end ifset
 @end ifnothtml
 
 @menu

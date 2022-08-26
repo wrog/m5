@@ -1,10 +1,13 @@
-doc/*.info
-doc/*.txt
-doc/html
 build-aux/
-.version
 config.log
 config.status
 configure
 autom4te.cache
+aclocal.m4
 Makefile
+Makefile.in
+doc/stamp-vti
+doc/version.texi
+doc/*.info
+doc/*.txt
+doc/M5manual.html

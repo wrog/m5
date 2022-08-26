@@ -4,7 +4,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-texinfo.tex])
 AC_CONFIG_SRCDIR([lib/Raw.db.top])
 AC_PROG_YACC
-AC_CONFIG_FILES([Makefile scripts/Makefile])
+AC_CONFIG_FILES([Makefile scripts/Makefile doc/Makefile])
 
 AC_CONFIG_COMMANDS([scripts/doom.in],
   [m4_pushdef([AS_MESSAGE_FD],[1])dnl
