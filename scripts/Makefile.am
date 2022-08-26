@@ -7,6 +7,10 @@ do_subst = \
         -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
         -e 's,[@]VERSION[@],$(VERSION),g'
 
+m5run: m5run.in Makefile
+	$(do_subst) < m5run.in > m5run
+	chmod +x m5run
+
 doom: doom.in Makefile
 	$(do_subst) < doom.in > doom
 	chmod +x doom

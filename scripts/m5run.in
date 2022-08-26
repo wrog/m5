@@ -15,9 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ENDLEGAL
 )"
-m5_version_major="0"
-m5_version_minor="1"
-m5_version="${m5_version_major}.${m5_version_minor}"
+m5_version="@VERSION@"
 
 netcat=nc
 run_dir=
