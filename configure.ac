@@ -1,4 +1,4 @@
-m4_define([m5_version],m4_esyscmd([build-aux/git-version-gen .tarball-version]))
+m4_define([m5_version],m4_esyscmd([if test -f configure.ac ; then d=. ; else d=`pwd` ; cd .. ; fi ; build-aux/git-version-gen .tarball-version ; cd "$d"]))
 AC_INIT([M5],[m5_version],[bug-m5@wrog.net],[m5],[https://wrog.net/moo/m5])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-texinfo.tex])
