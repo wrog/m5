@@ -322,8 +322,10 @@ you will now have something vaguely resembling a @moo interpreter, reading langu
 That last problem we can fix, and we also won't need the bogus @code{player} anymore, the price being that you have to type that horrible @command{grep} command or wade through lots of lines of server log to get what you want:
 
 @example
-$ m5run -t Raw -e 'server_log("Hello world!")' -l /dev/stdout | grep '^> '
+$ m5run -t Raw -e 'server_log("Hello world!")' -l - 2>&1 | grep ' > '
 @end example
+
+(You need the @samp{2>&1} because the specifing @samp{-} for the log means it shows up on standard error, not standard output.)
 
 In short, @samp{Raw} exists for (1) really simple tests, and (2) the bootstrap process that builds everything else in M5 (which you really don't need to know about unless you are insane).  The entire menagerie of template databases available is described in @ref{Databases}; typically you'll use the one that exists for your particular purpose, e.g., @samp{Test} to run test suites, @samp{TestGen} to create test suites, and so on@dots{}).
 
