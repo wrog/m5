@@ -15,6 +15,7 @@ m4_include([LICENSE])
 ENDLEGAL
 )"
 [m5_version]="@VERSION@"
+[lib_path]="@pkgdatadir@"
 ]) || { AS_ECHO(["failed to create doom.in"]); AS_EXIT; }
 m4_pushdef([AS_MESSAGE_LOG_FD],[2])dnl
 cat >> scripts/doom.in <<\__EOF__
