@@ -552,12 +552,6 @@ EOF
 
 describe_for_dryrun () {
     local v e z
-    if test "$final_db" && test "$final_db" != "-"; then
-        test -w "$final_db"  || die "--out-db not writeable:  $final_db"
-    fi
-    if test "$final_log" && test "$final_log" != "-"; then
-        test -w "$final_log" || die "--log not writeable:  $final_log"
-    fi
 
     printf "M5 Version:  %s" "$m5_version"
     test "$do_verbose" && printf "  (being verbose (-v|--verbose)"
@@ -938,6 +932,17 @@ elif test "$do_runmoo" = MAYBE ; then
     do_runmoo=
 else
     test "$do_runmoo" && usage "--moo|+M requires database (--db|-t or --dbfile|-d)"
+fi
+
+if test "do_runmoo" ; then
+    if test "$final_db" && test "$final_db" != "-"; then
+        test -w "$(dirname "$final_db")"  ||
+            die "--out-db not writable:  $final_db"
+    fi
+    if test "$final_log" && test "$final_log" != "-"; then
+        test -w "$(dirname "$final_log")" ||
+            die "--log not writable:  $final_log"
+    fi
 fi
 
 # set do_shconn, shell_port, infer from each other, do_runmoo
