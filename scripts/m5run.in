@@ -319,7 +319,7 @@ wait_log () {
                 '>')
                     case $snd in
                         playerport)
-                            printf "%s\n" "$auth_code" | "$netcat" "$moo_ip" "$thd" &
+                            printf "%s\n" "$auth_code" | "$netcat" "$moo_ip" "$thd" | tr -d '\015' &
                             ;;
                         shellport)
                             shell_port="$thd"
@@ -368,7 +368,7 @@ sh_connect () {
 do_commands () {
     local cmd ccmd id args
     while read -r cmd id args <&4; do
-        args="${args%?}"
+        args="$(printf "%s" "$args" | tr -d '\015')"
         ccmd="cmd_$cmd"
         if test "$cmd" = '***' ; then
             ccmd="cmd_BYE"
