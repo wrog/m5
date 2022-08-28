@@ -1007,7 +1007,7 @@ if test "$in_db" ; then
 
     # resolve filename
     in_db="$(file_find "$in_db" 'db')"
-    test "$in_db" || die;
+    test "$in_db" || die "--dbfile|-d not found";
 
 elif test "$template_db" ; then
 
