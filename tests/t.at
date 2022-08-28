@@ -1,0 +1,37 @@
+AT_INIT()
+
+AT_COLOR_TESTS
+AT_BANNER([category the first])
+
+dnl 1. every bit of shell code showing up at top level
+dnl    needs to be m4-quoted with [...], which then means
+dnl    every pure shell code argument to AT_CHECK
+dnl    gets double-quoted [[...]] and likewise
+dnl    for all deeper levels of m4 nesting
+dnl
+dnl A few quick tests to make sure we are quoting enough:
+dnl   m4_define([m5run],[mmmm5run])dnl
+dnl   m4_define([world],[wwwworld])dnl
+dnl   m4_define([sdcount],[sssssdcount])dnl
+dnl   m4_define([at],[aaat])dnl
+dnl   m4_define([directory],[ddddirectory])dnl
+dnl     -- dont do this last one;
+dnl     -- it seems there are significant parts of Autotest that are
+dnl        insufficiently quoted
+dnl
+dnl 2. there is only one name space for m4 macro names
+dnl    so we need to use m5at_/M5AT_ prefixes
+dnl
+dnl 3. we like having vpath builds work,
+dnl    so don't forget $srcdir or $at_srcdir references
+
+m4_foreach([m5at_current_include_file],m4_split(m4_esyscmd([
+  . ./atconfig
+  . ./atlocal
+  echo '['
+  ls ${at_srcdir}/*.at | ${EGREP} -v '/t[.]at$'
+  echo ']'
+]),m4_newline()),
+  [m4_if(m4_defn([m5at_current_include_file]),[],[],
+         [m4_include(m4_defn([m5at_current_include_file]))
+])])dnl

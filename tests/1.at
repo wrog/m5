@@ -1,0 +1,49 @@
+AT_SETUP([hello] (__file__))[
+##########################
+]
+AT_CHECK([[# hello via fake player
+
+m5run -t Raw -e 'notify(player,"hello world")'
+
+]],0,
+[[hello world
+]],[[]])dnl
+##########################
+AT_CHECK([[# fails with -P
+
+m5run -t Raw -e 'notify(player,"hello world")' -P
+
+]],0,[[]],[[]])dnl
+##########################
+AT_CHECK([[# code from file
+
+m5run -t Raw -f - <<END
+notify(player,"hello world");
+END
+
+]],0,
+[[hello world
+]],[[]])
+##########################
+AT_CHECK([[# hello via server log
+
+m5run -t Raw -e 'server_log("hello world")' -l -
+
+]],0,[[]],[[stderr-nolog]],[[]],[[
+
+${FGREP} ' > hello world' stderr || at_failed=:
+
+]])
+
+##########################
+AT_CHECK([[# unparsable hello
+
+m5run -t Raw -e '"hello world"(' -l -
+
+]],0,[[]],[[stderr-nolog]],[[]],[[
+
+${FGREP} ' *** PARSER: Error' stderr || at_failed=:
+
+]])
+
+AT_CLEANUP

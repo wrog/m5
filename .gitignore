@@ -11,3 +11,6 @@ doc/version.texi
 doc/*.info
 doc/*.txt
 doc/M5manual.html
+atconfig
+atlocal
+tests/package.m4

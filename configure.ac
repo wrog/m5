@@ -24,6 +24,11 @@ __EOF__
 m4_popdef([AS_MESSAGE_LOG_FD],[AS_MESSAGE_FD])
 ])dnl -- end of AC_CONFIG_COMMANDS
 
-AC_CONFIG_TESTDIR([tests],[bin])
+AC_PROG_GREP
+AC_PROG_EGREP
+AC_PROG_FGREP
+AC_CONFIG_TESTDIR([tests],[scripts])
+AC_CONFIG_FILES([tests/Makefile tests/atlocal])
+AM_MISSING_PROG([AUTOM4TE], [autom4te])
 
 AC_OUTPUT

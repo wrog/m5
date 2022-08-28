@@ -1,4 +1,4 @@
-SUBDIRS = scripts doc
+SUBDIRS = scripts doc . tests
 
 dist_data_DATA = lib/Raw.db.top lib/Raw.db.bot
 
