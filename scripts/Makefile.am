@@ -1,5 +1,5 @@
-dist_bin_SCRIPTS = doom
-EXTRA_DIST = doom.in
+dist_bin_SCRIPTS = m5run doom
+EXTRA_DIST = m5run.in doom.in
 
 do_subst = \
     sed -e 's,[@]datadir[@],$(datadir),g' \
