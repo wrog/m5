@@ -1,0 +1,144 @@
+AT_SETUP([outfile] (__file__))[
+##########################
+{ cat  "${top_srcdir}/lib/Raw.db.top" \
+       "${top_srcdir}/lib/Raw.db.bot"
+  echo "0 active connections with listeners"
+  } > MyRaw.db
+
+{ cat  "${top_srcdir}/lib/Raw.db.top"
+  echo "fork (0) shutdown(); endfork set_verb_code(#0,1,{});"
+  cat  "${top_srcdir}/lib/Raw.db.bot"
+  echo "0 active connections with listeners"
+  } > MyRaw2.db
+
+bad_directory=/bad-directory
+sdcount=0
+while test -d "${bad_directory}${sdcount}" ; do
+  sdcount=$((sdcount+1))
+done;
+]
+##########################
+AT_CHECK([[# log to stderr, outdb to stdout
+
+m5run -t Raw -e 'server_log("hello world")' -l - -o -
+
+]],0,[stdout-nolog],[stderr-nolog],[[]],[[
+
+cmp -s MyRaw.db stdout ||
+  { at_failed=: ; echo db mismatch ; }
+
+${FGREP} ' > hello world' stderr ||
+  { at_failed=: ; echo log mismatch ; }
+
+]])
+##########################
+AT_CHECK([[# log to file, outdb to file
+
+m5run -t Raw -e 'server_log("hello world")' -l Log -o Out2.db
+
+]],0,[[stdout-nolog]],[[stderr-nolog]],[[]],[[
+
+if cmp -s MyRaw.db Out2.db ; then
+  rm Out2.db
+else
+  at_failed=: ; echo db mismatch
+fi
+
+if ${FGREP} ' > hello world' Log ; then
+  rm Log
+else
+  at_failed=: ; echo log mismatch
+fi
+
+]])
+##########################
+AT_CHECK([[# template db writes itself
+
+m5run -t Raw -o Out3.db
+
+]],0,[[]],[[]],[[]],[[
+
+if cmp -s MyRaw.db Out3.db ; then
+  rm Out3.db
+else
+  at_failed=: ; echo db mismatch
+fi
+
+]])
+##########################
+AT_CHECK([[# file db writes itself
+
+m5run -d ./MyRaw2 -o Out4.db
+
+]],0,[[]],[[]],[[]],[[
+
+if cmp -s MyRaw.db Out4.db ; then
+  rm Out4.db
+else
+  at_failed=: ; echo db mismatch
+fi
+
+]])
+##########################
+AT_CHECK([[# file db on stdin
+
+cat MyRaw2.db | m5run -d - -o Out5.db
+
+]],0,[[]],[[]],[[]],[[
+
+if cmp -s MyRaw.db Out5.db ; then
+  rm Out5.db
+else
+  at_failed=: ; echo db mismatch
+fi
+
+]])
+##########################
+AT_CHECK([[# template db missing
+
+m5run -t ${bad_directory}/Raw -o Out.db
+
+]],1,[[]],[[stderr-nolog]],[[]],[[
+
+${FGREP} 'not found:' stderr >/dev/null ||
+  at_failed=:
+
+]])
+##########################
+AT_CHECK([[# file db missing
+
+m5run -d ${bad_directory}/Raw -o Out.db
+
+]],1,[[]],[[stderr-nolog]],[[]],[[
+
+${FGREP} 'dbfile|-d not found' stderr >/dev/null ||
+  at_failed=:
+
+test -f Out.db &&
+  at_failed=:
+
+]])
+##########################
+AT_CHECK([[# output db not writeable
+
+m5run -t Raw -o ${bad_directory}/Out.db
+
+]],1,[[]],[[stderr-nolog]],[[]],[[
+
+${FGREP} 'not writable' stderr >/dev/null ||
+  at_failed=:
+
+]])
+##########################
+AT_CHECK([[# log not writeable
+
+m5run -t Raw -l ${bad_directory}/log
+
+]],1,[[]],[[stderr-nolog]],[[]],[[
+
+${FGREP} 'not writable' stderr >/dev/null ||
+  at_failed=:
+
+]])
+
+AT_CLEANUP

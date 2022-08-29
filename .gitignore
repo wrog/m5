@@ -6,6 +6,8 @@ autom4te.cache
 aclocal.m4
 Makefile
 Makefile.in
+scripts/m5run
+scripts/doom*
 doc/stamp-vti
 doc/version.texi
 doc/*.info
@@ -14,3 +16,6 @@ doc/M5manual.html
 atconfig
 atlocal
 tests/package.m4
+tests/t
+tests/t.dir/
+tests/t.log
