@@ -86,7 +86,7 @@ verbose_printf () {
 
 gen_auth_code () {
     auth_code=$(dd if=/dev/urandom count=1 ibs=28 status=none | shasum -b -a 224) || die;
-    auth_code=${auth_code%% *}
+    auth_code=`expr "X$auth_code" : 'X\([^ ]*\)'`
 }
 
 make_run_dir () {
@@ -128,7 +128,7 @@ template_find () {
     local dbtop="$(lib_find "${1}.db.top")" rt
     test -n "$dbtop" || dbtop="$(lib_find "${1}.top")"
     test -n "$dbtop" || die "not found: ${1}[.db].top";
-    rt="${dbtop%.top}"
+    rt=`expr "X$dbtop" : 'X\(.*\).top'`
     if test ! -r "${rt}.bot" ; then
         die "${rt}.bot:  not found"
     fi
@@ -679,16 +679,17 @@ push_moo_listeners () {
             usage "--listen=|-p: cannot end with comma: $v"  ; return
             ;;
         *,*_listener)
-            port="${v%,*}"
-            lname="\$${v#*,}"
+            port=`expr "X$v" : 'X\(.*\),.*'`
+            lname='$'`expr "X$v" : 'X.*,\(.*\)'`
             ;;
         *,[#]*)
-            port="${v%,*}"
-            lname="${v#*,}"
+            port=`expr "X$v" : 'X\(.*\),.*'`
+            lname=`expr "X$v" : 'X.*,\(.*\)'`
             ;;
         *,*)
-            port="${v%,*}"
-            lname="\$${v#*,}_listener \$${v#*,}"
+            port=`expr "X$v" : 'X\(.*\),.*'`
+            lname=`expr "X$v" : 'X.*,\(.*\)'`
+            lname="\$${lname}_listener \$${lname}"
             ;;
         *[!0-9]*)
             usage "--listen=|-p: port must be a number: $v"  ; return
@@ -781,6 +782,14 @@ while test "$#" -gt 0 ; do
     arg_count=$((arg_count+1))
     conflicts="$1"
     case $1 in #(
+        --*=?*)
+            argument=`expr "X$1" : '[^=]*=\(.*\)'`
+            ;; #(
+        *)
+            argument=
+            ;;
+    esac
+    case $1 in #(
         +M | --moo)
             test "$do_runmoo" != MAYBE && conflict "-M|--no-moo"
             do_runmoo=yes
@@ -798,7 +807,7 @@ while test "$#" -gt 0 ; do
             do_shconn=
             ;; #(
         --moo-exec=* | --moo_exec=* | --mooexec=*)
-            moo_exec="${1#*=}"
+            moo_exec="$argument"
             ;; #(
         -x)
             test $# -gt 1 || usage "$1: <pathname> missing"
@@ -806,7 +815,7 @@ while test "$#" -gt 0 ; do
             moo_exec="$1"
             ;; #(
         --lib-path=* | --lib_path=* | --libpath=*)
-            push_lib_path "${1#*=}"
+            push_lib_path "$argument"
             ;; #(
         -L)
             test $# -gt 1 || usage "$1: <pathstring> missing"
@@ -814,7 +823,7 @@ while test "$#" -gt 0 ; do
             push_lib_path "$1"
             ;; #(
         --db=*)
-            template_db="${1#*=}"
+            template_db="$argument"
             ;; #(
         -t)
             test $# -gt 1 || usage "$1: <template> missing"
@@ -822,7 +831,7 @@ while test "$#" -gt 0 ; do
             template_db="$1"
             ;; #(
         --dbfile=*)
-            in_db="${1#*=}"
+            in_db="$argument"
             ;; #(
         -d)
             test $# -gt 1 || usage "$1: <basename> missing"
@@ -830,7 +839,7 @@ while test "$#" -gt 0 ; do
             in_db="$1"
             ;; #(
         --address=*)
-            moo_ip="${1#*=}"
+            moo_ip="$argument"
             ;; #(
         -b)
             test $# -gt 1 || usage "$1: <ip> missing"
@@ -841,10 +850,10 @@ while test "$#" -gt 0 ; do
             shell_port=
             ;; #(
         --shell-port=* | --shell_port=* | --shellport=*)
-            shell_port="${1#*=}"
+            shell_port="$argument"
             ;; #(
         --listen=*)
-            push_moo_listeners "${1#*=}"
+            push_moo_listeners "$argument"
             ;; #(
         -p)
             test $# -gt 1 || usage "$1: <port>[,<listener>] missing"
@@ -870,7 +879,7 @@ while test "$#" -gt 0 ; do
             break;
             ;; #(
         --expr=*)
-            code_expr="${1#*=}"
+            code_expr="$argument"
             ;; #(
         -e)
             test $# -gt 1 || usage "$1: <expression> missing"
@@ -878,7 +887,7 @@ while test "$#" -gt 0 ; do
             code_expr="$1"
             ;; #(
         --code-file=* | --code_file=* | --codefile=*)
-            code_file="${1#*=}"
+            code_file="$argument"
             ;; #(
         -f)
             test $# -gt 1 || usage "$1: <filename> missing"
@@ -895,7 +904,7 @@ while test "$#" -gt 0 ; do
             final_db=
             ;; #(
         --out-db=* | --out_db=* | --outdb=*)
-            final_db="${1#*=}"
+            final_db="$argument"
             ;; #(
         -o)
             test $# -gt 1 || usage "$1: <basename> missing"
@@ -906,7 +915,7 @@ while test "$#" -gt 0 ; do
             final_log=
             ;; #(
         --log=*)
-            final_log="${1#*=}"
+            final_log="$argument"
             ;; #(
         -l)
             test $# -gt 1 || usage "$1: <filename> missing"
