@@ -721,9 +721,50 @@ push_moo_listeners () {
 push_lib_path () {
     local v="${1}"
     case $v in
-        +:*) lib_path="${lib_path}${v#+}" ;;
-        *:+) lib_path="${v%+}${lib_path}" ;;
-        *)   lib_path="$v" ;;
+        +::*[!:]*)
+            v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
+            lib_path="${lib_path}:.:${v}"
+            ;;
+        +: | +::*)
+            lib_path="${lib_path}:."
+            ;;
+        +:?*:)
+            v=`expr "X$v" : 'X..\(.*[^:]\)'`
+            lib_path="${lib_path}:${v}:."
+            ;;
+        +:?*)
+            v=`expr "X$v" : 'X..\(.*\)'`
+            lib_path="${lib_path}:${v}"
+            ;;
+        :*[!:]*:+)
+            v=`expr "X$v" : 'X:*\(.*[^:]\).*+'`
+            lib_path=".:$v:${lib_path}"
+            ;;
+        :+ | :*:+)
+            lib_path=".:${lib_path}"
+            ;;
+        ?*::+)
+            v=`expr "X$v" : 'X\(.*[^:]\).*+'`
+            lib_path="${v}:.:${lib_path}"
+            ;;
+        ?*:+)
+            v=`expr "X$v" : 'X\(.*\):+'`
+            lib_path="${v}:${lib_path}"
+            ;;
+        :*)
+            v=`expr "X$v" : 'X:*\(.*[^:]\)'`
+            lib_path=".:${v}"
+            ;;
+        *:)
+            v=`expr "X$v" : 'X\(.*[^:]\)'`
+            lib_path="${v}:."
+            ;;
+        ?*)
+            lib_path="${v}"
+            ;;
+        *)
+            lib_path="."
+            ;;
     esac
 }
 
