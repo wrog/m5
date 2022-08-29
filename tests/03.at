@@ -1,0 +1,43 @@
+AT_SETUP([libpath] (__file__))[
+##########################
+ln -s "${top_srcdir}/lib/Raw.db.top" \
+      "${top_srcdir}/lib/Raw.db.bot" .
+]
+##########################
+for xx in "+::xyz::%_:.:xyz" "+:%_:." "+:::%_:." "+:abc:%_:abc:." "+:aa%_:aa" "a:+%a:_" ":ca:+%.:ca:_" ":+%.:_" "::::+%.:_" "aa::+%aa:.:_" ; do
+  lopt=`expr "X$xx" : 'X\(.*\)%'`
+  r1=`expr "X$xx" : 'X.*%\(.*\)_'`
+  r2=`expr "X$xx" : 'X.*%.*_\(.*\)'`
+
+AT_CHECK_UNQUOTED([[#
+
+m5run -n +M -t Raw -L ${top_srcdir}/lib -L $lopt |
+  ${FGREP} 'Library path'
+
+]],0,[[M5 Library path:  ${r1}${top_srcdir}/lib${r2}
+]],[[]])
+
+done
+
+AT_CHECK_UNQUOTED([[#
+
+m5run -n +M -t Raw -L :abc | ${FGREP} 'Library path'
+
+]],0,[[M5 Library path:  .:abc
+]],[[]])
+
+AT_CHECK_UNQUOTED([[#
+
+m5run -n +M -t Raw -L abc: |  ${FGREP} 'Library path'
+
+]],0,[[M5 Library path:  abc:.
+]],[[]])
+
+AT_CHECK_UNQUOTED([[#
+
+m5run -n +M -t Raw -L '' | ${FGREP} 'Library path'
+
+]],0,[[M5 Library path:  .
+]],[[]])
+
+AT_CLEANUP
