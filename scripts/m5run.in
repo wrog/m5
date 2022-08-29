@@ -780,83 +780,83 @@ arg_count=0
 while test "$#" -gt 0 ; do
     arg_count=$((arg_count+1))
     conflicts="$1"
-    case $1 in
-        +M|--moo)
+    case $1 in #(
+        +M | --moo)
             test "$do_runmoo" != MAYBE && conflict "-M|--no-moo"
             do_runmoo=yes
-            ;;
-        -M|--no-moo|--no_moo|--nomoo)
+            ;; #(
+        -M | --no-moo | --no_moo | --nomoo)
             test "$do_runmoo" != MAYBE && conflict "+M|--moo"
             do_runmoo=
-            ;;
-        +S|--shell)
+            ;; #(
+        +S | --shell)
             test "$do_shconn" != MAYBE && conflict "-S|--no-shell"
             do_shconn=yes
-            ;;
-        -S|--no-shell|--no_shell|--noshell)
+            ;; #(
+        -S | --no-shell | --no_shell | --noshell)
             test "$do_shconn" != MAYBE && conflict "+S|--shell"
             do_shconn=
-            ;;
-        --moo-exec=*|--moo_exec=*|--mooexec=*)
+            ;; #(
+        --moo-exec=* | --moo_exec=* | --mooexec=*)
             moo_exec="${1#*=}"
-            ;;
+            ;; #(
         -x)
             test $# -gt 1 || usage "$1: <pathname> missing"
             shift
             moo_exec="$1"
-            ;;
-        --lib-path=*|--lib_path=*|--libpath=*)
+            ;; #(
+        --lib-path=* | --lib_path=* | --libpath=*)
             push_lib_path "${1#*=}"
-            ;;
+            ;; #(
         -L)
             test $# -gt 1 || usage "$1: <pathstring> missing"
             shift
             push_lib_path "$1"
-            ;;
+            ;; #(
         --db=*)
             template_db="${1#*=}"
-            ;;
+            ;; #(
         -t)
             test $# -gt 1 || usage "$1: <template> missing"
             shift
             template_db="$1"
-            ;;
+            ;; #(
         --dbfile=*)
             in_db="${1#*=}"
-            ;;
+            ;; #(
         -d)
             test $# -gt 1 || usage "$1: <basename> missing"
             shift
             in_db="$1"
-            ;;
+            ;; #(
         --address=*)
             moo_ip="${1#*=}"
-            ;;
+            ;; #(
         -b)
             test $# -gt 1 || usage "$1: <ip> missing"
             shift
             moo_ip="$1"
-            ;;
-        --no-shell-port|--no_shell_port|--noshellport)
+            ;; #(
+        --no-shell-port | --no_shell_port | --noshellport)
             shell_port=
-            ;;
-        --shell-port=*|--shell_port=*|--shellport=*)
+            ;; #(
+        --shell-port=* | --shell_port=* | --shellport=*)
             shell_port="${1#*=}"
-            ;;
+            ;; #(
         --listen=*)
             push_moo_listeners "${1#*=}"
-            ;;
+            ;; #(
         -p)
             test $# -gt 1 || usage "$1: <port>[,<listener>] missing"
             shift
             push_moo_listeners "$1"
-            ;;
-        +P|--player)
+            ;; #(
+        +P | --player)
             do_player=yes
-            ;;
-        -P|--no-player|--no_player|--noplayer)
+            ;; #(
+        -P | --no-player | --no_player | --noplayer)
             do_player=
-            ;;
+            ;; #(
         --)
             moo_args=
             shift
@@ -868,64 +868,64 @@ while test "$#" -gt 0 ; do
             done
             set --
             break;
-            ;;
+            ;; #(
         --expr=*)
             code_expr="${1#*=}"
-            ;;
+            ;; #(
         -e)
             test $# -gt 1 || usage "$1: <expression> missing"
             shift
             code_expr="$1"
-            ;;
-        --code-file=*|--code_file=*|--codefile=*)
+            ;; #(
+        --code-file=* | --code_file=* | --codefile=*)
             code_file="${1#*=}"
-            ;;
+            ;; #(
         -f)
             test $# -gt 1 || usage "$1: <filename> missing"
             shift
             code_file="$1"
-            ;;
-        +H|--shutdown)
+            ;; #(
+        +H | --shutdown)
             do_shutdown=yes
-            ;;
-        -H|--no-shutdown|--no_shutdown|--noshutdown)
+            ;; #(
+        -H | --no-shutdown | --no_shutdown | --noshutdown)
             do_shutdown=
-            ;;
-        --no-out-db|--no_out_db|--nooutdb)
+            ;; #(
+        --no-out-db | --no_out_db | --nooutdb)
             final_db=
-            ;;
-        --out-db=*|--out_db=*|--outdb=*)
+            ;; #(
+        --out-db=* | --out_db=* | --outdb=*)
             final_db="${1#*=}"
-            ;;
+            ;; #(
         -o)
             test $# -gt 1 || usage "$1: <basename> missing"
             shift
             final_db="$1"
-            ;;
-        --no-log|--no_log|--nolog)
+            ;; #(
+        --no-log | --no_log | --nolog)
             final_log=
-            ;;
+            ;; #(
         --log=*)
             final_log="${1#*=}"
-            ;;
+            ;; #(
         -l)
             test $# -gt 1 || usage "$1: <filename> missing"
             shift
             final_log="$1"
-            ;;
-        -v|+v|--verbose)
+            ;; #(
+        -v | +v | --verbose)
             arg_count=$((arg_count-1))
             do_verbose=yes
-            ;;
-        -n|+n|--dry-run|--dry_run|--dryrun)
+            ;; #(
+        -n | +n | --dry-run | --dry_run | --dryrun)
             do_dryrun=yes
-            ;;
-        -h|+h|-[?]|--help)
+            ;; #(
+        -h | +h | -[?] | --help)
             do_help=yes
-            ;;
-        -V|+V|--version|--about)
+            ;; #(
+        -V | +V | --version | --about)
             do_version=yes
-            ;;
+            ;; #(
         *)
             usage "unrecognized option:  '$1'"
             ;;
