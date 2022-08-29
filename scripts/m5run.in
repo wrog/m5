@@ -569,7 +569,7 @@ describe_for_dryrun () {
             printf "  %s=%s\n" "$e" "$v"
         fi
     done
-    printf "\nM5 Library path:\n  %s\n" "$lib_path"
+    printf "\nM5 Library path:  %s\n" "$lib_path"
     if test -z "$do_runmoo"; then
         printf "\nNOT running a MOO server (-M|--no-moo)\n"
     else
