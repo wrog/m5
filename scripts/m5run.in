@@ -322,7 +322,14 @@ wait_log () {
                             printf "%s\n" "$auth_code" | "$netcat" "$moo_ip" "$thd" | tr -d '\015' &
                             ;;
                         shellport)
-                            shell_port="$thd"
+                            if test -z "$shell_port" ; then
+                                :
+                            elif test "$shell_port" = 0 ; then
+                                shell_port="$thd"
+                            elif test "$shell_port" != "$thd" ; then
+                                wait_error="wrong shell_port"
+                                break
+                            fi
                             ;;
                     esac
                     if test "$goal" = "$snd"; then
@@ -984,6 +991,7 @@ else
     test "$do_runmoo" && usage "--moo|+M requires database (--db|-t or --dbfile|-d)"
 fi
 
+# make sure --log and --out-db are doable
 if test "do_runmoo" ; then
     if test "$final_db" && test "$final_db" != "-"; then
         test -w "$(dirname "$final_db")"  ||
@@ -995,10 +1003,10 @@ if test "do_runmoo" ; then
     fi
 fi
 
-# set do_shconn, shell_port, infer from each other, do_runmoo
+# set do_shconn, shell_port, infer from each other and do_runmoo
 #
 if test -z "$shell_port" ; then
-    conflicts="--no-shell-port|--no-shell|-S"
+    conflicts="--no-shell-port"
     if test "$do_shconn" = MAYBE ; then
         do_shconn=
     elif test "$do_shconn" ; then
@@ -1013,8 +1021,8 @@ elif test "$shell_port" = MAYBE ; then
         shell_port=
     elif test "$do_shconn" = MAYBE ; then
         # TODO is this what we want?
-        do_shconn=
-        shell_port=
+        do_shconn=IMPLICIT
+        shell_port=0
     else
         shell_port=0
     fi
@@ -1040,11 +1048,6 @@ if test "$in_db" ; then
     test "$code_file"   && conflict "--code-file|-f"
     test "$code_expr"   && conflict "--expr|-e"
     test "$moo_args"    && conflict "--"
-
-    # --shell and --shell-port have to agree on file databases
-    #   (already made --no-shell-port imply --no-shell)
-    test -z "$do_shconn" && test "$shell_port" &&
-        conflict "(--no-shell|-S and --shell-port)"
 
     # $moo_port is the only allowed listener
     if test "$listen_fixed" || test "$listen_zcount" -gt 0; then
@@ -1141,7 +1144,11 @@ if test "$do_runmoo"; then
     run_moo
     wait_log || {
         # kill "$moo_pid"
-        die "$wait_error"
+        if test "$do_shconn" = IMPLICIT && test "$wait_error" = "premature shutdown"; then
+            do_shconn=
+        else
+            die "$wait_error"
+        fi
     }
 fi
 if test "$do_shconn"; then
