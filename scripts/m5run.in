@@ -77,7 +77,7 @@ moo_ip="127.0.0.2"
 moo_port=
 moo_args=
 template_db=
-in_db=
+file_db=
 code_expr=
 code_file=
 temp_db=
@@ -318,18 +318,19 @@ logged_moo () {
 }
 
 run_moo () {
-    local in_db="$in_db"
-    temp_db=
-    ckpt_db="$final_db"
-    if test -z "$ckpt_db" || test "$ckpt_db" = "-" ; then
+    if test -z "$final_db" || test "$final_db" = "-" ; then
         temp_db="${run_dir}/ckpt${moo_n}"
         ckpt_db="$temp_db"
+    else
+        temp_db=
+        ckpt_db="$final_db"
     fi
-    if test -n "$in_db" ; then
-        if test "$in_db" = "-" ; then
+    if test "$file_db" ; then
+        if test "$file_db" = "-" ; then
             in_db="/dev/stdin"
             { logged_moo 0<&5 & } 5<&0 0<&-
         else
+            in_db="$file_db"
             logged_moo &
         fi
     elif test -n "$template_db" ; then
@@ -345,19 +346,19 @@ run_moo () {
     eval "moo_pid${moo_n}=$!"
 }
 
-wait_log0 () {
-    local n=${2:-1} word=$1 toss cmd
-    while read -r toss toss toss cmd toss; do
-        if test "$cmd" = "$word" ; then
-            if test $n -le 1 ; then
-                exec <&-
-                return 0;
-            fi
-            n=$((n-1))
-        fi
-    done
-    return 1;
-}
+# wait_log0 () {
+#     local n=${2:-1} word=$1 toss cmd
+#     while read -r toss toss toss cmd toss; do
+#         if test "$cmd" = "$word" ; then
+#             if test $n -le 1 ; then
+#                 exec <&-
+#                 return 0;
+#             fi
+#             n=$((n-1))
+#         fi
+#     done
+#     return 1;
+# }
 
 wait_error=
 
@@ -673,11 +674,11 @@ describe_for_dryrun () {
                 printf "    (= shell listener port)\n"
             fi
         fi
-        if test "$in_db"; then
-            if test "$in_db" = "-" ; then
+        if test "$file_db"; then
+            if test "$file_db" = "-" ; then
                 printf "\nFile database (-d|--db-file) will be read from standard input.\n"
             else
-                printf "\nFile database (-d|--db-file):\n  %s\n" "$in_db"
+                printf "\nFile database (-d|--db-file):\n  %s\n" "$file_db"
             fi
         elif test "$template_db"; then
             printf "\nTemplate database (-t|--db):\n  %s.{top,bot}\n" "$template_db"
@@ -906,12 +907,12 @@ while test "$#" -gt 0 ; do
             template_db="$1"
             ;; #(
         --dbfile=*)
-            in_db="$argument"
+            file_db="$argument"
             ;; #(
         -d)
             test $# -gt 1 || usage "$1: <basename> missing"
             shift
-            in_db="$1"
+            file_db="$1"
             ;; #(
         --address=*)
             moo_ip="$argument"
@@ -1044,7 +1045,7 @@ esac
 
 # set do_runmoo, infer from --dbfile or --db
 #
-if test "$in_db" ; then
+if test "$file_db" ; then
     conflicts="--dbfile|-d"
     test "$template_db" && conflict "--db|-t"
     test -z "$do_runmoo" && conflict "--no-moo|-M"
@@ -1107,7 +1108,7 @@ fi
 
 # do_shutdown, do_player need to be set
 #
-if test "$in_db" ; then
+if test "$file_db" ; then
     conflicts="-d|--dbfile"
     test "$do_shutdown" = yes && conflict "--do-shutdown|+H"
     test "$do_player" = yes   && conflict "--player|+P"
@@ -1127,9 +1128,9 @@ if test "$in_db" ; then
     fi
 
     # resolve filename
-    if test "$in_db" != "-"; then
-        lib_find "$in_db" .db || die "--dbfile|-d not found: $in_db";
-        in_db="$full"
+    if test "$file_db" != "-"; then
+        lib_find "$file_db" .db || die "--dbfile|-d not found: $file_db";
+        file_db="$full"
     fi
 
 elif test "$template_db" ; then
@@ -1188,7 +1189,7 @@ else
     fi
     test "$moo_args"    && conflict "-- args..."
     test "$template_db" && conflict "-t|--db";
-    test "$in_db"       && conflict "-d|--dbfile";
+    test "$file_db"     && conflict "-d|--dbfile";
     test "$code_expr"   && conflict "-e|--expr";
     test "$code_file"   && conflict "-f|--code_file";
     test "$do_shutdown" != MAYBE  && conflict "+H|-H|--(no)-shutdown";
