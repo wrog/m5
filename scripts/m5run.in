@@ -149,14 +149,14 @@ lib_find () {
     exts="$2"
     full=
     for ext in $exts ; do
-        case $base in
+        case $base in #(
             *$ext)
                 exts=
                 break;
                 ;;
         esac
     done
-    case $base in
+    case $base in #(
         *[\\/]*)
 	    for ext in $exts ''; do
 	        full="$base$ext"
@@ -165,8 +165,8 @@ lib_find () {
 		    break
 	        fi
                 full=
-	    done;
-            ;;
+	    done
+            ;; #(
         *)
             save_IFS=$IFS
             IFS=$PATH_SEPARATOR
@@ -192,10 +192,10 @@ lib_find () {
 lib_template_find () {
     case $1 in
         *.db)
-            lib_find "${1}.top" || return 1;
-            ;;
+            lib_find "${1}.top" || return 1
+            ;; #(
         *)
-            lib_find "${1}" ".db.top .top" || return 1;
+            lib_find "${1}" ".db.top .top" || return 1
             test "$full" = "${1}" &&
                 die "file not found: $1.[db.]top"
             ;;
@@ -407,16 +407,16 @@ wait_log () {
                 rm -f "$moo_log_pipe"
                 moo_log_pipe=
             fi
-            case $fst in
+            case $fst in #(
                 '***')
                     wait_error="$snd $thd"
                     break
-                    ;;
+                    ;; #(
                 '>')
-                    case $snd in
+                    case $snd in #(
                         playerport)
                             printf "%s\n" "$auth_code" | "$netcat" "$moo_ip" "$thd" | tr -d '\015' &
-                            ;;
+                            ;; #(
                         shellport)
                             if test -z "$shell_port" ; then
                                 :
@@ -431,17 +431,17 @@ wait_log () {
                     if test "$goal" = "$snd"; then
                         goal= ; break
                     fi
-                    ;;
+                    ;; #(
                 LISTEN:)
                     if test "$goal" = "$fst"; then
                         goal= ; break
                     fi
-                    ;;
+                    ;; #(
                 UNLISTEN:)
                     if test "$goal" = "$fst"; then
                         goal="LISTEN:"
                     fi
-                    ;;
+                    ;; #(
                 SHUTDOWN:)
                     if test "$goal" = "$fst"; then
                         goal= ;
