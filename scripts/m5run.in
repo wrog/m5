@@ -39,7 +39,7 @@ else
 esac
 fi
 
-# The user is always right.  (?? --rfc)
+# The user is always right.
 if test "${PATH_SEPARATOR+set}" != set; then
   PATH_SEPARATOR=:
   (PATH='/bin;/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 && {
@@ -61,15 +61,15 @@ IFS=" ""	$as_nl"
 ## ------------------- ##
 
 lib_path="${M5LIBPATH:-/home/moo/src/git/m5/lib}"
+moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
+can_dev_stdin=false
 netcat=nc
-run_dir=
 
 auth_code=cd261b3bbb7f11644511ba96c18677397981d645318cd202604a680de2897a26
 # auth_code=
 
-moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
-
+run_dir=
 moo_log_pipe=
 moo_conn=
 moo_n=
@@ -261,6 +261,7 @@ db_middle () {
                 printf "\n<< code from standard input >>\n"
             else
                 cat <&5
+                exec 5>&-
             fi
         else
             cat "$code_file"
@@ -331,19 +332,39 @@ run_moo () {
         ckpt_db="$final_db"
     fi
     if test "$file_db" ; then
-        if test "$file_db" = "-" ; then
-            in_db="/dev/stdin"
-            { logged_moo 0<&5 & } 5<&0 0<&-
-        else
+        if test "$file_db" != "-" ; then
             in_db="$file_db"
+            logged_moo &
+        elif $can_dev_stdin ; then
+            in_db="/dev/stdin"
+            { logged_moo 0<&5 5<&- & } 5<&0 0<&-
+            exec 5>&-
+        else
+            in_db="${run_dir}/pipe_d"
+            mkfifo -m600 "$in_db" || die
+            { { cat - >"$in_db" 0<&5 5<&-; rm -f "$in_db" ; } & } 5<&0 0<&-
+            exec 5>&-
             logged_moo &
         fi
     elif test -n "$template_db" ; then
-        in_db="/dev/stdin"
-        if test "$code_file" = "-" ; then
-            { cat_db | logged_moo & } 5<&0 0<&-
+        if $can_dev_stdin ; then
+            in_db="/dev/stdin"
+            if test "$code_file" = "-" ; then
+                { cat_db | logged_moo & } 5<&0 0<&-
+                exec 5>&-
+            else
+                cat_db | logged_moo &
+            fi
         else
-            cat_db | logged_moo &
+            in_db="${run_dir}/pipe_d"
+            mkfifo -m600 "$in_db" || die
+            if test "$code_file" = "-" ; then
+                { { cat_db >"$in_db" ; rm -f "$in_db" ; } & } 5<&0 0<&-
+                exec 5>&-
+            else
+                { cat_db >"$in_db" ; rm -f "$in_db" ; } &
+            fi
+            logged_moo &
         fi
     else
         die "need --db or --dbfile"
