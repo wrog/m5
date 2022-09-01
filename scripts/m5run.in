@@ -17,13 +17,57 @@ ENDLEGAL
 )"
 m5_version="@VERSION@"
 
+## ------------------------ ##
+## Stolen from m4sh AS_INIT ##
+## ------------------------ ##
+
+# Be more Bourne compatible
+DUALCASE=1; export DUALCASE # for MKS sh
+if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then :
+  emulate sh
+  NULLCMD=:
+  # Pre-4.2 versions of Zsh do word splitting on ${1+"$@"}, which
+  # is contrary to our usage.  Disable this feature.
+  alias -g '${1+"$@"}'='"$@"'
+  setopt NO_GLOB_SUBST
+else
+  case `(set -o) 2>/dev/null` in #(
+  *posix*) :
+    set -o posix ;; #(
+  *) :
+     ;;
+esac
+fi
+
+# The user is always right.  (?? --rfc)
+if test "${PATH_SEPARATOR+set}" != set; then
+  PATH_SEPARATOR=:
+  (PATH='/bin;/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 && {
+    (PATH='/bin:/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 ||
+      PATH_SEPARATOR=';'
+  }
+fi
+as_nl='
+'
+# IFS
+# We need space, tab and new line, in precisely that order.  Quoting is
+# there to prevent editors from complaining about space-tab.
+# (If _AS_PATH_WALK were called with IFS unset, it would disable word
+# splitting by setting IFS to empty value.)
+IFS=" ""	$as_nl"
+
+## ------------------- ##
+## End of stolen stuff ##
+## ------------------- ##
+
+lib_path="${M5LIBPATH:-/home/moo/src/git/m5/lib}"
+
 netcat=nc
 run_dir=
 
 auth_code=cd261b3bbb7f11644511ba96c18677397981d645318cd202604a680de2897a26
 # auth_code=
 
-lib_path="${M5LIBPATH:-/home/moo/src/git/m5/lib}"
 moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
 moo_log_pipe=
@@ -100,39 +144,64 @@ make_run_dir () {
 }
 
 lib_find () {
-    local r PATH="${lib_path}:."
-    r=$(type "$1")
-    test -n "$r" || return 1
-    case $r in
-        "$1: not found") return 1 ;;
-        "$1 is an "*) return 1 ;;
-        "$1 is a tracked "*) ;;
-        "$1 is a shell "*) return 1 ;;
+    local base="$1" exts="$2" save_IFS=$IFS dir ext
+    full=
+    for ext in $exts ; do
+        case $base in
+            *$ext)
+                exts=
+                break;
+                ;;
+        esac
+    done
+    case $base in
+        *[\\/]*)
+	    for ext in $exts ''; do
+	        full="$base$ext"
+	        if test -f "$full" ; then
+		    test -r "$full" || die "not readable: $full"
+		    break
+	        fi
+                full=
+	    done;
+            ;;
+        *)
+            IFS=$PATH_SEPARATOR
+            for dir in $lib_path ; do
+	        IFS=$save_IFS
+	        test -z "$dir" && dir=.
+	        for ext in $exts ''; do
+	            full="$dir/$base$ext"
+	            if test -f "$full" ; then
+		        test -r "$full" || die "not readable: $full"
+		        break 2
+	            fi
+	        done;
+	        full=
+            done
+            IFS=$save_IFS
+            ;;
     esac
-    command -v "$1"
+    test "$full" || return 1;
+    return 0;
 }
 
-file_find () {
-    local f="$1" ext="$2" rf
-    if test -n "$f" && test "$f" != "-" ; then
-        rf="$(lib_find "${f}.${ext}")"
-        test -n "$rf" || rf="$(lib_find "${f}")"
-        test -n "$rf" || die "${f}[.${ext}]: not found"
-    else
-        rf="$f"
+lib_template_find () {
+    case $1 in
+        *.db)
+            lib_find "${1}.top" || return 1;
+            ;;
+        *)
+            lib_find "${1}" ".db.top .top" || return 1;
+            test "$full" = "${1}" &&
+                die "file not found: $1.[db.]top"
+            ;;
+    esac
+    full=`expr "X$full" : 'X\(.*\).top'`
+    if test ! -f "$full.bot" || test ! -r "$full.bot" ; then
+        die "file not found: $full.bot"
     fi
-    printf "%s" "$rf"
-}
-
-template_find () {
-    local dbtop="$(lib_find "${1}.db.top")" rt
-    test -n "$dbtop" || dbtop="$(lib_find "${1}.top")"
-    test -n "$dbtop" || die "not found: ${1}[.db].top";
-    rt=`expr "X$dbtop" : 'X\(.*\).top'`
-    if test ! -r "${rt}.bot" ; then
-        die "${rt}.bot:  not found"
-    fi
-    printf "%s" "$rt"
+    return 0;
 }
 
 db_middle () {
@@ -249,7 +318,7 @@ logged_moo () {
 }
 
 run_moo () {
-    local in_db
+    local in_db="$in_db"
     temp_db=
     ckpt_db="$final_db"
     if test -z "$ckpt_db" || test "$ckpt_db" = "-" ; then
@@ -1058,8 +1127,10 @@ if test "$in_db" ; then
     fi
 
     # resolve filename
-    in_db="$(file_find "$in_db" 'db')"
-    test "$in_db" || die "--dbfile|-d not found";
+    if test "$in_db" != "-"; then
+        lib_find "$in_db" .db || die "--dbfile|-d not found: $in_db";
+        in_db="$full"
+    fi
 
 elif test "$template_db" ; then
 
@@ -1097,12 +1168,15 @@ elif test "$template_db" ; then
     fi
 
     # resolve filenames
-    if test "$code_file"; then
-        code_file="$(file_find "$code_file")"
-        test "$code_file" || die;
+    if test "$code_file" && test "$code_file" != "-"; then
+        lib_find "$code_file" '.m5 .moo' ||
+            die "-f|--code-file not found: $code_file"
+        code_file="$full"
     fi
-    template_db="$(template_find "$template_db")"
-    test "$template_db" || die;
+    lib_template_find "$template_db" ||
+        die "-t|--db not found: $template_db"
+    template_db="$full"
+
 else
     # no moo rules out a whole lot of activities
     conflicts="--no-moo|-M"

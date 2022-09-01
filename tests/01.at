@@ -1,5 +1,9 @@
 AT_SETUP([hello] (__file__))[
 ##########################
+cat >hello.moo <<END
+notify(player,"hello world");
+END
+
 ]
 AT_CHECK([[# hello via fake player
 
@@ -20,6 +24,14 @@ AT_CHECK([[# code from file
 m5run -t Raw -f - <<END
 notify(player,"hello world");
 END
+
+]],0,
+[[hello world
+]],[[]])
+##########################
+AT_CHECK([[# code from file
+
+m5run -t Raw -f ./hello
 
 ]],0,
 [[hello world
