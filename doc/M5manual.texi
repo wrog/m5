@@ -104,9 +104,10 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 * Installing M5::            Installing M5
 * Getting Started::          Getting Started
 * @command{m5run} Reference::  The @command{m5run} Script
-* Databases::                Available Databases
+* Redirection::              The Redirection Framework
 * Language::                 @moo Language Extensions
 * Macros::                   The Macro System
+* Databases::                Available Databases
 * Legacy Databases::         Using M5 in Legacy Databases
 * Examples::                 Examples
 * Removing M5::              Removing M5
@@ -132,11 +133,11 @@ I have, of course, fully embraced the ongoing marketing trend of packaging any n
 
 @itemize
 @item
-a particular shell script (@command{m5run}) for invoking the @moo server.  Think of @command{m5run} as a version of the @command{restart} script that came packaged with the @moo server (a script you should never use for anything) that has been ridiculously enhanced with features to make it easy to run test scenarios, and also (we hope) ridiculously portable.
+a shell script (@command{m5run}) for invoking the @moo server, which is probably best thought of as a version of the @command{restart} script that comes packaged with the @moo server sources, but ridiculously enhanced, and also, via the magic of Autoconf, (we hope) ridiculously portable.
 @item
-a particular set of small, special-purpose @moo core databases (that should probably never be used for actual multi-player @moo setups).
+a particular set of special-purpose @moo databases
 @item
-a redirection facility for the @moo programming/command environment that allows reading/writing to the host filesystem, execution of arbitrary shell commands, and initiating/scripting other @moo server instances (and should really, @emph{really} never be used in multi-player scenarios)
+a redirection facility for the @moo programming/command environment that allows reading/writing to the host filesystem, execution of arbitrary shell commands, and initiating/scripting other @moo server instances (which should be kept far, far, away from any multi-player scenarios).
 @item
 a dessert topping,
 @item
@@ -146,7 +147,7 @@ a floor wax,
 @item
 a testing framework with a specification language for running and generating test scenarios (mainly intended for testing the @moo server, probably useless for testing other things, but who knows?).
 @item
-a device for correllating all computer activity aboard a starship to provide the ultimate in vessel operation and control.
+a device for correlating all computer activity aboard a starship to provide the ultimate in vessel operation and control.
 @end itemize
 
 @noindent
@@ -304,16 +305,26 @@ $ m5run +M -t Raw -e 'notify(player, "Hello world!")' -l '' -o '' -S +P +H
 @end example
 
 @noindent
+or, using the long options,
+
+@example
+$ m5run --moo --db=Raw --expr='notify(player, "Hello world!")' \
+  --no-log --no-out-db --no-shell --player --shutdown
+@end example
+
+@noindent
 We first note that, in a manner completely unlike the @moo server executable, @samp{m5run} command line arguments can be in any order you want.  This one does the following:
 
 @itemize
 @item
-Start a @moo server instance (@samp{+M}).
+Start a @moo server instance (@samp{+M} or @samp{--moo}).
 
 Then,
 
 @item
-we read the extremely small, simple, @samp{Raw}@footnote{I would have used the name @samp{Minimal} but that one was already taken.  As you can see, @samp{Raw} is even more minimal than @samp{Minimal}, and I think there is a reaasonable argument that this is the absolute best we can do, it not being possible to have a viable @moo database with zero objects (yes, this has been tried).} template database:  It's one object (@samp{#0} with a @code{server_started} verb and @emph{nothing else}.  Also the verb is blank, which means nothing is going to happen unless we put something in it.
+we read the extremely small, simple, @samp{Raw}@footnote{I would have used the name @samp{Minimal} but that one was already taken.  As you can see, @samp{Raw} is even more minimal than @samp{Minimal}, and I think there is a reaasonable argument that this is the absolute best we can do, it not being possible to have a viable @moo database with zero objects (yes, this has been tried).} template database:  It's one object (@samp{#0}) with a @code{server_started} verb and @emph{nothing else}.
+
+Also the verb is blank, which means nothing is going to happen unless you put something in it.
 
 @item
 The @samp{-e} @var{expression} option does exactly that, i.e., @samp{$server_started} will be the @var{expression}.
@@ -349,7 +360,7 @@ At some point your expressions will get so complicated you'll be wanting to put 
 
 @example
 $ m5run -t Raw -f - <<'END'
-notify(player, tostr("Hello world ", 2^32 - 1, " times.");
+notify(player, tostr("Hello world ", 2^30 - 1, " times."));
 END
 @end example
 
@@ -481,12 +492,13 @@ Also, if you have opted @emph{not} to actually install M5 --- i.e., you are just
 @item M5LIBPATH
 The M5 Library Search Path, which can also be set using @option{-L|--lib-path}, determines where @command{m5run} searches for database and library files.
 
-The format is the same format as for @code{PATH} --- a colon (@code{:})@footnote{making this all work for Windows is a ways off,@dots{} we'll see} separated list of directories  --- and searches are performed in exactly the same way.
+The format is the same format as for @code{PATH} --- a colon (@code{:})@footnote{and if we get ever this working in Windows Land, the code @emph{is} actually there to allow semicolons (@code{;}), but we'll see how that goes@dots{}} separated list of directories  --- and searches are performed in exactly the same way.
 
-Depending on personal taste you may or may not want to add the current directory @file{.} at the beginning or the end of this path.  Please use @file{.} rather than putting completely blank components into the @code{PATH}.
+In theory, this should already be set to the correct directory, @file{@var{srcdir}/lib} if you're running @command{m5run} from its source directory or the appropriate @file{/usr/@dots{}/share/m5} if you have done a @command{make install} to one of the approved prefixes (@file{/usr} or @file{/usr/local}, so that @command{m5run} ends up in @file{/usr/bin} or @file{/usr/local/bin}, respectively), but if you've done something else, all bets are off and you may need to adjust this.
 
-The directory @file{@var{srcdir}/lib} should generally @emph{not} be included unless you are doing development on core libraries and prefer to see immediate effects without having to run @command{make} all of the time, in which case you would put @file{lib} at the front of this path, and then your freshly edited routines will likely break stuff, but you knew that.
+Also, depending on personal taste you may or may not want to add the current directory @file{.} at the beginning or the end of this path.
 
+(and please use @file{.} for current directory.  Attempts to put empty components into @code{PATH} will usually be caught and changed to @file{.} but some may not and may possibly end up confusing things.)
 @end table
 
 @node Informational Options
@@ -575,15 +587,15 @@ This option may be given multiple times and the results are cumulative.
 @itemx -t @var{template}
 Start the @moo instance using this template database.  The M5 Library Path (see @option{-L}) is searched if @var{template} has no directory separators.
 
-Template databases are actually pairs of files.  One of @file{@var{template}.db.top} or @file{@var{template}.top} (searched in this order) must exist, and, if found, a corresponding @file{.bot} file (i.e., @file{@var{template}.db.bot} or @file{@var{template}.bot}, respectively) must be present in the same directory.
+Template databases are actually pairs of files.  One of @file{@var{template}.db.top} (if @file{@var{template}} does not already end with @file{.db}) or @file{@var{template}.top} (searched in this order) must exist, and, if found, a corresponding @file{.bot} file (i.e., @file{@var{template}.db.bot} or @file{@var{template}.bot}, respectively) must be present in the same directory.
 
 @item --dbfile=@var{basename}
 @itemx -d @var{basename}
-Start the @moo instance using this file database.  The M5 library path (see @option{-L}) is searched if @var{basename} has no directory separators.  If @file{@var{basename}.db} is not found, @file{@var{basename}} will be interpreted as the entire filename and searched for.
+Start the @moo instance using this file database.  The M5 library path (see @option{-L}) is searched if @var{basename} has no directory separators.  One of @file{@var{basename}.db} (if @file{@var{basename}} does not already end with @file{.db}) or @file{@var{basename}} is expected to be found.
 
-If @var{basename} is @samp{-}, then the file database is read from standard input.
+Also, @var{basename} can be @file{-}, in which case the file database is read from standard input.
 
-Using a file database also disables the options that are intended only for template databases, i.e., the ones where we say ``This option can only be used with template databases (@option{-t}).''
+Note that using a file database disables options that are intended only for template databases, i.e., the ones where we say ``This option can only be used with template databases (@option{-t}).''
 @end table
 
 @noindent
@@ -707,7 +719,7 @@ This option can only be used with template databases (@option{-t}).
 
 @item --(no-)shutdown
 @itemx +H (-H)
-Bracket the expression and/or file included in the first verb with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminates immediately after that code finishes executing or raises an error.
+Bracket the expression and/or file included in the first verb with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately after that code finishes executing or raises an error.
 
 Default is usually @option{--no-shutdown|-H}; the exception is when there are no listening points (@samp{+p}), i.e., no way (other than signals) to get a shutdown to happen, in which case @option{--shutdown|+H} is set by default.
 
@@ -749,8 +761,8 @@ somewhere in the code file you load using @option{-f}, but you probably already 
 
 @end table
 
-@node Databases
-@chapter Available Databases and Libraries
+@node Redirection
+@chapter The Redirection Framework
 
 @node Language
 @chapter @moo Language Extensions
@@ -803,24 +815,44 @@ Omitting the result will have specific meanings in particular contexts (e.g., tr
 @node LValue Builtin
 @section LValue Builtin Functions
 
-In ordinary @moo code, only variables and property references are allowed in the "lvalue position" at the base of the left-hand side of an assignment expression (i.e., ignoring any additional index or range operators that may be stacked on top of it).  In M5, certain additional constructs are now allowed.  For example:
+In ordinary @moo code, only variables and property references are allowed in the "lvalue position" at the base of the left-hand side of an assignment expression (i.e., ignoring any additional index or range operators that may be stacked on top of it).
+
+M5 allows certain builtin function references as well.  For example:
 
 @example
-verb_info(#0,"method")[2] = "rdx"
-@xresult{} "rdx"
+is_player(#42) = 1;  @xresult{} 1
 @end example
 
 @noindent
-does, as a side effect,
+has, as a side effect,
 
 @example
-set_verb_info(#0,"method",listset(verb_info(#0,"method"), "rdx", 2))
+set_player_flag(#42, 1);
 @end example
 
 @noindent
-to change the verb flags, essentially assigning @code{"rdx"} to the third slot of the @code{verb_info(#0,"method")} array, the only difference in behavior being that if we were to instead have a complex subexpression with side-effects in place of either @code{#0} or @code{"method"}, that subexpression will only be evaluated once.
+Similarly,
 
-Also note that in this case @code{verb_args(#0,"method)[2]} will henceforth be @code{"rxd"}, in accordance with how @code{set_verb_info()} canonicalizes its arguments, but the value of the original assignment expression is still @code{"rdx"} since assignments always pass the right hand side through.
+@example
+verb_info(#0,"method")[2] = "rdx";  @xresult{} "rdx"
+@end example
+
+also does this:
+
+@example
+set_verb_info(#0, "method", listset(verb_info(#0,"method"), "rdx", 2));
+@end example
+
+@noindent
+to change the verb flags on @code{$method}, essentially assigning @code{"rdx"} to the third slot of the @code{verb_info(#0,"method")} array, the only difference in behavior being that if we were to instead have something like
+
+@example
+verb_info($very_expensive_object_zero(), "method")[2] = "rdx";  @xresult{} "rdx"
+@end example
+
+where @code{$very_expensive_object_zero()} is a time-consuming routine with consequential non-idempotent side-effects that evaluates to @code{#0}, that verb call will only happen @emph{once}.
+
+Also note that in this case @code{verb_info(#0,"method)[2]} will henceforth be @code{"rxd"}, in accordance with how @code{set_verb_info()} canonicalizes its arguments, but the value of the original assignment expression is still @code{"rdx"} since assignments always pass the right hand side through.
 
 Here is the full list of builtin-call expressions that M5 allows at the base of the left-hand side of an assignment:
 
@@ -1032,14 +1064,17 @@ The special variable &? gives the status of the most recent scattering assignmen
 @author Dr. Richard Daystrom
 @end quotation
 
-@node Legacy Databases
-@chapter M5 and Legacy Databases
+@node Databases
+@chapter Available Databases and Libraries
 
+@node Legacy Databases
 @quotation
+@*
 ``M5's analysis told it it needed a new power source.@*
 The ensign simply @dots{} got in the way.''
 @author Dr. Richard Daystrom
 @end quotation
+@chapter M5 and Legacy Databases
 
 This section assumes you have an existing @moo database, possibly multiplayer, possibly based on LambdaCore or JHCore, and you wish to install M5 features.
 
@@ -1047,14 +1082,19 @@ Note that it is @strong{extremely} unlikely you will want to install the entiret
 
 But various subsets can be installed safely.
 
-@node Examples
-@chapter Examples
+(to be continued.)
 
+@node Examples
 @quotation
-``Destroyed, Kirk?  No.  We are invincible.  Look what we've done!@*
-Your mighty starships:  Four toys to be @strong{crushed} as we choose.''
+@*
+``Destroyed, Kirk?@*
+No.  We are invincible.@*
+Look what we've done!@*
+Your mighty starships:@*
+Four toys to be @strong{crushed} as we choose.''
 @author Dr. Richard Daystrom
 @end quotation
+@chapter Examples
 
 @node Removing M5
 @chapter Removing M5
@@ -1063,6 +1103,11 @@ Your mighty starships:  Four toys to be @strong{crushed} as we choose.''
 ``Fantastic machine, the M5:  No @code{OFF} switch!''
 @author Dr. Leonard McCoy
 @end quotation
+
+We do provide @command{make uninstall}.
+
+Good luck with that.
+
 
 
 @node Function Index
