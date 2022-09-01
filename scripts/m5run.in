@@ -519,36 +519,36 @@ Usage:
   $0 [options] [-- args...]
 
 Top-level options:
-  +M, -M, --(no-)moo              run a moo server instance [+M=yes]
-  +S, -S, --(no-)shell            connect a shell instance [+S=yes*]
+  +M, -M, --(no-)moo                run a moo server instance [+M=yes]
+  +S, -S, --(no-)shell              connect a shell instance [+S=yes*]
 
 File options:
-  -x, --moo-exec=<pathname>       moo server executable [*]
-  -L, --lib-path=<pathstring>     library/db file search path [*]
-  -t, --db=<template>             use moo template database [Default]
-  -d, --dbfile=<basename>         use moo file database
+  -x, --moo-exec=<pathname>         moo server executable [*]
+  -L, --lib-path=<pathstring>       library/db file search path [*]
+  -t, --db=<template>               use moo template database
+  -d, --dbfile=<basename>           use moo file database
 
 Network options:
-  -b, --address=<ip>              listen/connect address [127.0.0.2]
-      --(no-)shell-port=<port>    moo<->shell port [0*]
+  -b, --address=<ip>                listen/connect address [127.0.0.2]
+      --(no-)shell-port=<port>      moo<->shell port [0*]
   -p, --listen=<port>[,<listener>]  add moo listening port
 
 First Verb options (template databases only):
-  +P, -P, --(no-)player           first verb gets 'player' [-P=no*]
-      --                          first verb gets remaining 'args'
-  -e, --expr=<expression>         insert expression into first verb
-  -f, --code-file=<filename>      insert file into first verb
-  +H, -H, --(no-)shutdown         shutdown after first verb [-H=no*]
+  +P, -P, --(no-)player             first verb gets 'player' [-P=no*]
+      --                            first verb gets remaining 'args'
+  -e, --expr=<expression>           insert expression into first verb
+  -f, --code-file=<filename>        insert file into first verb
+  +H, -H, --(no-)shutdown           shutdown after first verb [-H=no*]
 
 Output options:
-  -o, --(no-)out-db=<basename>    retain moo database output [no]
-  -l, --(no-)log=<filename>       retain moo server log file [no]
+  -o, --(no-)out-db=<basename>      retain moo database output [no]
+  -l, --(no-)log=<filename>         retain moo server log file [no]
 
 Informational options:
-  -v, +v, --verbose               be extra chatty on stderr
-  -n, +n, --dry-run               validate command line and exit
-  -h, +h, -?, --help              print this text and exit
-  -V, +V, --version, --about      print version info and exit
+  -v, +v, --verbose                 be extra chatty on stderr
+  -n, +n, --dry-run                 validate command line and exit
+  -h, +h, -?, --help                print this text and exit
+  -V, +V, --version, --about        print version info and exit
 
  short options cannot be combined, parameters are required
 
@@ -560,9 +560,8 @@ EOF
 describe_for_dryrun () {
     local v e z
 
-    printf "M5 Version:  %s" "$m5_version"
-    test "$do_verbose" && printf "  (being verbose (-v|--verbose)"
-    printf "\n"
+    printf "M5 Version:  %s\n" "$m5_version"
+    test "$do_verbose" && printf "  being verbose (-v|--verbose)\n"
     test "$do_help" && {
         printf "  (print helptext (-h|--help)\n" ; exit
     }
@@ -632,10 +631,10 @@ describe_for_dryrun () {
                     z=$((z+1))
                 done
             fi
-            test "$do_player" && printf "  (+P) adding fake 'player'\n"
+            test "$do_player"   && printf "  (+P) adding fake 'player'\n"
             test "$do_shutdown" && printf "  (+H) adding shutdown()\n"
             printf "  args = {%s}\n" "$moo_args"
-            test "$code_expr" && printf "  (-e) --expr= %s\n" "$code_expr"
+            test "$code_expr"   && printf "  (-e) --expr= %s\n" "$code_expr"
             if test "$code_file" ; then
                 if test "$code_file" = "-" ; then
                     printf "  (-f) --code_file will be read from standard input\n"
@@ -663,44 +662,44 @@ describe_for_dryrun () {
 
 push_moo_listeners () {
     local v="$1" port lname=
-    case $v in
-        *[!0-9a-zA-Z_,#]*)
+    case $v in #(
+        *[!0-9a-zA-Z_,\#]*)
             usage "--listen=|-p: illegal characters in $v"  ; return
-            ;;
+            ;; #(
         *,*,*)
             usage "--listen=|-p: at most one comma allowed: $v"  ; return
-            ;;
+            ;; #(
         *[!0-9]*,*)
             usage "--listen=|-p: port must be a number: $v"  ; return
-            ;;
-        *,[#]*[!0-9]*)
+            ;; #(
+        *,[\#]*[!0-9]*)
             usage "--listen=|-p: listener bad literal objectid: $v"  ; return
-            ;;
-        *,?*[#]*)
+            ;; #(
+        *,?*[\#]*)
             usage "--listen=|-p: listener illegal character: $v"  ; return
-            ;;
+            ;; #(
         *,[0-9]*)
             usage "--listen=|-p: listener invalid identifier: $v"  ; return
-            ;;
+            ;; #(
         *,)
             usage "--listen=|-p: cannot end with comma: $v"  ; return
-            ;;
+            ;; #(
         *,*_listener)
             port=`expr "X$v" : 'X\(.*\),.*'`
             lname='$'`expr "X$v" : 'X.*,\(.*\)'`
-            ;;
-        *,[#]*)
+            ;; #(
+        *,[\#]*)
             port=`expr "X$v" : 'X\(.*\),.*'`
             lname=`expr "X$v" : 'X.*,\(.*\)'`
-            ;;
+            ;; #(
         *,*)
             port=`expr "X$v" : 'X\(.*\),.*'`
             lname=`expr "X$v" : 'X.*,\(.*\)'`
             lname="\$${lname}_listener \$${lname}"
-            ;;
+            ;; #(
         *[!0-9]*)
             usage "--listen=|-p: port must be a number: $v"  ; return
-            ;;
+            ;; #(
         *)
             port="$v"
             lname="#0"
@@ -728,48 +727,48 @@ push_moo_listeners () {
 
 push_lib_path () {
     local v="${1}"
-    case $v in
+    case $v in #(
         +::*[!:]*)
             v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
             lib_path="${lib_path}:.:${v}"
-            ;;
+            ;; #(
         +: | +::*)
             lib_path="${lib_path}:."
-            ;;
+            ;; #(
         +:?*:)
             v=`expr "X$v" : 'X..\(.*[^:]\)'`
             lib_path="${lib_path}:${v}:."
-            ;;
+            ;; #(
         +:?*)
             v=`expr "X$v" : 'X..\(.*\)'`
             lib_path="${lib_path}:${v}"
-            ;;
+            ;; #(
         :*[!:]*:+)
             v=`expr "X$v" : 'X:*\(.*[^:]\).*+'`
             lib_path=".:$v:${lib_path}"
-            ;;
+            ;; #(
         :+ | :*:+)
             lib_path=".:${lib_path}"
-            ;;
+            ;; #(
         ?*::+)
             v=`expr "X$v" : 'X\(.*[^:]\).*+'`
             lib_path="${v}:.:${lib_path}"
-            ;;
+            ;; #(
         ?*:+)
             v=`expr "X$v" : 'X\(.*\):+'`
             lib_path="${v}:${lib_path}"
-            ;;
+            ;; #(
         :*)
             v=`expr "X$v" : 'X:*\(.*[^:]\)'`
             lib_path=".:${v}"
-            ;;
+            ;; #(
         *:)
             v=`expr "X$v" : 'X\(.*[^:]\)'`
             lib_path="${v}:."
-            ;;
+            ;; #(
         ?*)
             lib_path="${v}"
-            ;;
+            ;; #(
         *)
             lib_path="."
             ;;
@@ -965,7 +964,7 @@ fi
 # Flags that can be MAYBE at this point:
 #   do_shutdown, do_runmoo, do_shconn, shell_port, do_player
 
-case $template_db in
+case $template_db in #(
     Raw*)
         if test "$do_shconn" = MAYBE && test "$shell_port" = MAYBE ; then
             do_shconn=
