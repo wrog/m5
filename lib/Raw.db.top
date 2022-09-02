@@ -16,7 +16,7 @@ System Object
 -1
 -1
 1
-server_started
+server_started do_login_command
 0
 173
 -1
