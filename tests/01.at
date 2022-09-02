@@ -1,7 +1,16 @@
 AT_SETUP([hello] (__file__))[
 ##########################
+
 cat >hello.moo <<END
 notify(player,"hello world");
+END
+
+cat >shutd.moo <<END
+fork (0)
+  notify(player,"made it");
+  boot_player(player);
+  shutdown();
+endfork
 END
 
 ]
@@ -57,5 +66,21 @@ m5run -t Raw -e '"hello world"(' -l -
 ${FGREP} ' *** PARSER: Error' stderr || at_failed=:
 
 ]])
+
+##########################
+AT_CHECK([[# no shutdown
+
+m5run -t Raw -f ./shutd -H
+
+]],0,
+[[made it
+]],[[]])
+
+##########################
+AT_CHECK([[# shutdown
+
+m5run -t Raw -f ./shutd +H
+
+]],0,[[]],[[]])
 
 AT_CLEANUP
