@@ -1,19 +1,18 @@
 AT_SETUP([hello] (__file__))[
-##########################
+##########################]
 
-cat >hello.moo <<END
+AT_DATA([hello.moo],[[
 notify(player,"hello world");
-END
+]])dnl
 
-cat >shutd.moo <<END
+AT_DATA([shutd.moo],[[
 fork (0)
   notify(player,"made it");
   boot_player(player);
   shutdown();
 endfork
-END
+]])dnl
 
-]
 AT_CHECK([[# hello via fake player
 
 m5run -t Raw -e 'notify(player,"hello world")'
