@@ -159,30 +159,46 @@ db_middle () {
     if test "$do_player"; then
         printf "%s" 'npl=create(#-1);set_verb_code(npl,add_verb(npl,{#0,"rxd","do_login_command"},{"this","none","this"}),{"if(argstr==\"\")","return;",tostr("elseif(argstr!=\"",auth_code,"\")"),"boot_player(player);return;","endif","port=toint(substitute(\"%1\",match(connection_name(player),\"^port %([0-9]+%)\",1)));","unlisten(port);","for p in(connected_players(1))","if(p!=player)","boot_player(p);","endif","endfor","recycle(this);","reset_max_object();","mx=toobj(toint(this)-1);","while(max_object()<mx)","recycle(create(#-1));","endwhile",tostr("resume(",task_id(),",player);")});pport=listen(npl,0,0);server_log(tostr("playerport ",pport));player=suspend();'
     fi
+    comma=false
+    printf 'listeners={'
+    if test "$moo_port" ; then
+        printf "$moo_port,"'"#0"'
+        comma=:
+    fi
     if test "$listen_fixed" || test "$listen_zcount" -gt 0; then
         for z in $listen_fixed; do
             lname="$(eval printf "%s" '"$'"_listen_$z"'"')"
+            $comma && printf ','
             if test "$shell_port" && test "$shell_port" -eq "$z"; then
                 printf 'shell_port='
             fi
             printf 'listen('
-            printf '`%s!ANY=>1'"' &&" $lname
-            printf '%s' "raise(E_PROPNF),$z,1);"
+            for l in $lname ; do
+                printf '`{%s,o="%s"}[1]!ANY=>1'"' &&" $l $l
+            done
+            printf '%s' "raise(E_PROPNF),$z,1),o"
+            comma=:
         done
         z=1
         while test "$z" -le "$listen_zcount"; do
             lname="$(eval printf "%s" '"$'"_listen_z$z"'"')"
-            if test "$shell_listener" = "$lname" && test "$shell_port" -eq 0 ; then
+            $comma && printf ','
+            if test "$shell_port" && test "$shell_listener" = "$lname" && test "$shell_port" -eq 0 ; then
                 printf 'shell_port='
             fi
             printf 'listen('
-            printf '`%s!ANY=>1'"' &&" $lname
-            printf '%s' 'raise(E_PROPNF),0,1);'
+            for l in $lname ; do
+                printf '`{%s,o="%s"}[1]!ANY=>1'"' &&" $l $l
+            done
+            printf '%s' 'raise(E_PROPNF),0,1),o'
+            comma=:
             z=$((z+1))
         done
-        printf 'server_log(tostr("ri ",toliteral($run_info)));'
-        printf 'if(shell_port)server_log(tostr("shellport ",shell_port));endif '
     fi
+    printf '};run_info[$+1..$]={"listeners",listeners,@shell_port?{"shell_port",shell_port}|{}};'
+    printf 'server_log(tostr("ri ",toliteral(run_info)));'
+    printf 'if(shell_port)server_log(tostr("shellport ",shell_port));endif '
+
     printf 'except (ANY)`boot_player(player)!ANY'"'"';shutdown();endtry '
     test -n "$do_shutdown" &&
         printf 'try '
@@ -614,7 +630,7 @@ describe_for_dryrun () {
         printf "\nNOT running a MOO server (-M|--no-moo)\n"
     else
         test "$moo_exec" || moo_exec=' ??'
-        printf "\nRunning a MOO server (+M|--moo):\n  (-x) --moo-exec=%s\n"
+        printf "\nRunning a MOO server (+M|--moo):\n  (-x) --moo-exec=%s\n" "$moo_exec"
         if test "$final_db" ; then
             if test "$final_db" = "-" ; then
                 printf "  (-o) --out-db goes to standard output\n"
@@ -629,7 +645,7 @@ describe_for_dryrun () {
                 printf "  (-l) --log=%s\n" "$final_log"
             fi
         fi
-        printf "  (-b) --address=%s \n" "$moo_exec" "$moo_ip"
+        printf "  (-b) --address=%s \n" "$moo_ip"
         if test -z "$moo_port"; then
             printf "  will unlisten initial #0 listener\n"
         else
@@ -650,7 +666,7 @@ describe_for_dryrun () {
                 printf "  other listeners (-p|--listen):\n"
                 for z in $listen_fixed; do
                     lname="$(eval printf "%s" '"$'"_listen_$z"'"')"
-                    if test "$shell_port" -eq "$z"; then
+                    if test "$shell_port" && test "$shell_port" -eq "$z"; then
                         lname="$lname  (shell listener port)"
                     fi
                     printf "    %d -> %s\n" "$z" "$lname";
@@ -658,7 +674,7 @@ describe_for_dryrun () {
                 z=1
                 while test "$z" -le "$listen_zcount"; do
                     lname="$(eval printf "%s" '"$'"_listen_z$z"'"')"
-                    if test "$shell_listener" = "$lname" && test "$shell_port" -eq 0 ; then
+                    if test "$shell_port" && test "$shell_listener" = "$lname" && test "$shell_port" -eq 0 ; then
                         lname="$lname  (shell listener port)"
                     fi
                     printf "    0 -> %s\n" "$lname"
@@ -671,10 +687,7 @@ describe_for_dryrun () {
             test "$code_expr"   && printf "  (-e) --expr= %s\n" "$code_expr"]
             AS_CASE([[$code_file]],[''],[],[[-]],
                     [[printf "  (-f) --code_file will be read from standard input\n"]],
-                    [[printf "  (-f) --code_file= %s\n" "$code_file"]])
-            AS_IF([[test "$do_verbose"]],
-                  [[printf "  code being inserted in first verb:\n    "
-                    db_middle]])[
+                    [[printf "  (-f) --code_file= %s\n" "$code_file"]])[
         fi
     fi
 
@@ -686,7 +699,10 @@ describe_for_dryrun () {
     else
         printf "\nNOT connecting a shell redirector (-S|--no-shell)\n"
     fi
-    printf "\n"
+    printf "\n"]
+    AS_IF([[test "$template_db" && test "$do_verbose"]],
+          [[printf "Code being inserted in first verb:\n  "
+            db_middle]])[
 }
 
 push_moo_listeners () {
@@ -694,7 +710,7 @@ push_moo_listeners () {
     v="$1"
     lname=]
     AS_CASE([[$v]],
-            [[*[!0-9a-zA-Z_,\#]*]],
+            [[*[!0-9a-zA-Z_.,\#]*]],
             [[usage "--listen=|-p: illegal characters in $v"; return]],
             [[*,*,*]],
             [[usage "--listen=|-p: at most one comma allowed: $v"; return]],
@@ -702,12 +718,8 @@ push_moo_listeners () {
             [[usage "--listen=|-p: port must be a number: $v"; return]],
             [[*,[\#]*[!0-9]*]],
             [[usage "--listen=|-p: listener bad literal objectid: $v"; return]],
-            [[*,?*[\#]*]],
-            [[usage "--listen=|-p: listener illegal character: $v"; return]],
-            [[*,[0-9]*]],
+            [[*,?*[\#]* | *,[0-9.]* | *,*.[0-9.]* | *,*. | *,]],
             [[usage "--listen=|-p: listener invalid identifier: $v"; return]],
-            [[*,]],
-            [[usage "--listen=|-p: cannot end with comma: $v"; return]],
             [[*,*_listener]],
             [[port=`expr "X$v" : 'X\(.*\),.*'`
               lname='$'`expr "X$v" : 'X.*,\(.*\)'`]],
