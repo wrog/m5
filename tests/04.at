@@ -1,0 +1,58 @@
+AT_SETUP([ports] (__file__))[
+##########################
+
+while : ; do
+  addr=`m5run -t Raw -e 'r=1+random(255);s=1+random(254);notify(player,tostr(127,".",0,".",r,".",s))'`
+  lock="/tmp/m5-test-reserve-$addr"
+  if mkdir "$lock" 2>/dev/null ; then
+    break
+  fi
+done
+
+rmlock () {
+  rm -rf "$lock"
+}
+trap ':; rmlock' 0
+]
+
+AT_DATA([setup.moo],[[
+set_verb_code(#0,1,{tostr("p=",player,";if(argstr==\"",auth_code,"\");resume(",task_id(),", player);set_verb_code(#0,1,{tostr(\"p=\",p,\";if (argstr==\\\"DIE\\\")boot_player(p);shutdown();elseif(argstr)notify(p,tostr(player,\\\",\\\",this,\\\"<<\\\",argstr));endif\")});endif")});
+notify(player,toliteral(listset(listeners,55555,5)));
+]])
+
+AT_CHECK([[
+m5run -t Raw -p 0,ow#ner
+]],1,[[]],[[--listen=|-p: listener invalid identifier: 0,ow#ner
+]])
+AT_CHECK([[
+m5run -t Raw -p 0x,owner
+]],1,[[]],[[--listen=|-p: port must be a number: 0x,owner
+]])
+AT_CHECK([[
+m5run -t Raw -p 0,#owner
+]],1,[[]],[[--listen=|-p: listener bad literal objectid: 0,#owner
+]])
+AT_CHECK([[
+m5run -t Raw -p 0,#owner,hey
+]],1,[[]],[[--listen=|-p: at most one comma allowed: 0,#owner,hey
+]])
+AT_CHECK([[
+m5run -t Raw -p 2000,foo -p 2000,bar
+]],1,[[]],[[--listen|-p:  multiple listeners at 2000
+]])
+AT_CHECK([[
+
+m5run -b "$addr" -t Raw -p 0,owner -p 3000,owner.owner -p "4000,#0" -f ./setup +H +P
+
+]],0,[[{4000, "#0", 3000, "$owner.owner", 55555, "$owner"}
+]],[[]])
+
+AT_CHECK([[
+
+m5run -b "$addr" -t Raw -p 0,owner -p 3000,owner.owner -p "4000,#0" -f ./setup -e 'notify(player,tostr(suspend()))' +P +S --shell-port=3000 +H
+
+]],0,[[{4000, "#0", 3000, "$owner.owner", 55555, "$owner"}
+#-3
+]],[[]])
+
+AT_CLEANUP
