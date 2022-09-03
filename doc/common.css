@@ -1,4 +1,4 @@
-body { background-color : #eee; font-family:palatino; margin:.5in }
+body { background-color : #ddd; font-family:palatino; margin:.5in }
 pre { margin-left : 3em; }
 dl { margin-left: 2em; }
 // code { font-family: pt mono, monospace; }
@@ -8,3 +8,5 @@ b { color:blue }
 blockquote { float: right; width: 51%; clear: all; margin-top:-5ex; font-family: sans-serif; font-style: oblique; font-size:90% }
 blockquote + div { float: right; position: relative; width: 51%; clear: all; padding-bottom:4ex; margin-top:-2ex; }
 .moo { font-variant: small-caps; }
+a:visited , a:link { text-decoration:none; background-color:#fff; padding:3px 1px 0px 3px; border:2px inset #eee }
+a:hover {background-color: black; color: white }

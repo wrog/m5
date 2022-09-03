@@ -33,6 +33,16 @@
 @end macro
 @end ifnothtml
 
+@ifhtml
+@macro htmlbrbr{}
+@inlineraw{html,<br /><br />}
+@end macro
+@end ifhtml
+@ifnothtml
+@macro htmlbrbr{}
+@end macro
+@end ifnothtml
+
 @comment %**end of header (This is for running Texinfo on a region.)
 
 @copying
@@ -108,7 +118,8 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 * Language::                 @moo Language Extensions
 * Macros::                   The Macro System
 * Databases::                Available Databases
-* Legacy Databases::         Using M5 in Legacy Databases
+* Security::                 Security Considerations
+* Legacy @moo Databases::    Using M5 in Legacy @moo Databases
 * Examples::                 Examples
 * Removing M5::              Removing M5
 
@@ -127,17 +138,19 @@ A whole new approach!''
 @author Dr. Richard Daystrom
 @end quotation
 
-What is M5?  Hard to say.  Really, M5 is just a name (M4 was already taken).  If you want to think in terms of something that makes it easy to simultaneously run five (5) @moo servers in order to enact one or more vaguely interesting test scenarios, you could imagine that being the inspiration for the name; I certainly won't stop you.
+What is M5?  Hard to say.
 
-I have, of course, fully embraced the ongoing marketing trend of packaging any number of completely unrelated facilities under a single name for basically no reason other than that it's a trend with a most impressive lineage (cf. Sun Microsystems' Java or Microsoft's .NET).  ``M5'' may thus refer to any or all of the following (even if certain items on this list have yet to be fully implemented):
+Strictly speaking, M5 is just a name (M4 was already taken).  If you want to think in terms of something that makes it easy to simultaneously run five (5) @moo servers in order to enact one or more vaguely interesting test scenarios, you could imagine that being the inspiration for the name; I certainly won't stop you.
+
+You could also, if you want, think of this as a protest against the ongoing marketing trend of packaging any number of completely unrelated facilities under a single name for basically no reason (cf. Sun Microsystems' Java or Microsoft's .NET). ``M5'' may thus refer to any or all of the following (even if certain items on this list have yet to be fully implemented):
 
 @itemize
 @item
-a shell script (@command{m5run}) for invoking the @moo server, which is probably best thought of as a version of the @command{restart} script that comes packaged with the @moo server sources, but ridiculously enhanced, and also, via the magic of Autoconf, (we hope) ridiculously portable.
+a shell script (@command{m5run}) for invoking the @moo server, which is probably best thought of as a ridiculously enhanced version of the @command{restart} script that comes packaged with the @moo server sources, that is also, via the magic of @sc{gnu} Autoconf, (we hope) ridiculously portable as well.
 @item
-a particular set of special-purpose @moo databases
+a set of special-purpose @moo databases
 @item
-a redirection facility for the @moo programming/command environment that allows reading/writing to the host filesystem, execution of arbitrary shell commands, and initiating/scripting other @moo server instances (which should be kept far, far, away from any multi-player scenarios).
+a redirection facility for the @moo programming/command environment that allows reading/writing to the host filesystem, execution of arbitrary shell commands, and initiating/scripting other @moo server instances (which should be kept far, @emph{far}, away from any multi-user scenarios).
 @item
 a dessert topping,
 @item
@@ -145,7 +158,7 @@ a set of extensions to the @moo programming language, including a hygenic macro 
 @item
 a floor wax,
 @item
-a testing framework with a specification language for running and generating test scenarios (mainly intended for testing the @moo server, probably useless for testing other things, but who knows?).
+a testing framework with a specification language for running and generating test scenarios (whose utility for testing things other than the @moo server has yet to be determined).
 @item
 a device for correlating all computer activity aboard a starship to provide the ultimate in vessel operation and control.
 @end itemize
@@ -157,20 +170,26 @@ The capsule summary as to why M5 exists is that the author wanted to build a @mo
 @chapter Installing M5
 
 @quotation
-``When your crew has been removed, the ship's engineering section@*
-will be modified to contain the M5.''@*
-@ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ ``Why remove my crew?''@*
+``When your crew has been removed,@*
+@ the ship's engineering section@*
+@ will be modified to contain the M5.''@*
+@*
+``Why remove my crew?''@*
+@*
 ``They're not needed.''
 @author conversation between @*Cmdre. Robert Wesley and Capt. James Kirk
 @end quotation
-@*
+@htmlbrbr
 
 @menu
 * Prerequisites::  What you need
 * Install Steps::  What to do
 @end menu
 
-Note that if what you actually want is to install some subset of the M5 facilities into an existing, possibly multiplayer @moo database, e.g., the client/server redirection facilities, libraries, language extensions, macros, in order to make them facilities available to the players there, that is covered in @ref{Legacy Databases}.
+@noindent
+This is about obtaining the code and building @command{m5run}, its associated libraries, @moo databases, and the testing framework.
+
+If what you actually want is to install some subset of the M5 facilities into an existing, possibly multi-user @moo database, e.g., the client/server redirection facilities, libraries, language extensions, macros, in order to make them facilities available to the users there, that subject is covered in @ref{Legacy @moo Databases}.  But you will need to do this first, anyway.
 
 @node Prerequisites
 @section Prerequisites
@@ -197,22 +216,18 @@ Autoconf and Bison, but @strong{only} if you are trying to build M5 directly fro
 (Note that there may be some warnings if you do not have the @emph{correct} version of Bison, which is currently 3.7.5, much depending on how often the Bison People change their @code{yyparse} algorithm and table formats; I'd like to think that's pretty much @emph{never} these days, but we'll see).  Again, if you have an up-to-date tarball, you can skip this.)
 
 @item
-An OS that is one of the recent varieties of @unix for which @moo is available.
-
-(As for where @emph{that} is going, figure that trying to maintain suport for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD)@footnote{I really have no idea which, if any, of these matter.} work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath for (Dec) Ultrix, (SGI) IRIX, (IBM) AIX, and other ancient relics).
+An OS that is one of the recent varieties of @unix for which @moo is available.@footnote{As for where @emph{that} is going, figure that trying to maintain suport for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD)@footnote{I really have no idea which, if any, of these matter.@footnote{And nested footnotes confuse TexInfo.  Who knew?}} work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}@htmlbrbr
 
 @item
-A POSIX-compliant shell.  Really, this should be one of the four that the Autoconf People find vaguely acceptable:  @command{bash}, @command{dash}, @command{ksh},or @command{zsh}.
+A POSIX-compliant shell.  Really, this should be one of the four that the Autoconf People find vaguely acceptable:  @command{bash}, @command{dash}, @command{ksh}, or @command{zsh}.
 
 We also assume vaguely modern versions of the usual associated utilities (@command{cat}, @command{diff}, @command{expr}, @command{grep}, @command{sed}, @command{tr}).  But if you've gotten this far, chances are, you already have these.
 
 @item
-Some version of Netcat (either traditional/OpenBSD @command{netcat} a.k.a. @command{nc}, or NMap's @command{ncat}).
-
-(In theory, there should be a way to make this work with just @file{/dev/tcp} for the various shells that understand that (e.g., @code{bash}), but Netcat seems to be sufficiently widely available that maybe trying to do that is pointless, too.)
+Some version of Netcat (either traditional/OpenBSD @command{netcat} a.k.a. @command{nc}, or NMap's @command{ncat}).@footnote{In theory, there should be a way to make this work with just @file{/dev/tcp} for the various shells that understand that (e.g., @code{bash}), but Netcat seems to be sufficiently widely available that maybe trying to do that is pointless, too.}@htmlbrbr
 
 @item
-OS features (@file{/dev/stdin}, @file{/dev/stdout}) that I'm hoping are not limited to @linux (but if they are, then your @unix will then need to be one of the sufficiently recent varieties of @linux that has these).@*@*
+OS features (@file{/dev/stdin}, @file{/dev/stdout}) that I'm hoping are not limited to @linux (but if they are, then your @unix will then need to be one of the sufficiently recent varieties of @linux that has these).@htmlbrbr
 
 @item
 Sufficient disk space.@footnote{Greetings from The Year 1991.}
@@ -247,10 +262,10 @@ If building directly from git you will also need Autoconf (version 2.69+) and Ya
 Clone the source repository (currently @file{https://github.com/wrog/m5}) to a suitable directory.
 
 @item cd @var{srcdir}
-(You knew this was coming.)
+(You knew that was coming.)
 
 @item autoreconf -i
-(You probably also knew this was coming, too.)
+(You probably also knew that was coming, too.)
 
 Without the @option{-i}, you'll have to run @command{automake --missing} to get 3 additional, useless files installed.
 
@@ -264,7 +279,7 @@ which, as usual, builds everything.
 which, as usual, tests things.
 
 @item make install
-Your call.  This is probably not necessary if your use of M5 is single-purpose (e.g., running the @moo server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.
+Your call.  This is probably not necessary if your use of M5 is single-purpose (e.g., running the @moo server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.@footnote{Greetings from The Year 1991}
 
 With suitable @code{PATH} adjustments M5 should run just fine out of its source directory (@var{srcdir}), though if you're wanting to run @moo server tests, there's a setting in that part of the world you'll have to make.
 
@@ -272,7 +287,7 @@ Or you can
 @example
 make install --prefix=@var{moo-srcdir}/m5
 @end example
-to install m5 into the @moo source tree, in which case a sufficiently-recent-on-the-correct-branch moo server build process (which does not exist yet as of this writing) will then automatically be able to find what it needs.
+to install m5 into the @moo source tree, in which case a sufficiently-recent-on-the-correct-branch @moo server build process (which does not exist yet as of this writing) will then automatically be able to find what it needs.
 
 @end table
 
@@ -280,8 +295,10 @@ to install m5 into the @moo source tree, in which case a sufficiently-recent-on-
 @chapter Getting Started
 
 @quotation
-``You don't shut a child off when it makes a mistake.@*
-The M5 is growing, learning.''
+``You don't shut a child off@*
+@ when it makes a mistake.@*
+@*
+``The M5 is growing, learning.''
 @author Dr. Richard Daystrom
 @end quotation
 
@@ -313,7 +330,7 @@ $ m5run --moo --db=Raw --expr='notify(player, "Hello world!")' \
 @end example
 
 @noindent
-We first note that, in a manner completely unlike the @moo server executable, @samp{m5run} command line arguments can be in any order you want.  This one does the following:
+This does the following:
 
 @itemize
 @item
@@ -334,10 +351,10 @@ Now, in order to make this work, certain other options need to get defaulted in 
 @item
 @option{-l ''}, or, equivalently @option{--no-log}, means we don't care about the server log, so toss it
 
-@option{-o ''}, or, equivalently @option{--no-out-db}, means we don't care about the checkpoint/output database, either.
+@option{-o ''}, or, equivalently @option{--no-out-db}, means we don't care about the checkpoint/output database, so toss that, too.
 
 @item
-We are also not using any of the redirection features, so, via @option{-S}, we skip enabling those as well.  This is fortunate because @option{+S -t Raw} normally crashes and burns, because @samp{Raw} does not know how to do any of that without a whole @emph{lot} of extra coaching (via custom code written into the first verb), which we are not providing (and almost certainly would not fit on a single line anyway).
+@option{-S}, or, equivalently @option{--no-shell}, means don't bother enabling any of the redirection features.@footnote{This is actually necessary because @option{+S -t Raw} normally crashes and burns, because @samp{Raw} does not know how to do any of that without a whole @emph{lot} of extra coaching (via custom code written into the first verb), which we are not providing (and almost certainly would not fit on a single line anyway).}
 @end itemize
 
 @noindent
@@ -416,21 +433,28 @@ There is no topology; @code{.location} and @code{.contents} are entirely unused.
 @chapter @command{m5run} Reference
 
 @quotation
-``I would say, Captain, that M5 is not only capable of taking
-care of this ship, it is also capable of taking care of itself.''
-@author Cmdr. Ucdnprnownzit Spock
+``Both ships report simulated hits in sufficient quantity and location
+to justify awarding the surprise engagement to Enterprise.
+
+Our compliments to the M5 unit and regards to Captain Dunsail.''
+@author Cmdre. Robert Wesley
 @end quotation
 
-This is the full reference for the @command{m5run} shell script.  In general, @command{m5run} is invoked like this:
+@noindent
+This is the full reference for the @command{m5run} shell script.
+
+@noindent
+In general, @command{m5run} is invoked like this:
 
 @example
 $ m5run [@var{options...}] [-- @var{args...}]
 @end example
 
 @noindent
-where @var{args...} are made available in the first verb, as is, and otherwise left uninterpreted; they can be anything, including further instances of @option{--}.
+where @option{@var{args...}} are made available in the first verb, as is, and otherwise left uninterpreted; they can be anything,@dots{}
 
-Only the first @option{--} matters to @command{m5run}.  If there is no @option{--} at all, then all words on the command line must be part of valid options.
+@noindent
+@dots{}including further instances of @option{--}.  Only the first @option{--} matters to @command{m5run}.  If there is no @option{--} at all, then all words on the command line must be valid options or parameters thereof.
 
 @menu
 * Option Conventions::    General notes about the options
@@ -446,26 +470,37 @@ Only the first @option{--} matters to @command{m5run}.  If there is no @option{-
 @node Option Conventions
 @section Option Conventions
 
-Some things to know:
+Some things you might want to know if you are unusually pedantic:
+
 @itemize
 @item
-We use @option{--(no-)foo}@footnote{The parentheses are not actually part of the option name, but you knew that.} to indicate that the long option @option{--foo} may be negated using @option{--no-foo}.
+In cases where an option takes a value parameter, e.g., @option{-l|}@footnote{the vertical bar @option{|} is not actually part of the option name, but rather indicates a choice between @w{@option{-l @var{filename}}} and @option{--log=@var{filename}}, which are intended to mean the same thing, but you probably guessed this already.}@option{--log=@var{filename}}, the value (@option{@var{filename}}) is always @emph{mandatory}, i.e., we do not have any options with optional values.  For situations where some kind of default is appropriate, you'll typically do that by specifying an empty string (@option{--log=} or @w{@option{-l ''}}), though, more often, you'll get the default by not mentioning the option at all.
 
-If this option is a straight boolean flag (i.e., there are only two possible settings) then, for the corresponding short option, plus (@samp{+}) will indicate the affirmative setting and minus (@samp{-}) will be equivalent to @samp{no-}.
+If you're using the short-option version, e.g., @option{-l}, the value must be a separate word, i.e., @w{@option{-l @var{filename}}}; we explicitly forbid @option{-l@var{filename}} and @option{-l=@var{filename}}.
 
-For example, @option{+M} is the same as @option{--moo} and @option{-M} is the same as @option{--no-moo}.@footnote{Yes, I believe this violates one of the GNU coding standards for How to Do Options.  It won't be the first time this sort of thing has happened.  Cope.}
-
-@item
-We use @option{--(no-)foo=@var{value}} to mean that @option{--no-foo} --- which @emph{cannot} be given a @var{value} even though @option{--foo} absolutely requires one --- is synonymous with specifying the empty string @option{--foo=''} which, in turn, will have a special meaning that will usually (we hope) be obvious.
-
-For example, @option{--no-log} means do not write a log file, whereas @option{--log} inherently requires telling us where the log file is supposed to go, but @option{--log=''} @emph{also} means do not write a log file (@dots{} as opposed to, say, attempting to write the log to a file whose name is the empty string, which, if you were unfortunate enough to be on a system where that actually works, would be then be Stupid and Very Annoying).
-
-Also, note that we're assuming the usual shell quoting mechanisms are in effect, in which, say, @samp{''} gets stripped down to be an actual empty string rather than a pair of single quotes.
+For the long-option version, it has to be @option{--log=@var{filename}}, i.e., the two word version @w{@option{--log @var{filename}}} is likewise forbidden.
 
 @item
-For certain other flags, notably @option{-h} or @option{-?} as alternatives for @option{--help} and other informational flags that preempt most other activity, we adhere more closely to tradition.
+The ordering of options does not matter, except for a few stated situations where it does (@option{-e|--expr}, @option{-f|--code-file}, @option{-L|--lib-path}, and @option{--}, which see.)@htmlbrbr
 
-This means they default negative, and mentioning them at all makes them kick in, and we simply do not bother having a @option{--no-} version.@footnote{Because people would hurt us if we were silly enough to have @option{-h} mean @option{--no-help} and thence require everyone to type @option{+h} in order to get help.}
+@item
+We use @option{-[-no]-foo}@footnote{The square brackets are to indicate that the @samp{-no} portion of this is optional, and not actually part of the option name, but you knew this already.
+
+We are perhaps being unorothdox in expressing this using @w{@option{-[-no]-foo}} rather than @w{@option{--[no-]foo}}, but it seems preferable to make the option-name portion of this (@samp{foo}) more readable as opposed to emphasizing that this is indeed a long (@samp{--}) option.
+
+Visual perception is weird.  Film at 11.} to indicate that the long option @option{--foo} may be negated using @option{--no-foo}.
+
+If this option is a straight boolean flag (i.e., there are only two possible settings) then, for the corresponding short option, plus (@samp{+}) will indicate the affirmative setting and minus (@samp{-}) will be equivalent to @samp{no-}.@*For example, @option{+M} is the same as @option{--moo} and @option{-M} is the same as @option{--no-moo}.@footnote{Yes, I believe this violates one of the GNU coding standards for How to Do Options.  It won't be the first time this sort of thing has happened.  Cope.}
+
+@item
+We use @option{-[-no]-foo=@var{value}} to mean that @option{--no-foo} --- which @emph{cannot} be given a @var{value} even though @option{--foo} absolutely requires one --- is synonymous with specifying the empty string @option{--foo=''} which, in turn, will have a special meaning that will usually (we hope) be obvious.
+
+For example, @option{--no-log} means do not write a log file, whereas @option{--log} inherently requires telling us where the log file is supposed to go, but @option{--log=''} @emph{also} means@footnote{Also, note that we're assuming the usual shell quoting mechanisms are in effect, and thus @option{--log=''} is the same as @option{--log=}, which means the value of this option is indeed an empty string, as opposed to a string containing a pair of single quotes, and we're just putting the quotes there for pedagogical reasons, but you probably already knew this, too.} do not write a log file (@dots{} as opposed to, say, attempting to write the log to a file whose name is the empty string, which, if you were unfortunate enough to be on a system where that actually worked, would then be Stupid and Very Annoying).
+
+@item
+For certain other flags, notably @option{-h} or @option{-?} as alternatives for @option{--help} and other informational flags that preempt most other activity and for which a @option{--no-} version is entirely pointless, we adhere more closely to tradition.
+
+Meaning they default negative, and mentioning them at all flips them to affirmative, e.g., @option{-h} is the same as @option{--help}, if used it kicks in and that's that.@footnote{Because if we were silly enough to have @option{-h} mean @option{--no-help} and thence require everyone to type @option{+h} in order to be able to actually get help, people would hurt us.}
 
 @item
 Hyphens within long option names may be globally@footnote{``Globally'' means you do all or nothing on this and you will need to be consistent about it.  Meaning if we see crap like @w{@option{--no_shell-port}} or @w{@option{--noshell-port}}, we will send the ice weasels after you.} omitted or replaced by underscores.  Thus, e.g., @option{--no-shell-port}, @option{--no_shell_port}, and @option{--noshellport} are all equivalent.
@@ -489,14 +524,15 @@ Since @command{m5run} is a shell script, in any situation in which you are makin
 
 Also, if you have opted @emph{not} to actually install M5 --- i.e., you are just leaving everything in the source directory --- @emph{and} you still want to be able to type @command{m5run} to your shell prompt and have that work, then @file{@var{srcdir}/scripts} will need to be on your @code{PATH} somewhere (surprise).
 
+@anchor{lib-path}
 @item M5LIBPATH
 The M5 Library Search Path, which can also be set using @option{-L|--lib-path}, determines where @command{m5run} searches for database and library files.
 
 The format is the same format as for @code{PATH} --- a colon (@code{:})@footnote{and if we get ever this working in Windows Land, the code @emph{is} actually there to allow semicolons (@code{;}), but we'll see how that goes@dots{}} separated list of directories  --- and searches are performed in exactly the same way.
 
-In theory, this should already be set to the correct directory, @file{@var{srcdir}/lib} if you're running @command{m5run} from its source directory or the appropriate @file{/usr/@dots{}/share/m5} if you have done a @command{make install} to one of the approved prefixes (@file{/usr} or @file{/usr/local}, so that @command{m5run} ends up in @file{/usr/bin} or @file{/usr/local/bin}, respectively), but if you've done something else, all bets are off and you may need to adjust this.
+In theory, this should already be set to the correct directory, @file{@var{srcdir}/lib} if you're running @command{m5run} from its source directory or to the appropriate @file{/usr/@dots{}/share/m5} if you have done a @command{make install} to one of the approved prefixes (i.e., @file{/usr} or @file{/usr/local}, which make @command{m5run} end up in @file{/usr/bin} or @file{/usr/local/bin}, respectively), but if you've done something else, all bets are off and you may need to adjust this.
 
-Also, depending on personal taste you may or may not want to add the current directory @file{.} at the beginning or the end of this path.
+Also, depending on personal taste, you may want to add the current directory @file{.} --- @emph{not} included by default --- at the beginning or the end of this path.
 
 (and please use @file{.} for current directory.  Attempts to put empty components into @code{PATH} will usually be caught and changed to @file{.} but some may not and may possibly end up confusing things.)
 @end table
@@ -540,19 +576,21 @@ The @command{m5run} shell script normally runs an instance of the @moo server, t
 It is also possible to run the redirection facility by itself, connecting it to a pre-existing @moo server instance rather than running a fresh @moo ourselves.
 
 @table @option
-@item --(no-)moo
+@item -[-no]-moo
 @itemx +M (-M)
 Launch (or do not launch) an instance of the @moo server.
 
-The default is to launch (@samp{+M}), unless no database (@option{-t|--db} or @option{-d|--dbfile}) is specified, in which case it's @samp{-M}.
+The default is to launch (@samp{+M}), unless no database (@option{-t|--db} or @option{-d|--dbfile}) is specified, in which case we do not (@samp{-M}).
 
-@item --(no-)shell
+@item -[-no]-shell
 @itemx +S (-S)
 Connect (or do not connect) a shell redirection service to the @moo's @code{$shell_listener}.
 
-The default action is @option{-S|--no-shell} unless there is a setting for @option{--(no-)shell-port}, which see.
+The default for this, if we're running a @moo server (@option{+M}), is to follow the setting for @option{-[-no]-shell-port} (which see), and if that's left blank, then just watch the @moo server log, try to connect if the server says there it's listening at a shell port, and otherwise don't.
 
-If @option{-M} is also specified, then @option{+S} means we will connect to a pre-existing @moo server and we will need to explicitly specify the port with @option{--shell-port=@var{port}}, and possibly also the @option{--address|-b}.
+The main utility of this option is to use @option{-S} to prevent a connection attempt in cases where there would otherwise be one, say, in order to let Someone Else connect.  It is quite possible (if I've done this right) that you will never otherwise need to specify this option explicitly.
+
+If we're @emph{not} running a @moo server, then the only thing this command could be doing is running a separate redirection service (@option{+S}), meaning we will connect to a pre-existing @moo server (i.e., we @emph{are} the Somebody Else in the previous paragraph), and this cannot work unless we also explicitly specify the port to connect to using @option{--shell-port=@var{port}} (and possibly also the @option{--address|-b}), which will then imply @option{+S}, so we'll never actually need to say @option{+S} in this case.
 @end table
 
 @noindent
@@ -561,8 +599,12 @@ Note that, unless you're just getting help (@option{-h},@dots{}), you have to do
 @node File Options
 @section File Options
 
+When running a @moo server (@option{+M}) an input database option (@option{-t|--db} or @option{-d|--dbfile}) must be specified, and there can be at most one.
+
 @anchor{std-file}
-Some of these options allow specifying @samp{-} to mean standard input, standard output, or standard error, which you should use if this is the behavior you want.  You may be tempted to use such things as @file{/dev/stdin} or @file{/dev/fd/5} if your operating system offers them, but don't; we have enough weird redirection going on behind the scenes that these probably will not work in the way you expect.  Just use @samp{-} and redirect from the outside if you want bits being sent to unorthodox file descriptors.
+Also, some of these allow specifying @samp{-} to mean standard input, standard output, or standard error, depending on context, which you should use if this is the behavior you want.  Meaning do not use @file{/dev/stdin} or @file{/dev/fd/5} if your operating system offers such things; there are enough weird redirections happening behind the scenes that these will probably not work in the way you expect.  Just use @samp{-} and redirect from the outside if you want bits being sent to unorthodox file descriptors.
+
+And it is entirely legal to use @samp{-} for @emph{both} the output database and the server log; database goes to standard output and log goes to standard error, so there's no conflict.
 
 @table @option
 @item --moo-exec=@var{pathname}
@@ -571,7 +613,9 @@ Use @var{pathname} as the @moo server executable.  @xref{exec-prereq,,Prerequisi
 
 @item --lib-path=@var{pathstring}
 @itemx -L @var{pathstring}
-Sets or adds to the M5 Library Path, a colon-separated list of directories initialized to the value of the environment variable @env{M5LIBPATH} if that is set.
+Sets or adds to the M5 Library Path, a list of directories initialized the value of the environment variable @env{M5LIBPATH} if that is set, and otherwise to a sensible default based on installation parameters.  See the description of @ref{lib-path,,@env{M5LIBPATH} in the Environment section}, for more on the format and uses of this path.
+
+There are 3 possibilities for @var{pathstring}:
 @itemize
 @item
 A @var{pathstring} beginning with @samp{+:} is appended to the path.
@@ -581,7 +625,7 @@ A @var{pathstring} ending with @samp{:+} adds directories to the beginning of th
 Otherwise @var{pathstring} replaces the entire path.
 @end itemize
 
-This option may be given multiple times and the results are cumulative.
+This option may be given multiple times and the results are cumulative.  All @option{-L|--lib-path} options are collected @emph{first} and considered in the order they appear to determine the (@emph{single}) library path.  The relative order of @option{-L|--lib-path} with respect to any other options does not matter (except for @option{--}, beyond which any further @option{-L|--lib-path} options are not recognized).  The resulting path is then used to resolve all input filenames (@option{-f|--code-file}, @option{-d|--db-file}, @option{-t|--db}), regardless of whether these options occur before or after the @option{-L|--lib-path} options they depend on.
 
 @item --db=@var{template}
 @itemx -t @var{template}
@@ -596,29 +640,24 @@ Start the @moo instance using this file database.  The M5 library path (see @opt
 Also, @var{basename} can be @file{-}, in which case the file database is read from standard input.
 
 Note that using a file database disables options that are intended only for template databases, i.e., the ones where we say ``This option can only be used with template databases (@option{-t}).''
-@end table
 
-@noindent
-Only one input database option (@option{-t|--db} or @option{-d|--dbfile}) is allowed.
-
-@table @option
 @item --no-out-db
 @itemx --out-db=@var{basename}
 @itemx -o @var{basename}
-Write the output moo database to @file{@var{basename}.db} (or @var{basename} if that already ends with @samp{.db}) instead of discarding it (default).
+Write the output moo database to @file{@var{basename}.db} (or @var{basename} if that already ends with @samp{.db}).
+
+The default is @option{--no-out-db}, meaning the output database is discarded.
 
 If @var{basename} is @samp{-}, then the file database is written to standard output.  If you do this you cannot use the fake player (@option{+P|--player}), since that also takes over standard output.
-
-Empty string @var{basename} and @option{--no-out-db} both mean an output database file should not be written, and this is the default.
 
 @item --no-log
 @itemx --log=@var{filename}
 @itemx -l @var{filename}
-Write the moo server log to @var{filename} instead of discarding it (default).
+Write the moo server log to @var{filename}.
 
-If @var{filename} is @samp{-}, then the server log will appear on standard error.@footnote{Yes, this also goes against tradition if you were expecting @samp{-} to mean standard output in this case, but standard error is pretty much always where you want a log anyway, and this way, we reduce the likelihood that an output database and server log will get jumbled together, which will help exactly no one.  Anyway, if you @emph{really} do want the log on standard output, @code{2>&1} isn't that hard.}
+The default is @option{--no-log}, meaning the server log is discarded.
 
-Empty @var{filename} and @option{--no-log} both mean the server log should be discarded, and this is the default.
+If @var{filename} is @samp{-}, then the server log will appear on standard error.@footnote{Yes, this also goes against tradition if you were expecting @samp{-} to mean standard output in this case, but standard error is pretty much always where you want a log anyway, and this way, we reduce the likelihood that an output database and server log will get jumbled together, which will help exactly no one.  Anyway, if you @emph{really} do want the log on standard output, @code{2>&1} isn't that hard.}  Error messages from the redirection service will get mixed in with the @moo server log if you do this.@footnote{And, often, this is what you want.}
 @end table
 
 @node Network Options
@@ -629,7 +668,9 @@ Empty @var{filename} and @option{--no-log} both mean the server log should be di
 @itemx -b @var{ip}
 Use this IP address (default is @samp{127.0.0.2}) for all service bindings.  This will pass @option{-a} to the @moo server executable, and any listening ports created separately in the shell will likewise use this address.
 
-@strong{WARNING}:  Combining @samp{+S} with @samp{-b} and any address that is @emph{not} on your loopback net (@samp{127.*.*.*/localhost}) will, unless you @emph{completely} trust everyone who has access to your network, essentially be committing Security Suicide, since this potentially gives, to everyone who can reach this address, filesystem access on your host with your own permissions.@footnote{And if you totally hate your employer and your employment, you should arrange for @command{m5run} to be setuid-root as well, except do this all on one of your company's mission-critical servers, though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}
+@strong{WARNING}:  Combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and any address that is @emph{not} on your loopback net (@samp{127.*.*.*/localhost}), unless you @strong{completely} trust everyone who has access to the @emph{actual} network that your machine lives on, will essentially be you committing Security Suicide, since this potentially gives, to everyone who can reach your machine via that address, filesystem access on your host with your own permissions.@footnote{And if you totally hate your employer and your employment, you should also be sure to arrange for the @command{m5run} script to be made setuid-root as well, except do this all on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}
+
+(Note that the loopback net, in contrast, is only accessible by local users and processes on the same host machine, so as long as there are none of those that you do not trust --- one hopes this is the case for the hosts where you do development and run test suites --- you should be fine.  And even if there are, there are various measures we take to reduce exposure (@pxref{Security}).
 
 @item --shell-port=@var{port}
 @itemx --no-shell-port
@@ -639,18 +680,18 @@ Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}
 
 @option{--shell-port=0} means a random port will be selected by the kernel and the redirector will be reading the @moo server log to determine what to connect to.
 
-Where possible, this choice of port (or not) will be communicated to the @moo server, however this only works for template databases (@option{-t|--db}); for file databases (@option{-d|--dbfile}), we watch the log, hope for the best, and error-exit if it's not doing the right thing.
+Where possible, the setting of this option will be communicated to the @moo server, however this only works for template databases (@option{-t|--db}); for file databases (@option{-d|--dbfile}), the best we can do is watch the log, hope we guessed correctly, and error-exit if we see the @moo not doing what we expected.
 
-Specifying @option{--shell-port=@var{p}} explicitly with @option{+M|--moo} means it's an error if the @moo server fails to listen or, in the case of @var{p} > 0, listens at the wrong port.
+Specifying @option{--shell-port=@var{p}} explicitly with @option{+M|--moo} means it's an error if the @moo server fails to report that it is shell-listening or, in the case of @var{p} > 0, that it has somehow chosen to listen at a different port.
 
-Specifying @option{--shell-port=@var{p}} with @option{-S|--no-shell} is specifically for the case where you expect the @moo server to listen but plan to run a separate redirector (with @option{-M +S}).  This can only be done with a template database.
+Specifying @option{--shell-port=@var{p}} with @option{-S|--no-shell} is specifically for the case where the @moo server is expected listen but the redirector will be run elsewhere (with @option{-M +S}).  This can only be done with a template database.
 
-The default is @option{--shell-port=0}, with two exceptions
+If @option{-[-no]-shell-port} is unspecified, the default is @option{--shell-port=0}, @strong{unless}:
 @itemize
 @item
-if @option{--(no-)?shell} is also unspecified, then it is @emph{not} an error for the @moo server to fail to listen, in which case we quietly revert to @option{--no-shell-port} and no connection attempt is made.
+@option{-[-no]-shell} is also unspecified, in which case it is @emph{not} an error for the @moo server to fail to report that it is shell listening; in this situation we quietly revert to @option{--no-shell-port} and no connection attempt is made; or@htmlbrbr
 @item
-if we are not running a @moo at all (@option{-M|--no-moo}), then @option{--shell-port=@var{p}} with @var{p} > 0 is @strong{required}, this being the separate redirector part of the separate redirector scenario, which looks like this
+we are not running a @moo at all (@option{-M|--no-moo}), in which case a @option{--shell-port=@var{p}} with @var{p} > 0 is @strong{required}, this being the separate redirector part of the separate redirector scenario, which looks like this
 @example
 m5run +M -S --shell-port=6666 -t db  #runs the @moo
 m5run -M +S --shell-port=6666        #runs the redirector
@@ -665,7 +706,7 @@ Have the @moo listen at a specific port.  The @var{listener} portion should be o
 
 @table @code
 @item @var{word}
-naming a property on the system object (@samp{#0} or an ancestor); both @code{$@var{word}_listener}, provided @code{$@var{word}} does not already end with @code{_listener}, and then @code{$@var{word}} will be tried, in that order, and if neither exists an error will be raised.  @var{word} must consist entirely of characters valid for @moo property names and must @emph{not} begin with a @samp{$}.
+naming a property accessible from the system object (@samp{#0} or an ancestor).  Both @code{$@var{word}_listener}, provided @code{$@var{word}} does not already end with @code{_listener}, and then @code{$@var{word}} will be tried, in that order, and if neither exists an error will be raised.  @var{word} must be a period(@samp{.})-separated sequence of valid @moo property names and must @emph{not} begin with a @samp{$} (which is already assumed).
 @item #@var{n}
 a literal object number,
 @end table
@@ -675,7 +716,7 @@ and defaults to @samp{#0}.
 
 For file databases, this option may be given at most once, and @samp{#0} is the only allowed value for @var{listener} (and, being the default, there will then never any point to explicitly specifying a listener object in this case).  In other words, all you can do with file databases is give a single @option{-p @var{port}} which then gets passed straight through to the @moo server command line.
 
-For template databases, this option may be given multiple times and the results are cumulative.
+For template databases, this option may be given multiple times and the results are cumulative.  The first such option that specifies @samp{#0} as its listener is passed to the @moo server command line; if there is no such option the @moo server's original port is @code{unlisten()}ed in @code{$server_started} and nothing will ever get a chance to connect to it.
 
 If multiple @option{-p|--listen} options are present, there must at most one for any given non-zero port number.  For port 0, arbitrarily many listeners are allowed, since port 0 just means, ``Choose a random port,'' and the kernel takes care of making them all be different.
 
@@ -690,7 +731,7 @@ A template database is a pair of files in which the @file{.top} file consist of 
 Essentially, this @dfn{first verb}, usually left blank, serves as a place for @command{m5run} to insert arbitrary code to make possible the following special effects:.
 
 @table @option
-@item --(no-)player
+@item -[-no]-player
 @itemx +P (-P)
 Include, in the first verb, an assignment to @code{player} such that @code{notify(player,@var{line})} sends @var{line} to @code{stdout} and @code{boot_player(player)} closes @code{stdout}.
 
@@ -701,30 +742,38 @@ This option can only be used with template databases (@option{-t}).
 @item --
 Include, in the first verb, an assignment to @code{args} that gathers all remaining words of the command line after this one.  None of these words will be treated as @command{m5run} options even if they would otherwise be valid as such.
 
-Note that if @option{--} is @emph{not} present, then the the first verb begins with @code{args = @{@};} and remaining unrecognized command line words will be treated as errors.
+If @option{--} is @emph{not} present, then the the first verb begins with @code{args = @{@}} and unrecognized command line words will be treated as errors.
 
 This option can only be used with template databases (@option{-t}).
 
 @item --expr=@var{expression}
 @itemx -e @var{expression}
-Include @var{expression} in the first verb after other insertions except @option{-f @var{filename}}.  @var{expression} is expected to be a valid @moo language expression or statement.  A semicolon (@samp{;}) will always be inserted afterwards, so it does not matter or not whether you include one yourself.
+Insert this @var{expression} into the first verb.  @var{expression} is expected to be a valid @moo language expression or statement.  Semicolon (@samp{;}) will always be inserted before and afterwards, so there will never be any combining of expressions from different @option{-e} options or different @option{-f} files.
+
+This option may be given multiple times and the results are cumulative.
 
 This option can only be used with template databases (@option{-t}).
 
 @item --code-file=@var{filename}
 @itemx -f @var{filename}
-Insert this file at the end the first verb.  @var{filename} is expected to contain a sequence of valid @moo language statements.
+Insert this file into the first verb.  @var{filename} is expected to contain a sequence of valid @moo language statements.
+
+The M5 library path (see @option{-L}) is searched if @var{filename} has no directory separators.
+
+This option may be given multiple times and the results are cumulative.
 
 This option can only be used with template databases (@option{-t}).
 
-@item --(no-)shutdown
+@item -[-no]-shutdown
 @itemx +H (-H)
-Bracket the expression and/or file included in the first verb with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately after that code finishes executing or raises an error.
+Bracket the sequence of expressions/files included in the first verb via @option{-e|--expr} and @option{-f|--code-file} options with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately after that sequence either successfully finishes executing or something in it raises an error.
 
-Default is usually @option{--no-shutdown|-H}; the exception is when there are no listening points (@samp{+p}), i.e., no way (other than signals) to get a shutdown to happen, in which case @option{--shutdown|+H} is set by default.
+Default is usually @option{--no-shutdown|-H}, the exception being when there are no listening points (@samp{+p}), i.e., no way (other than signals) to get a shutdown to happen, in which case @option{--shutdown|+H} is set by default.
 
 This option can only be used with template databases (@option{-t}).
 @end table
+
+Expressions (@option{-e|--expr}) and files (@option{-f|--code-file}) are inserted in the order they appear on the command line, @emph{after} the setup for the fake player (@option{-P|--player}) and the listening points (@option{-p|--listener}) but (obviously) before any code calling for a shutdown (@option{+H|--shutdown}).
 
 @node First Verb Variables
 @section Variables Available in the First Verb
@@ -745,17 +794,17 @@ A temporary directory, mainly for checkpoint databases and random fifos needed b
 The current authorization code, needed to connect to the @moo server on any of the listeners.
 
 @item run_info
-This is a property list containing the other variables.  Thus, e.g.,
+This is a plist (alternating sequence of names and values) containing the other variables.  Thus, e.g.,
 @example
 run_info[1 + ("ckpt_db" in run_info)]
-$list:get(run_info, "ckpt_db", E_NONE)
+$list:get(run_info, "ckpt_db")
 @end example
 @noindent
-are two equivalent ways of getting the value of @samp{ckpt_db} --- the @code{$list:get(...)} version assuming this is a database with the M5 @code{$list} utility object in it.
+are two mostly equivalent ways of getting the value of @samp{ckpt_db} --- assuming we're in a database containing the @code{$list} utility object and its methods for accessing/manipulating plists; otherwise you will want to use the first one.
 
 This is actually more of use outside of the first verb since, in most of the advanced template databases (i.e., those that are not @file{Raw}) this value is available as @code{$run_info}.  (In order to make it availble in @file{Raw}, you will first have to do something like
 @example
-add_property(#0,"run_info",run_info,@{#0,"r"@})
+add_property(#0, "run_info", run_info, @{#0,"r"@})
 @end example
 somewhere in the code file you load using @option{-f}, but you probably already knew that.)
 
@@ -763,6 +812,34 @@ somewhere in the code file you load using @option{-f}, but you probably already 
 
 @node Redirection
 @chapter The Redirection Framework
+@quotation
+@*
+``It appears, Captain, we have been doing what used to be called 'pursuing a wild goose.'@w{}''
+@author Cmdr. Ucdnprnownzit Spock
+@end quotation
+As you may recall, when a @moo verb runs, there is an environment that gets propagated however far down the call stack it might be needed.  Traditionally, this environment is used to list particular objects in the ``room'' that the current command/task is referring to (as originally determined by the parse of the command.
+
+In M5 cores, there is no topology, i.e., no notion of there being ``rooms'', physical ``objects'', or ``containment'', so we repurpose some of this machinery.
+
+In a nutshell:
+@itemize @w{}
+@item
+@code{dobj} is standard input.
+
+@item
+@code{iobj} is standard output.
+
+@item
+@code{dobjstr} encodes additional channels (e.g., standard error input or output) and attributes as needed.
+
+@item
+@code{iobjstr} is reserved for future use.
+@end itemize
+
+@noindent
+However, this is simply an implementation; user code should not be referring to any of these variables directly or relying on them to be anything in particular.  Likewise, bare @code{notify()} and @code{read()} should not be used.
+
+(todo)
 
 @node Language
 @chapter @moo Language Extensions
@@ -1067,18 +1144,28 @@ The special variable &? gives the status of the most recent scattering assignmen
 @node Databases
 @chapter Available Databases and Libraries
 
-@node Legacy Databases
+@node Security
+@chapter Security Considerations
+
 @quotation
-@*
-``M5's analysis told it it needed a new power source.@*
+``I would say, Captain, that M5 is not only capable of taking
+care of this ship, it is also capable of taking care of itself.''
+@author Cmdr. Ucdnprnownzit Spock
+@end quotation
+
+@node Legacy @moo Databases
+@quotation
+@htmlbrbr
+``M5's analysis told it@*
+it needed a new power source.@*
 The ensign simply @dots{} got in the way.''
 @author Dr. Richard Daystrom
 @end quotation
-@chapter M5 and Legacy Databases
+@chapter M5 and Legacy @moo Databases
 
 This section assumes you have an existing @moo database, possibly multiplayer, possibly based on LambdaCore or JHCore, and you wish to install M5 features.
 
-Note that it is @strong{extremely} unlikely you will want to install the entirety of M5 into an existing multiplayer @moo database.  The redirection features will either be pointless (if you're not running your @moo using @code{m5run}) or have significant security implications in that your @moo instance will then potentially be able to do anything with the file system or available devices that the local user running it is allowed to do and your only protection from hostile players invoking them will be the security measures available within @moo itself.
+Note that it is @strong{extremely} unlikely you will want to install the entirety of M5 into an existing multiplayer @moo database.  The redirection features will either be pointless (if you're not running your @moo using @code{m5run}) or have significant security implications in that your @moo instance will then potentially be able to do anything with the file system or available devices that the local user running it is allowed to do and your only protection from hostile players invoking them will be most-likely-inadequate security measures available within @moo itself.
 
 But various subsets can be installed safely.
 
@@ -1086,7 +1173,7 @@ But various subsets can be installed safely.
 
 @node Examples
 @quotation
-@*
+@htmlbrbr
 ``Destroyed, Kirk?@*
 No.  We are invincible.@*
 Look what we've done!@*
@@ -1100,7 +1187,8 @@ Four toys to be @strong{crushed} as we choose.''
 @chapter Removing M5
 
 @quotation
-``Fantastic machine, the M5:  No @code{OFF} switch!''
+``Fantastic machine, the M5:@*
+No @code{OFF} switch!''
 @author Dr. Leonard McCoy
 @end quotation
 
@@ -1112,15 +1200,6 @@ Good luck with that.
 
 @node Function Index
 @unnumbered Function Index
-
-@quotation
-``Both ships report simulated hits in sufficient quantity and location@*
-to justify awarding the surprise engagement to Enterprise.
-
-Our compliments to the M5 unit and regards to Captain Dunsail.''
-@author Cmdre. Robert Wesley
-@end quotation
-
 
 @quotation
 ```Dunsail' is a term used by midshipmen at Starfleet Academy.@*
@@ -1137,7 +1216,8 @@ It refers to a part that serves no useful purpose.''
 ``20 years of groping to prove the things I've done before are not accidents.
 Seminars and lectures to rows of fools who couldn't begin to understand my systems.
 Colleagues, colleagues laughing behind my back at the boy wonder,
-and becoming famous, building on my work.  Building on @strong{my work}!''
+and becoming famous building on my work.@*
+Building on @strong{my work}!''
 @author Dr. Richard Daystrom
 @end quotation
 
