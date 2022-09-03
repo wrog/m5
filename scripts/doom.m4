@@ -59,7 +59,11 @@ die () {
 }
 
 usage () {
-    die "$1" "$0 --help  will show a list of valid options"
+    if test "$2" ; then
+        die "$1" "$as_me --help  will show a list of valid options"
+    else
+        die "$1"
+    fi
 }
 
 verbose_printf () {
@@ -920,7 +924,7 @@ while test "$#" -gt 0 ; do
       [[do_help=yes]],
       [[-V | +V | --version | --about]],
       [[do_version=yes]],
-      [[usage "unrecognized option:  '$1'"]])[
+      [[usage "unrecognized option:  '$1'" :]])[
     shift
 done
 
