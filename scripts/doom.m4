@@ -18,13 +18,16 @@ moo_port=
 moo_args=
 template_db=
 file_db=
-code_expr=
-code_file=
 temp_db=
 ckpt_db=
 final_db=
 final_log=
 do_shutdown=MAYBE
+
+do_stdin_code=
+code_count=0
+# _code_what$N = file|expr
+# _code_source$N = filename|expression
 
 do_runmoo=MAYBE
 do_shconn=MAYBE
@@ -33,6 +36,8 @@ shell_listener='$shell_listener'
 do_player=MAYBE
 listen_zcount=0
 listen_fixed=
+# _listen_$N = listener for listen_fixed[$N]
+# _listen_z$N = $Nth port 0 listener
 
 do_dryrun=
 do_help=
@@ -207,21 +212,25 @@ db_middle () {
     test -n "$do_shutdown" &&
         printf 'try '
     printf 'args = {%s};' "$moo_args"
-    test -n "$code_expr" &&
-        printf "%s ;\n" "$code_expr"
-    if test "$code_file"; then
-        if test "$code_file" = "-"; then
-            if test "$do_dryrun" ; then
+    z=1
+    while test "$z" -le "$code_count"  ; do
+        eval w='"$'"_code_what$z"'"'
+        eval v='"$'"_code_source$z"'"']
+        AS_CASE([[$w]],
+          [[expr]],
+          [[printf "%s" "$v"]],
+          [[file]],
+          [[if test "$v" != "-"; then
+                cat "$v"
+            elif test "$do_dryrun" ; then
                 printf "\n<< code from standard input >>\n"
             else
                 cat <&5
                 exec 5>&-
-            fi
-        else
-            cat "$code_file"
-        fi
+            fi]])[
+        z=$((z+1))
         printf ";\n"
-    fi
+    done
     test -n "$do_shutdown" &&
         printf "%s\n" 'finally`boot_player(player)!ANY'"'"';shutdown();endtry '
     printf "\n"
@@ -303,7 +312,7 @@ run_moo () {
     elif test -n "$template_db" ; then
         if $can_dev_stdin ; then
             in_db="/dev/stdin"
-            if test "$code_file" = "-" ; then
+            if test "$do_stdin_code" ; then
                 { cat_db | logged_moo & } 5<&0 0<&-
                 exec 5>&-
             else
@@ -312,7 +321,7 @@ run_moo () {
         else
             in_db="${run_dir}/pipe_d"
             mkfifo -m600 "$in_db" || die
-            if test "$code_file" = "-" ; then
+            if test "$do_stdin_code" ; then
                 { { cat_db >"$in_db" ; rm -f "$in_db" ; } & } 5<&0 0<&-
                 exec 5>&-
             else
@@ -686,12 +695,23 @@ describe_for_dryrun () {
                 done
             fi
             test "$do_player"   && printf "  (+P) adding fake 'player'\n"
-            test "$do_shutdown" && printf "  (+H) adding shutdown()\n"
             printf "  args = {%s}\n" "$moo_args"
-            test "$code_expr"   && printf "  (-e) --expr= %s\n" "$code_expr"]
-            AS_CASE([[$code_file]],[''],[],[[-]],
-                    [[printf "  (-f) --code_file will be read from standard input\n"]],
-                    [[printf "  (-f) --code_file= %s\n" "$code_file"]])[
+            z=1
+            while test "$z" -le "$code_count"  ; do
+                eval w='"$'"_code_what$z"'"'
+                eval v='"$'"_code_source$z"'"']
+                AS_CASE([[$w]],
+                  [[expr]],
+                  [[printf "  (-e) --expr= %s\n" "$v"]],
+                  [[file]],
+                  [[if test "$v" = "-"; then
+                        printf "  (-f) --code_file will be read from standard input\n"
+                    else
+                        printf "  (-f) --code_file= %s\n" "$v"
+                    fi]])[
+                z=$((z+1))
+            done
+            test "$do_shutdown" && printf "  (+H) adding shutdown()\n"
         fi
     fi
 
@@ -797,6 +817,19 @@ push_lib_path () {
       [[lib_path="."]])[
 }
 
+push_code () {
+    code_count=$((code_count+1))
+    if test "$1" = 'file' && test "$2" = '-' ; then
+        if test "$do_stdin_code" ; then
+            usage "only one -f|--code-file can be standard input"
+        else
+            do_stdin_code="$code_count"
+        fi
+    fi
+    eval "_code_what${code_count}="'"$'1'"'
+    eval "_code_source${code_count}="'"$'2'"'
+}
+
 conflicts=
 conflict () {
     usage "conflicting options:  $conflicts vs. $1";
@@ -884,17 +917,17 @@ while test "$#" -gt 0 ; do
         set --
         break;]],
       [[--expr=*]],
-      [[code_expr="$argument"]],
+      [[push_code expr "$argument"]],
       [[-e]],
       [[test $# -gt 1 || usage "$1: <expression> missing"
         shift
-        code_expr="$1"]],
+        push_code expr "$1"]],
       [[--code-file=* | --code_file=* | --codefile=*]],
-      [[code_file="$argument"]],
+      [[push_code file "$argument"]],
       [[-f]],
       [[test $# -gt 1 || usage "$1: <filename> missing"
         shift
-        code_file="$1"]],
+        push_code file "$1"]],
       [[+H | --shutdown]],
       [[do_shutdown=yes]],
       [[-H | --no-shutdown | --no_shutdown | --noshutdown]],
@@ -1020,20 +1053,19 @@ fi
 #
 if test "$file_db" ; then
     conflicts="-d|--dbfile"
-    test "$do_shutdown" = yes && conflict "--do-shutdown|+H"
-    test "$do_player" = yes   && conflict "--player|+P"
+    test "$do_shutdown" = yes && conflict "+H|--do-shutdown"
+    test "$do_player" = yes   && conflict "+P|--player"
     do_shutdown=
     do_player=
-    test "$code_file"   && conflict "--code-file|-f"
-    test "$code_expr"   && conflict "--expr|-e"
+    test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr"
     test "$moo_args"    && conflict "--"
 
     # $moo_port is the only allowed listener
     if test "$listen_fixed" || test "$listen_zcount" -gt 0; then
         if test "$moo_port"; then
-            usage "--dbfile|-d only allows one --listen|-p"
+            usage "-d|--dbfile only allows one -p|--listen"
         else
-            usage "--dbfile|-d only allows #0 as listener"
+            usage "-d|--dbfile only allows #0 as listener"
         fi
     fi
 
@@ -1079,11 +1111,17 @@ elif test "$template_db" ; then
     fi
 
     # resolve filenames
-    if test "$code_file" && test "$code_file" != "-"; then
-        lib_find "$code_file" '.m5 .moo' ||
-            die "-f|--code-file not found: $code_file"
-        code_file="$full"
-    fi
+    z=1
+    while test "$z" -le "$code_count"  ; do
+        eval w='"$'"_code_what$z"'"'
+        eval v='"$'"_code_source$z"'"'
+        if test "$w" = 'file' && test "$v" != '-' ; then
+            lib_find "$v" '.m5 .moo' ||
+                die "-f|--code-file not found: $v"
+            eval "_code_source${z}="'"$'full'"'
+        fi
+        z=$((z+1))
+    done
     lib_template_find "$template_db" ||
         die "-t|--db not found: $template_db"
     template_db="$full"
@@ -1100,8 +1138,7 @@ else
     test "$moo_args"    && conflict "-- args..."
     test "$template_db" && conflict "-t|--db";
     test "$file_db"     && conflict "-d|--dbfile";
-    test "$code_expr"   && conflict "-e|--expr";
-    test "$code_file"   && conflict "-f|--code_file";
+    test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr";
     test "$do_shutdown" != MAYBE  && conflict "+H|-H|--(no)-shutdown";
     test "$do_player"   != MAYBE  && conflict "+P|-P|--(no)-player";
 fi
