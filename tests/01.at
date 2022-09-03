@@ -27,7 +27,7 @@ m5run -t Raw -e 'notify(player,"hello world")' -P
 
 ]],0,[[]],[[]])dnl
 ##########################
-AT_CHECK([[# code from file
+AT_CHECK([[# code from stdin
 
 m5run -t Raw -f - <<END
 notify(player,"hello world");
@@ -44,6 +44,22 @@ m5run -t Raw -f ./hello
 ]],0,
 [[hello world
 ]],[[]])
+##########################
+AT_CHECK([[# hello from args
+
+m5run -t Raw -e 'notify(player,tostr(@args))' -- hello ' ' world
+
+]],0,
+[[hello world
+]],[[]])dnl
+##########################
+AT_CHECK([[# hello with quotes
+
+m5run -t Raw -e 'notify(player,tostr(@args))' -- -H "e'llo" ' ' w'"'o'\'rld
+
+]],0,
+[[-He'llo w"o\rld
+]],[[]])dnl
 ##########################
 AT_CHECK([[# hello via server log
 
