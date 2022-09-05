@@ -406,7 +406,7 @@ sh_connect () {
     pi="${run_dir}/pipe_i"
     po="${run_dir}/pipe_o"
     mkfifo -m600 "$pi" "$po" || die
-    ${netcat} "$@" <"$po" >"$pi" &
+    ${netcat} -N "$@" <"$po" >"$pi" &
     exec 3>"$po" 4<"$pi"
     rm -f "$po" "$pi"
     if test -n "$auth_code" ; then
@@ -424,14 +424,17 @@ do_commands () {
             args=
         elif test "$cmd" = "??:" ; then
             ccmd="cmd_ECHO"
-        fi
+        fi]
         # printf "|>>%s<<|\n" "$cmd $id $args" >&2
-        if test "$(type $ccmd)" != "$ccmd is a shell function" ; then
-            result -1 "$id" "unknown: $cmd"
-        else
-            eval "$ccmd $id $args"
-        fi
+        AS_CASE(
+          [[$(type $ccmd 2>/dev/null)]],
+          [[*' is a'*' 'function*]],
+            # ksh and bash say 'function'
+            # zsh and sh say 'shell function'
+          [[eval "$ccmd $id $args"]],
+          [[result -1 "$id" "unknown: $cmd"]])[
     done
+    exec 3>&- 4>&-
 }
 
 result () {
@@ -549,13 +552,13 @@ cmd_EVAL () {
 }
 
 cmd_ECHO () {
-    echo "$@"
+    printf "%s\n" "$*"
 }
 
 cmd_WORDS () {
     while test $# -gt 0 ; do
-        echo "$1" | cat -A;
-        shift;
+        printf "%s\n" "$1" | cat -A
+        shift
     done
 }
 
