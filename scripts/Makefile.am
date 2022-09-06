@@ -8,20 +8,20 @@ do_subst = \
         -e 's,[@]VERSION[@],$(VERSION),g' \
         -e 's,[@]CONFIG_SHELL[@],$(CONFIG_SHELL),g'
 
-m5run: m5run.in Makefile
-	$(do_subst) < m5run.in > m5run
+m5run: $(srcdir)/m5run.in Makefile
+	$(do_subst) < $(srcdir)/m5run.in > m5run
 	chmod +x m5run
 
 doom: doom.in Makefile
 	$(do_subst) < doom.in > doom
 	chmod +x doom
 
-doom.in: doom.m4 $(top_builddir)/config.status ../LICENSE ../AUTHOR
+doom.in: $(srcdir)/doom.m4 $(top_builddir)/config.status $(top_srcdir)/LICENSE $(top_srcdir)/AUTHOR
 	$(top_builddir)/config.status doom.in
 
 doom2: doom2.in Makefile
 	$(do_subst) < doom2.in > doom2
 	chmod +x doom2
 
-doom2.in: doom2.m4 doom.m4 $(top_builddir)/config.status ../LICENSE ../AUTHOR
-	$(AUTOM4TE) -l m4sh doom2.m4 > doom2.in
+doom2.in: $(srcdir)/doom2.m4 $(srcdir)/doom.m4 $(top_builddir)/config.status $(top_srcdir)/LICENSE $(top_srcdir)/AUTHOR
+	$(AUTOM4TE) -l m4sh --include=$(srcdir) $(srcdir)/doom2.m4 > doom2.in
