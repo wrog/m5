@@ -57,10 +57,12 @@ cleanup () {
 trap ':; cleanup' 0
 
 die () {
+    s=$?
+    test $s -eq 0 && s=1
     if test $# -gt 0 ; then
         printf "%s\n" "$@" >&2
     fi
-    exit 1
+    exit $s
 }
 
 usage () {
@@ -83,12 +85,14 @@ gen_auth_code () {
 }
 
 make_run_dir () {
-    if test -z "$run_dir" ; then
-        run_dir="$(umask 077; mktemp -d -p . m5.XXXXXXXXX)"
-        cu_run_dir="$run_dir"
-        test -n "$run_dir" || die "mktemp failed"
+    if test -z "$run_dir" ; then]
+        AS_TMPDIR([m5.],[.])[
+        run_dir="$tmp"
+        cu_run_dir="$tmp"
+    elif test ! -d "$run_dir" || test ! -w "$run_dir" ; then
+        die "bad run_directory:  $run_dir"
     else
-        mkdir "$run_dir" || die "mkdir failed"
+        cu_run_dir=
     fi
 }
 
