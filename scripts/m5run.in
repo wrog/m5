@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@CONFIG_SHELL@
 #
 m5_legal_msg="$(cat <<'ENDLEGAL'
 Copyright 2022, Roger F. Crew.

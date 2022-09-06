@@ -5,7 +5,8 @@ do_subst = \
     sed -e 's,[@]datadir[@],$(datadir),g' \
 	-e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
         -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-        -e 's,[@]VERSION[@],$(VERSION),g'
+        -e 's,[@]VERSION[@],$(VERSION),g' \
+        -e 's,[@]CONFIG_SHELL[@],$(CONFIG_SHELL),g'
 
 m5run: m5run.in Makefile
 	$(do_subst) < m5run.in > m5run
