@@ -203,6 +203,9 @@ In theory, @command{configure} will sort most of this out, but you will need:
 
 @itemize
 @item
+An OS that is one of the recent varieties of @unix for which @moo is available.@footnote{As for where @emph{that} is going, figure that trying to maintain suport for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD)@footnote{I really have no idea which, if any, of these matter.@footnote{And nested footnotes confuse TexInfo.  Who knew?}} work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}@htmlbrbr
+
+@item
 @anchor{exec-prereq}
 A @moo server executable compiled with @option{NETWORK_PROTOCOL=NP_TCP} and @option{OUTBOUND_NETWORK} (0 or 1) @samp{#define}d in @file{options.h}.
 
@@ -211,23 +214,17 @@ This will need to be one of the post-1.8.2 versions that understands the circa-2
 A quick way to check all of this is to run the executable with @option{+O -a 127.0.0.1}.  If that doesn't immediately die, you're probably in business.  We explicitly make a point @strong{not} to rely on any features that were implemented after 2004 (e.g., 64-bit integers, Unicode, WAIFs, XML support, etc...).
 
 @item
+Some version of Netcat, any of NMap's @command{ncat}, OpenBSD's @command{netcat}, or Hobbit's original version, in increasing order of preference (because for our purposes smaller is better; we're really only using it in the most basic way).@footnote{In theory, there should be a way to make this work with just @file{/dev/tcp} for those shells that understand that (read @code{bash}), but Netcat seems to be sufficiently widely available that this is likely pointless.}@htmlbrbr
+
+@item
 Autoconf and Bison, but @strong{only} if you are trying to build M5 directly from the git source repository.  If you have an up-to-date tarball, you can skip this.
 
 (Note that there may be some warnings if you do not have the @emph{correct} version of Bison, which is currently 3.7.5, much depending on how often the Bison People change their @code{yyparse} algorithm and table formats; I'd like to think that's pretty much @emph{never} these days, but we'll see).  Again, if you have an up-to-date tarball, you can skip this.)
 
 @item
-An OS that is one of the recent varieties of @unix for which @moo is available.@footnote{As for where @emph{that} is going, figure that trying to maintain suport for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD)@footnote{I really have no idea which, if any, of these matter.@footnote{And nested footnotes confuse TexInfo.  Who knew?}} work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}@htmlbrbr
-
-@item
 A POSIX-compliant shell.  Really, this should be one of the four that the Autoconf People find vaguely acceptable:  @command{bash}, @command{dash}, @command{ksh}, or @command{zsh}.
 
 We also assume vaguely modern versions of the usual associated utilities (@command{cat}, @command{diff}, @command{expr}, @command{grep}, @command{sed}, @command{tr}).  But if you've gotten this far, chances are, you already have these.
-
-@item
-Some version of Netcat (either traditional/OpenBSD @command{netcat} a.k.a. @command{nc}, or NMap's @command{ncat}).@footnote{In theory, there should be a way to make this work with just @file{/dev/tcp} for the various shells that understand that (e.g., @code{bash}), but Netcat seems to be sufficiently widely available that maybe trying to do that is pointless, too.}@htmlbrbr
-
-@item
-OS features (@file{/dev/stdin}, @file{/dev/stdout}) that I'm hoping are not limited to @linux (but if they are, then your @unix will then need to be one of the sufficiently recent varieties of @linux that has these).@htmlbrbr
 
 @item
 Sufficient disk space.@footnote{Greetings from The Year 1991.}
@@ -239,19 +236,32 @@ Sufficient disk space.@footnote{Greetings from The Year 1991.}
 
 @subsection Installing from a tarball
 
-The one slightly esoteric thing you need is a version of Netcat installed.
+@noindent
+Do the (mostly) usual
 
-Do the usual
 @example
 tar xzf @var{tarfile}.gz  # creates @var{srcdir}
 cd @var{srcdir}
 ./configure
 make
-make check
+M5MOOEXEC=/path/to/moo make check
 @end example
 
-@noindent
-followed, possibly, by @samp{make install}, but maybe not (see below).
+If @command{configure} has trouble finding Netcat you may need to install one.  If it's weirdly named or in a strange directory you may need to do something like
+
+@example
+@command{./configure --with-netcat=/bin/nc.traditional}
+@end example
+
+or, in the absolute worst case, something like
+
+@example
+@command{./configure NETCAT=/path/to/my_own_weird_netcat \
+   NETCAT_CLOSE_EOF=--my-stupidly-named-option-that-does-that \
+   NETCAT_KEEPALIVE=--my-other-stupidly-named-option-that-does-that}
+@end example
+
+(And yes, making @command{make check} do something useful even if there isn't a @moo server installed is on the agenda.)
 
 @subsection Installing from @command{git}
 
@@ -269,14 +279,10 @@ Clone the source repository (currently @file{https://github.com/wrog/m5}) to a s
 
 Without the @option{-i}, you'll have to run @command{automake --missing} to get 3 additional, useless files installed.
 
-@item configure
-which, as usual, will fail if your OS is too divergent from what is expected.
-
-@item make
-which, as usual, builds everything.
-
-@item make check
-which, as usual, tests things.
+@item ./configure
+@itemx make
+@itemx M5MOOEXEC=/path/to/moo make check
+As above.
 
 @item make install
 Your call.  This is probably not necessary if your use of M5 is single-purpose (e.g., running the @moo server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.@footnote{Greetings from The Year 1991}
@@ -460,7 +466,7 @@ where @option{@var{args...}} are made available in the first verb, as is, and ot
 * Option Conventions::    General notes about the options
 * Environment::           Environment variables that matter
 * Informational Options:: Getting help; Validating command lines
-* Top-Level Options::     What are we actually doing?
+* Top-level Options::     What are we actually doing?
 * File Options::          Database and log file names
 * Network Options::       Addresses and listening ports
 * First Verb Options::    How to insert code into the First Verb
@@ -541,17 +547,10 @@ Also, depending on personal taste, you may want to add the current directory @fi
 @section Informational Options
 
 @table @option
-@item --help
-@itemx -?
-@itemx +h
-@itemx -h
-Print the help text and exit.
-
-@item --about
-@itemx --version
-@itemx +V
-@itemx -V
-Print version information and exit.
+@item --verbose
+@itemx +v
+@itemx -v
+Be extra chatty on the standard error output.@footnote{The author not being a natural extrovert, there are currently relatively few situations where this flag makes a difference, but maybe that will change.}
 
 @item --dry-run
 @itemx +n
@@ -562,14 +561,23 @@ This includes verifying that any files mentioned actually exist for reading or a
 
 This will also show you command line options set implicitly that might not otherwise have been obvious.
 
-@item --verbose
-@itemx +v
-@itemx -v
-Be extra chatty on the standard error output.  (Note that I am not naturally extroverted so there are currently relatively few situations where this flag makes a difference, but maybe that will change.)
+@item --help
+@itemx -?
+@itemx +h
+@itemx -h
+Print the help text and exit.
+
+@item --version
+@itemx +V
+@itemx -V
+Print version information and exit.
+
+@item --about
+Print the ``about'' box.  This is the same as @option{--version --verbose}.
 @end table
 
-@node Top-Level Options
-@section Top-Level Options
+@node Top-level Options
+@section Top-level Options
 
 The @command{m5run} shell script normally runs an instance of the @moo server, then optionally creates a redirection service that connects to the @moo's @code{$shell_listener}, and then enables shell command/file redirections from inside the @moo.
 
@@ -604,7 +612,7 @@ When running a @moo server (@option{+M}) an input database option (@option{-t|--
 @anchor{std-file}
 Also, some of these allow specifying @samp{-} to mean standard input, standard output, or standard error, depending on context, which you should use if this is the behavior you want.  Meaning do not use @file{/dev/stdin} or @file{/dev/fd/5} if your operating system offers such things; there are enough weird redirections happening behind the scenes that these will probably not work in the way you expect.  Just use @samp{-} and redirect from the outside if you want bits being sent to unorthodox file descriptors.
 
-And it is entirely legal to use @samp{-} for @emph{both} the output database and the server log; database goes to standard output and log goes to standard error, so there's no conflict.
+And it is entirely legal to use @samp{-} for multiple options in the same command, e.g., @emph{all} of input database (@option{-d}), output database (@option{-o}) and the server log (@option{-l}) could be @samp{-}, since these are referring to standard input, standard output, and standard error, respectively, each being used only once, there is no conflict.
 
 @table @option
 @item --moo-exec=@var{pathname}
@@ -641,18 +649,18 @@ Also, @var{basename} can be @file{-}, in which case the file database is read fr
 
 Note that using a file database disables options that are intended only for template databases, i.e., the ones where we say ``This option can only be used with template databases (@option{-t}).''
 
-@item --no-out-db
-@itemx --out-db=@var{basename}
+@item --out-db=@var{basename}
 @itemx -o @var{basename}
+@itemx --no-out-db
 Write the output moo database to @file{@var{basename}.db} (or @var{basename} if that already ends with @samp{.db}).
 
 The default is @option{--no-out-db}, meaning the output database is discarded.
 
 If @var{basename} is @samp{-}, then the file database is written to standard output.  If you do this you cannot use the fake player (@option{+P|--player}), since that also takes over standard output.
 
-@item --no-log
-@itemx --log=@var{filename}
+@item --log=@var{filename}
 @itemx -l @var{filename}
+@itemx --no-log
 Write the moo server log to @var{filename}.
 
 The default is @option{--no-log}, meaning the server log is discarded.
