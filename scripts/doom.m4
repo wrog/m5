@@ -4,7 +4,10 @@ lib_path="${M5LIBPATH:-/home/moo/src/git/m5/lib}"
 moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
 can_dev_stdin=false
-netcat=nc
+
+netcat="@NETCAT@"
+nc_close_eof="@NETCAT_CLOSE_EOF@"
+nc_keepalive="@NETCAT_KEEPALIVE@"
 
 auth_code=cd261b3bbb7f11644511ba96c18677397981d645318cd202604a680de2897a26
 # auth_code=
@@ -370,7 +373,7 @@ wait_log () {
                  [[$snd]],
                  [[playerport]],
                  [[printf "%s\n" "$auth_code" |]dnl
-                  ["$netcat" "$moo_ip" "$thd" | tr -d '\015' &]],
+                  ["$netcat" $nc_keepalive "$moo_ip" "$thd" | tr -d '\015' &]],
                  [[shellport]],
                  [[if test -z "$shell_port" ; then
                        :
@@ -410,7 +413,7 @@ sh_connect () {
     pi="${run_dir}/pipe_i"
     po="${run_dir}/pipe_o"
     mkfifo -m600 "$pi" "$po" || die
-    ${netcat} -N "$@" <"$po" >"$pi" &
+    "$netcat" $nc_close_eof "$@" <"$po" >"$pi" &
     exec 3>"$po" 4<"$pi"
     rm -f "$po" "$pi"
     if test -n "$auth_code" ; then
@@ -477,7 +480,7 @@ cmd_READ () {
         cat "$file" 2>/dev/null
         result "$?" "$id" " -status"
     } | {
-        "${netcat}" -N "$moo_ip" "$port" 2>&1 >/dev/null
+        "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null
         result "$?" "$id"
     } ) &
 }
@@ -487,7 +490,7 @@ cmd_WRITE () {
     id="$1"
     port="$2"
     file="$3"
-    ( echo "$auth_code,$id,>" | "${netcat}" "$moo_ip" "$port" 2>/dev/null >"$file"
+    ( echo "$auth_code,$id,>" | "$netcat" $nc_keepalive "$moo_ip" "$port" 2>/dev/null >"$file"
       result "$?" "$id" ) &
 }
 
@@ -502,12 +505,12 @@ cmd_PROC () {
         efd="2>/dev/null"
     fi
     ( echo "$auth_code,$id,>" \
-          | "${netcat}" "$moo_ip" "$port" 2>/dev/null \
+          | "$netcat" $nc_keepalive "$moo_ip" "$port" 2>/dev/null \
           | {
           echo "$auth_code,$id,<"
           eval "$@" "$efd"
           result "$?" "$id" " -status"
-      } | "${netcat}" -N "$moo_ip" "$port" 2>&1 >/dev/null
+      } | "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null
       result "$?" "$id"
     ) &
 }
@@ -522,14 +525,14 @@ cmd_PROC2 () {
         efd="2>/dev/null"
     fi
     ( echo "$auth_code,$id,>" \
-          | "${netcat}" "$moo_ip" "$port" 2>/dev/null \
+          | "$netcat" $nc_keepalive "$moo_ip" "$port" 2>/dev/null \
           | {
           echo "$auth_code,$id,<"
           echo "$auth_code,$id,e" >&5
           eval "$@" 2>&5
           result "$?" "$id" " -status"
-      } | "${netcat}" -N "$moo_ip" "$port" 2>&1 >/dev/null \
-          | "${netcat}" -N "$moo_ip" "$port" 2>&1 >/dev/null <&5
+      } | "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null \
+          | "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null <&5
       result "$?" "$id"
     ) &
 }

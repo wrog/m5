@@ -6,6 +6,9 @@ do_subst = \
 	-e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
         -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
         -e 's,[@]VERSION[@],$(VERSION),g' \
+        -e 's,[@]NETCAT[@],$(NETCAT),g' \
+        -e 's,[@]NETCAT_CLOSE_EOF[@],$(NETCAT_CLOSE_EOF),g' \
+        -e 's,[@]NETCAT_KEEPALIVE[@],$(NETCAT_KEEPALIVE),g' \
         -e 's,[@]CONFIG_SHELL[@],$(CONFIG_SHELL),g'
 
 m5run: $(srcdir)/m5run.in Makefile
