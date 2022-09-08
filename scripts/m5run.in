@@ -211,14 +211,15 @@ lib_find () {
     full=
     for ext in $exts ; do
         case $base in #(
-            *$ext)
+            *$ext) :
                 exts=
                 break;
-                ;;
+                ;; #(
+            *) : ;;
         esac
     done
     case $base in #(
-        *[\\/]*)
+        *[\\/]*) :
 	    for ext in $exts ''; do
 	        full="$base$ext"
 	        if test -f "$full" ; then
@@ -228,7 +229,7 @@ lib_find () {
                 full=
 	    done
             ;; #(
-        *)
+        *)  :
             save_IFS=$IFS
             IFS=$PATH_SEPARATOR
             for dir in $lib_path ; do
@@ -251,11 +252,11 @@ lib_find () {
 }
 
 lib_template_find () {
-    case $1 in
-        *.db)
+    case $1 in #(
+        *.db) :
             lib_find "${1}.top" || return 1
             ;; #(
-        *)
+        *) :
             lib_find "${1}" ".db.top .top" || return 1
             test "$full" = "${1}" &&
                 die "file not found: $1.[db.]top"
@@ -335,10 +336,10 @@ db_middle () {
         eval w='"$'"_code_what$z"'"'
         eval v='"$'"_code_source$z"'"'
         case $w in #(
-            expr)
+            expr) :
                 printf "%s" "$v"
                 ;; #(
-            file)
+            file) :
                 if test "$v" != "-"; then
                     cat "$v"
                 elif test "$do_dryrun" ; then
@@ -347,7 +348,8 @@ db_middle () {
                     cat <&5
                     exec 5>&-
                 fi
-                ;;
+                ;; #(
+            *) : ;;
         esac
         z=$((z+1))
         printf ";\n"
@@ -492,16 +494,16 @@ wait_log () {
                 moo_log_pipe=
             fi
             case $fst in #(
-                '***')
+                '***') :
                     wait_error="$snd $thd"
                     break
                     ;; #(
-                '>')
+                '>') :
                     case $snd in #(
-                        playerport)
+                        playerport) :
                             printf "%s\n" "$auth_code" | "$netcat" $nc_keepalive "$moo_ip" "$thd" | tr -d '\015' &
                             ;; #(
-                        shellport)
+                        shellport) :
                             if test -z "$shell_port" ; then
                                 :
                             elif test "$shell_port" = 0 ; then
@@ -510,29 +512,31 @@ wait_log () {
                                 wait_error="wrong shell_port"
                                 break
                             fi
-                            ;;
+                            ;; #(
+                        *) : ;;
                     esac
                     if test "$goal" = "$snd"; then
                         goal= ; break
                     fi
                     ;; #(
-                LISTEN:)
+                LISTEN:) :
                     if test "$goal" = "$fst"; then
                         goal= ; break
                     fi
                     ;; #(
-                UNLISTEN:)
+                UNLISTEN:) :
                     if test "$goal" = "$fst"; then
                         goal="LISTEN:"
                     fi
                     ;; #(
-                SHUTDOWN:)
+                SHUTDOWN:) :
                     if test "$goal" = "$fst"; then
                         goal= ;
                     fi
                     wait_error="premature shutdown"
                     break
-                    ;;
+                    ;; #(
+                *) : ;;
             esac
         done
         { cat - >/dev/null 0<&5 5<&- & } 5<&0
@@ -567,13 +571,13 @@ do_commands () {
             ccmd="cmd_ECHO"
         fi
         # printf "|>>%s<<|\n" "$cmd $id $args" >&2
-        case $(type $ccmd 2>/dev/null) in
+        case $(type $ccmd 2>/dev/null) in #(
             # ksh and bash say 'function'
             # zsh and sh say 'shell function'
-            *' is a'*' 'function*)
+            *' is a'*' 'function*) :
                 eval "$ccmd $id $args"
-                ;;
-            *)
+                ;; #(
+            *) :
                 result -1 "$id" "unknown: $cmd"
                 ;;
         esac
@@ -844,16 +848,17 @@ describe_for_dryrun () {
                 eval w='"$'"_code_what$z"'"'
                 eval v='"$'"_code_source$z"'"'
                 case $w in #(
-                    expr)
+                    expr) :
                         printf "  (-e) --expr= %s\n" "$v"
                         ;; #(
-                    file)
+                    file) :
                         if test "$v" = "-"; then
                             printf "  (-f) --code_file will be read from standard input\n"
                         else
                             printf "  (-f) --code_file= %s\n" "$v"
                         fi
-                        ;;
+                        ;; #(
+                    *) : ;;
                 esac
                 z=$((z+1))
             done
@@ -870,7 +875,7 @@ describe_for_dryrun () {
         printf "\nNOT connecting a shell redirector (-S|--no-shell)\n"
     fi
     printf "\n"
-    if test "$template_db" && test "$do_verbose" ; then
+    if test "$template_db" && test "$do_verbose" ; then :
         printf "Code being inserted in first verb:\n  "
         db_middle
     fi
@@ -881,38 +886,38 @@ push_moo_listeners () {
     v="$1"
     lname=
     case $v in #(
-        *[!0-9a-zA-Z_.,\#]*)
+        *[!0-9a-zA-Z_.,\#]*) :
             usage "--listen=|-p: illegal characters in $v"  ; return
             ;; #(
-        *,*,*)
+        *,*,*) :
             usage "--listen=|-p: at most one comma allowed: $v"  ; return
             ;; #(
-        *[!0-9]*,*)
+        *[!0-9]*,*) :
             usage "--listen=|-p: port must be a number: $v"  ; return
             ;; #(
-        *,[\#]*[!0-9]*)
+        *,[\#]*[!0-9]*) :
             usage "--listen=|-p: listener bad literal objectid: $v"  ; return
             ;; #(
         *,?*[\#]* | *,[0-9.]* | *,*.[0-9.]* | *,*. | *,) :
             usage "--listen=|-p: listener invalid identifier: $v"  ; return
             ;; #(
-        *,*_listener)
+        *,*_listener) :
             port=`expr "X$v" : 'X\(.*\),.*'`
             lname='$'`expr "X$v" : 'X.*,\(.*\)'`
             ;; #(
-        *,[\#]*)
+        *,[\#]*) :
             port=`expr "X$v" : 'X\(.*\),.*'`
             lname=`expr "X$v" : 'X.*,\(.*\)'`
             ;; #(
-        *,*)
+        *,*) :
             port=`expr "X$v" : 'X\(.*\),.*'`
             lname=`expr "X$v" : 'X.*,\(.*\)'`
             lname="\$${lname}_listener \$${lname}"
             ;; #(
-        *[!0-9]*)
+        *[!0-9]*) :
             usage "--listen=|-p: port must be a number: $v"  ; return
             ;; #(
-        *)
+        *) :
             port="$v"
             lname="#0"
             ;;
@@ -941,48 +946,48 @@ push_lib_path () {
     # local v
     v="${1}"
     case $v in #(
-        +::*[!:]*)
+        +::*[!:]*) :
             v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
             lib_path="${lib_path}:.:${v}"
             ;; #(
-        +: | +::*)
+        +: | +::*) :
             lib_path="${lib_path}:."
             ;; #(
-        +:?*:)
+        +:?*:) :
             v=`expr "X$v" : 'X..\(.*[^:]\)'`
             lib_path="${lib_path}:${v}:."
             ;; #(
-        +:?*)
+        +:?*) :
             v=`expr "X$v" : 'X..\(.*\)'`
             lib_path="${lib_path}:${v}"
             ;; #(
-        :*[!:]*:+)
+        :*[!:]*:+) :
             v=`expr "X$v" : 'X:*\(.*[^:]\).*+'`
             lib_path=".:$v:${lib_path}"
             ;; #(
-        :+ | :*:+)
+        :+ | :*:+) :
             lib_path=".:${lib_path}"
             ;; #(
-        ?*::+)
+        ?*::+) :
             v=`expr "X$v" : 'X\(.*[^:]\).*+'`
             lib_path="${v}:.:${lib_path}"
             ;; #(
-        ?*:+)
+        ?*:+) :
             v=`expr "X$v" : 'X\(.*\):+'`
             lib_path="${v}:${lib_path}"
             ;; #(
-        :*)
+        :*) :
             v=`expr "X$v" : 'X:*\(.*[^:]\)'`
             lib_path=".:${v}"
             ;; #(
-        *:)
+        *:) :
             v=`expr "X$v" : 'X\(.*[^:]\)'`
             lib_path="${v}:."
             ;; #(
-        ?*)
+        ?*) :
             lib_path="${v}"
             ;; #(
-        *)
+        *) :
             lib_path="."
             ;;
     esac
@@ -1014,91 +1019,91 @@ while test "$#" -gt 0 ; do
     arg_count=$((arg_count+1))
     conflicts="$1"
     case $1 in #(
-        --*=?*)
+        --*=?*) :
             argument=`expr "X$1" : '[^=]*=\(.*\)'`
             ;; #(
-        *)
+        *) :
             argument=
             ;;
     esac
     case $1 in #(
-        +M | --moo)
+        +M | --moo) :
             test "$do_runmoo" != MAYBE && conflict "-M|--no-moo"
             do_runmoo=yes
             ;; #(
-        -M | --no-moo | --no_moo | --nomoo)
+        -M | --no-moo | --no_moo | --nomoo) :
             test "$do_runmoo" != MAYBE && conflict "+M|--moo"
             do_runmoo=
             ;; #(
-        +S | --shell)
+        +S | --shell) :
             test "$do_shconn" != MAYBE && conflict "-S|--no-shell"
             do_shconn=yes
             ;; #(
-        -S | --no-shell | --no_shell | --noshell)
+        -S | --no-shell | --no_shell | --noshell) :
             test "$do_shconn" != MAYBE && conflict "+S|--shell"
             do_shconn=
             ;; #(
-        --moo-exec=* | --moo_exec=* | --mooexec=*)
+        --moo-exec=* | --moo_exec=* | --mooexec=*) :
             moo_exec="$argument"
             ;; #(
-        -x)
+        -x) :
             test $# -gt 1 || usage "$1: <pathname> missing"
             shift
             moo_exec="$1"
             ;; #(
-        --lib-path=* | --lib_path=* | --libpath=*)
+        --lib-path=* | --lib_path=* | --libpath=*) :
             push_lib_path "$argument"
             ;; #(
-        -L)
+        -L) :
             test $# -gt 1 || usage "$1: <pathstring> missing"
             shift
             push_lib_path "$1"
             ;; #(
-        --db=*)
+        --db=*) :
             template_db="$argument"
             ;; #(
-        -t)
+        -t) :
             test $# -gt 1 || usage "$1: <template> missing"
             shift
             template_db="$1"
             ;; #(
-        --dbfile=*)
+        --dbfile=*) :
             file_db="$argument"
             ;; #(
-        -d)
+        -d) :
             test $# -gt 1 || usage "$1: <basename> missing"
             shift
             file_db="$1"
             ;; #(
-        --address=*)
+        --address=*) :
             moo_ip="$argument"
             ;; #(
-        -b)
+        -b) :
             test $# -gt 1 || usage "$1: <ip> missing"
             shift
             moo_ip="$1"
             ;; #(
-        --no-shell-port | --no_shell_port | --noshellport)
+        --no-shell-port | --no_shell_port | --noshellport) :
             shell_port=
             ;; #(
-        --shell-port=* | --shell_port=* | --shellport=*)
+        --shell-port=* | --shell_port=* | --shellport=*) :
             shell_port="$argument"
             ;; #(
-        --listen=*)
+        --listen=*) :
             push_moo_listeners "$argument"
             ;; #(
-        -p)
+        -p) :
             test $# -gt 1 || usage "$1: <port>[,<listener>] missing"
             shift
             push_moo_listeners "$1"
             ;; #(
-        +P | --player)
+        +P | --player) :
             do_player=yes
             ;; #(
-        -P | --no-player | --no_player | --noplayer)
+        -P | --no-player | --no_player | --noplayer) :
             do_player=
             ;; #(
-        --)
+        --) :
             moo_args=
             shift
             while test "$#" -gt 0; do
@@ -1110,64 +1115,64 @@ while test "$#" -gt 0 ; do
             set --
             break;
             ;; #(
-        --expr=*)
+        --expr=*) :
             push_code expr "$argument"
             ;; #(
-        -e)
+        -e) :
             test $# -gt 1 || usage "$1: <expression> missing"
             shift
             push_code expr "$1"
             ;; #(
-        --code-file=* | --code_file=* | --codefile=*)
+        --code-file=* | --code_file=* | --codefile=*) :
             push_code file "$argument"
             ;; #(
-        -f)
+        -f) :
             test $# -gt 1 || usage "$1: <filename> missing"
             shift
             push_code file "$1"
             ;; #(
-        +H | --shutdown)
+        +H | --shutdown) :
             do_shutdown=yes
             ;; #(
-        -H | --no-shutdown | --no_shutdown | --noshutdown)
+        -H | --no-shutdown | --no_shutdown | --noshutdown) :
             do_shutdown=
             ;; #(
-        --no-out-db | --no_out_db | --nooutdb)
+        --no-out-db | --no_out_db | --nooutdb) :
             final_db=
             ;; #(
-        --out-db=* | --out_db=* | --outdb=*)
+        --out-db=* | --out_db=* | --outdb=*) :
             final_db="$argument"
             ;; #(
-        -o)
+        -o) :
             test $# -gt 1 || usage "$1: <basename> missing"
             shift
             final_db="$1"
             ;; #(
-        --no-log | --no_log | --nolog)
+        --no-log | --no_log | --nolog) :
             final_log=
             ;; #(
-        --log=*)
+        --log=*) :
             final_log="$argument"
             ;; #(
-        -l)
+        -l) :
             test $# -gt 1 || usage "$1: <filename> missing"
             shift
             final_log="$1"
             ;; #(
-        -v | +v | --verbose)
+        -v | +v | --verbose) :
             arg_count=$((arg_count-1))
             do_verbose=yes
             ;; #(
-        -n | +n | --dry-run | --dry_run | --dryrun)
+        -n | +n | --dry-run | --dry_run | --dryrun) :
             do_dryrun=yes
             ;; #(
-        -h | +h | -[?] | --help)
+        -h | +h | -[?] | --help) :
             do_help=yes
             ;; #(
-        -V | +V | --version | --about)
+        -V | +V | --version | --about) :
             do_version=yes
             ;; #(
-        *)
+        *) :
             usage "unrecognized option:  '$1'" :
             ;;
     esac
@@ -1191,12 +1196,13 @@ fi
 #   do_shutdown, do_runmoo, do_shconn, shell_port, do_player
 
 case $template_db in #(
-    Raw*)
+    Raw*) :
         if test "$do_shconn" = MAYBE && test "$shell_port" = MAYBE ; then
             do_shconn=
             shell_port=
         fi
-        ;;
+        ;; #(
+    *) : ;;
 esac
 
 # set do_runmoo, infer from --dbfile or --db

@@ -105,51 +105,52 @@ lib_find () {
     exts="$2"
     full=
     for ext in $exts ; do]
-        AS_CASE([[$base]],
-          [[*$ext]],
-          [[exts=
+        AS_CASE([[$base]],[[
+          *$ext]],[[
+            exts=
             break;
-           ]])[
+          ]])[
     done]
-    AS_CASE(
-        [[$base]],
-        [[*[\\/]*]],
-        [[for ext in $exts ''; do
-              full="$base$ext"
-              if test -f "$full" ; then
-                  test -r "$full" || die "not readable: $full"
-                  break
-              fi
-              full=
-          done]],
-        [[save_IFS=$IFS
-          IFS=$PATH_SEPARATOR
-          for dir in $lib_path ; do
-              IFS=$save_IFS
-              test -z "$dir" && dir=.
-              for ext in $exts ''; do
-                  full="$dir/$base$ext"
-                  if test -f "$full" ; then
-                      test -r "$full" || die "not readable: $full"
-                      break 2
-                  fi
-              done;
-              full=
-          done
-          IFS=$save_IFS]])[
+    AS_CASE([[$base]],[[
+      *[\\/]*]],[[
+        for ext in $exts ''; do
+            full="$base$ext"
+            if test -f "$full" ; then
+                test -r "$full" || die "not readable: $full"
+                break
+            fi
+            full=
+        done
+      ]],[[
+        save_IFS=$IFS
+        IFS=$PATH_SEPARATOR
+        for dir in $lib_path ; do
+            IFS=$save_IFS
+            test -z "$dir" && dir=.
+            for ext in $exts ''; do
+                full="$dir/$base$ext"
+                if test -f "$full" ; then
+                    test -r "$full" || die "not readable: $full"
+                    break 2
+                fi
+            done;
+            full=
+        done
+        IFS=$save_IFS
+      ]])[
     test "$full" || return 1;
     return 0;
 }
 
 lib_template_find () {]
-    AS_CASE(
-        [[$1]],
-        [[*.db]],
-        [[lib_find "${1}.top" || return 1]],
-        [[lib_find "${1}" ".db.top .top" || return 1
-          test "$full" = "${1}" &&
-          die "file not found: $1.[db.]top"]])[
-
+    AS_CASE([[$1]],[[
+      *.db]],[[
+        lib_find "${1}.top" || return 1
+      ]],[[
+        lib_find "${1}" ".db.top .top" || return 1
+        test "$full" = "${1}" &&
+        die "file not found: $1.[db.]top"
+      ]])[
     full=`expr "X$full" : 'X\(.*\).top'`
     if test ! -f "$full.bot" || test ! -r "$full.bot" ; then
         die "file not found: $full.bot"
@@ -223,18 +224,19 @@ db_middle () {
     while test "$z" -le "$code_count"  ; do
         eval w='"$'"_code_what$z"'"'
         eval v='"$'"_code_source$z"'"']
-        AS_CASE([[$w]],
-          [[expr]],
-          [[printf "%s" "$v"]],
-          [[file]],
-          [[if test "$v" != "-"; then
+        AS_CASE([[$w]],[[
+          expr]],[[
+            printf "%s" "$v"]],[[
+          file]],[[
+            if test "$v" != "-"; then
                 cat "$v"
             elif test "$do_dryrun" ; then
                 printf "\n<< code from standard input >>\n"
             else
                 cat <&5
                 exec 5>&-
-            fi]])[
+            fi
+          ]])[
         z=$((z+1))
         printf ";\n"
     done
@@ -363,43 +365,49 @@ wait_log () {
                 rm -f "$moo_log_pipe"
                 moo_log_pipe=
             fi]
-            AS_CASE(
-              [[$fst]],
-              [['***']],
-              [[wait_error="$snd $thd"
-                break]],
-              [['>']],
-              [AS_CASE(
-                 [[$snd]],
-                 [[playerport]],
-                 [[printf "%s\n" "$auth_code" |]dnl
-                  ["$netcat" $nc_keepalive "$moo_ip" "$thd" | tr -d '\015' &]],
-                 [[shellport]],
-                 [[if test -z "$shell_port" ; then
-                       :
-                   elif test "$shell_port" = 0 ; then
-                       shell_port="$thd"
-                   elif test "$shell_port" != "$thd" ; then
-                       wait_error="wrong shell_port"
-                       break
-                   fi]])[
+            AS_CASE([[$fst]],[[
+              '***']],[[
+                wait_error="$snd $thd"
+                break
+               ]],[[
+              '>']],[
+                AS_CASE([[$snd]],[[
+                  playerport]],[[
+                    printf "%s\n" "$auth_code" |]dnl
+ ["$netcat" $nc_keepalive "$moo_ip" "$thd" |]dnl
+ [tr -d '\015' &
+                   ]],[[
+                  shellport]],[[
+                    if test -z "$shell_port" ; then
+                        :
+                    elif test "$shell_port" = 0 ; then
+                        shell_port="$thd"
+                    elif test "$shell_port" != "$thd" ; then
+                        wait_error="wrong shell_port"
+                        break
+                    fi
+                  ]])[
                 if test "$goal" = "$snd"; then
                     goal= ; break
-                fi]],
-              [[LISTEN:]],
-              [[if test "$goal" = "$fst"; then
+                fi
+               ]],[[
+              LISTEN:]],[[
+                if test "$goal" = "$fst"; then
                     goal= ; break
-                fi]],
-              [[UNLISTEN:]],
-              [[if test "$goal" = "$fst"; then
+                fi
+               ]],[[
+              UNLISTEN:]],[[
+                if test "$goal" = "$fst"; then
                     goal="LISTEN:"
-                fi]],
-              [[SHUTDOWN:]],
-              [[if test "$goal" = "$fst"; then
+                fi
+               ]],[[
+              SHUTDOWN:]],[[
+                if test "$goal" = "$fst"; then
                     goal= ;
                 fi
                 wait_error="premature shutdown"
-                break]])[
+                break
+            ]])[
         done
         { cat - >/dev/null 0<&5 5<&- & } 5<&0
         exec 5>&-
@@ -433,13 +441,14 @@ do_commands () {
             ccmd="cmd_ECHO"
         fi]
         # printf "|>>%s<<|\n" "$cmd $id $args" >&2
-        AS_CASE(
-          [[$(type $ccmd 2>/dev/null)]],
-          [[*' is a'*' 'function*]],
+        AS_CASE([[$(type $ccmd 2>/dev/null)]],[[
             # ksh and bash say 'function'
             # zsh and sh say 'shell function'
-          [[eval "$ccmd $id $args"]],
-          [[result -1 "$id" "unknown: $cmd"]])[
+          *' is a'*' 'function*]],[[
+            eval "$ccmd $id $args"
+          ]],[[
+            result -1 "$id" "unknown: $cmd"
+          ]])[
     done
     exec 3>&- 4>&-
 }
@@ -581,8 +590,8 @@ Complete documentation for M5 is available at https://ipomoea.org/moo/m5
 
 EOF
 }]
-m4_rename([AS_HELP_STRING],[__M5__prev_HS])dnl
-m4_define([AS_HELP_STRING],[__M5__prev_HS([$1],[$2],[36])])dnl
+m4_rename([AS_HELP_STRING],[_M5_prev_HS])dnl
+m4_define([AS_HELP_STRING],[_M5_prev_HS([$1],[$2],[36])])dnl
 [
 help_message () {
     cat <<EOF
@@ -627,8 +636,10 @@ AS_HELP_STRING([[-V, +V, --version, --about]],[print version info and exit])
 
 EOF
 }]
-m4_rename_force([__M5__prev_HS],[AS_HELP_STRING])dnl
-m4_define([printf],[pppprintf])dnl
+m4_rename_force([_M5_prev_HS],[AS_HELP_STRING])dnl
+dnl m4_define([printf],[pppprintf])
+dnl -- uncomment to purposefully screw up
+dnl -- improperly quoted m4
 [
 describe_for_dryrun () {
     # local v e z
@@ -710,15 +721,17 @@ describe_for_dryrun () {
             while test "$z" -le "$code_count"  ; do
                 eval w='"$'"_code_what$z"'"'
                 eval v='"$'"_code_source$z"'"']
-                AS_CASE([[$w]],
-                  [[expr]],
-                  [[printf "  (-e) --expr= %s\n" "$v"]],
-                  [[file]],
-                  [[if test "$v" = "-"; then
+                AS_CASE([[$w]],[[
+                  expr]],[[
+                    printf "  (-e) --expr= %s\n" "$v"
+                   ]],[[
+                  file]],[[
+                    if test "$v" = "-"; then
                         printf "  (-f) --code_file will be read from standard input\n"
                     else
                         printf "  (-f) --code_file= %s\n" "$v"
-                    fi]])[
+                    fi
+                  ]])[
                 z=$((z+1))
             done
             test "$do_shutdown" && printf "  (+H) adding shutdown()\n"
@@ -734,41 +747,51 @@ describe_for_dryrun () {
         printf "\nNOT connecting a shell redirector (-S|--no-shell)\n"
     fi
     printf "\n"]
-    AS_IF([[test "$template_db" && test "$do_verbose"]],
-          [[printf "Code being inserted in first verb:\n  "
-            db_middle]])[
+    AS_IF([[test "$template_db" && test "$do_verbose"]],[[
+        printf "Code being inserted in first verb:\n  "
+          db_middle
+    ]])[
 }
 
 push_moo_listeners () {
     # local v port lname
     v="$1"
     lname=]
-    AS_CASE([[$v]],
-            [[*[!0-9a-zA-Z_.,\#]*]],
-            [[usage "--listen=|-p: illegal characters in $v"; return]],
-            [[*,*,*]],
-            [[usage "--listen=|-p: at most one comma allowed: $v"; return]],
-            [[*[!0-9]*,*]],
-            [[usage "--listen=|-p: port must be a number: $v"; return]],
-            [[*,[\#]*[!0-9]*]],
-            [[usage "--listen=|-p: listener bad literal objectid: $v"; return]],
-            [[*,?*[\#]* | *,[0-9.]* | *,*.[0-9.]* | *,*. | *,]],
-            [[usage "--listen=|-p: listener invalid identifier: $v"; return]],
-            [[*,*_listener]],
-            [[port=`expr "X$v" : 'X\(.*\),.*'`
-              lname='$'`expr "X$v" : 'X.*,\(.*\)'`]],
-            [[*,[\#]*]],
-            [[port=`expr "X$v" : 'X\(.*\),.*'`
-              lname=`expr "X$v" : 'X.*,\(.*\)'`]],
-            [[*,*]],
-            [[port=`expr "X$v" : 'X\(.*\),.*'`
-              lname=`expr "X$v" : 'X.*,\(.*\)'`
-              lname="\$${lname}_listener \$${lname}"]],
-            [[*[!0-9]*]],
-            [[usage "--listen=|-p: port must be a number: $v"; return]],
-            [[port="$v"
-              lname="#0"
-              ]])[
+    AS_CASE([[$v]],[[
+      *[!0-9a-zA-Z_.,\#]*]],[[
+        usage "--listen=|-p: illegal characters in $v"; return
+       ]],[[
+      *,*,*]],[[
+        usage "--listen=|-p: at most one comma allowed: $v"; return
+       ]],[[
+      *[!0-9]*,*]],[[
+        usage "--listen=|-p: port must be a number: $v"; return
+       ]],[[
+      *,[\#]*[!0-9]*]],[[
+        usage "--listen=|-p: listener bad literal objectid: $v"; return
+       ]],[[
+      *,?*[\#]* | *,[0-9.]* | *,*.[0-9.]* | *,*. | *,]],[[
+        usage "--listen=|-p: listener invalid identifier: $v"; return
+       ]],[[
+      *,*_listener]],[[
+        port=`expr "X$v" : 'X\(.*\),.*'`
+        lname='$'`expr "X$v" : 'X.*,\(.*\)'`
+       ]],[[
+      *,[\#]*]],[[
+        port=`expr "X$v" : 'X\(.*\),.*'`
+        lname=`expr "X$v" : 'X.*,\(.*\)'`
+       ]],[[
+      *,*]],[[
+        port=`expr "X$v" : 'X\(.*\),.*'`
+        lname=`expr "X$v" : 'X.*,\(.*\)'`
+        lname="\$${lname}_listener \$${lname}"
+       ]],[[
+      *[!0-9]*]],[[
+        usage "--listen=|-p: port must be a number: $v"; return
+      ]],[[
+        port="$v"
+        lname="#0"
+      ]])[
 
     # TODO: convert to M4SH indirect variables
     if test "$lname" = "#0" && test -z "$moo_port"; then
@@ -792,39 +815,50 @@ push_moo_listeners () {
 push_lib_path () {
     # local v
     v="${1}"]
-    AS_CASE(
-      [[$v]],
-      [[+::*[!:]*]],
-      [[v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
-        lib_path="${lib_path}:.:${v}"]],
-      [[+: | +::*]],
-      [[lib_path="${lib_path}:."]],
-      [[+:?*:]],
-      [[v=`expr "X$v" : 'X..\(.*[^:]\)'`
-        lib_path="${lib_path}:${v}:."]],
-      [[+:?*]],
-      [[v=`expr "X$v" : 'X..\(.*\)'`
-        lib_path="${lib_path}:${v}"]],
-      [[:*[!:]*:+]],
-      [[v=`expr "X$v" : 'X:*\(.*[^:]\).*+'`
-        lib_path=".:$v:${lib_path}"]],
-      [[:+ | :*:+]],
-      [[lib_path=".:${lib_path}"]],
-      [[?*::+]],
-      [[v=`expr "X$v" : 'X\(.*[^:]\).*+'`
-        lib_path="${v}:.:${lib_path}"]],
-      [[?*:+]],
-      [[v=`expr "X$v" : 'X\(.*\):+'`
-        lib_path="${v}:${lib_path}"]],
-      [[:*]],
-      [[v=`expr "X$v" : 'X:*\(.*[^:]\)'`
-        lib_path=".:${v}"]],
-      [[*:]],
-      [[v=`expr "X$v" : 'X\(.*[^:]\)'`
-        lib_path="${v}:."]],
-      [[?*]],
-      [[lib_path="${v}"]],
-      [[lib_path="."]])[
+    AS_CASE([[$v]],[[
+      +::*[!:]*]],[[
+        v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
+        lib_path="${lib_path}:.:${v}"
+       ]],[[
+      +: | +::*]],[[
+        lib_path="${lib_path}:."
+       ]],[[
+      +:?*:]],[[
+        v=`expr "X$v" : 'X..\(.*[^:]\)'`
+        lib_path="${lib_path}:${v}:."
+       ]],[[
+      +:?*]],[[
+        v=`expr "X$v" : 'X..\(.*\)'`
+        lib_path="${lib_path}:${v}"
+       ]],[[
+      :*[!:]*:+]],[[
+        v=`expr "X$v" : 'X:*\(.*[^:]\).*+'`
+        lib_path=".:$v:${lib_path}"
+       ]],[[
+      :+ | :*:+]],[[
+        lib_path=".:${lib_path}"
+       ]],[[
+      ?*::+]],[[
+        v=`expr "X$v" : 'X\(.*[^:]\).*+'`
+        lib_path="${v}:.:${lib_path}"
+       ]],[[
+      ?*:+]],[[
+        v=`expr "X$v" : 'X\(.*\):+'`
+        lib_path="${v}:${lib_path}"
+       ]],[[
+      :*]],[[
+        v=`expr "X$v" : 'X:*\(.*[^:]\)'`
+        lib_path=".:${v}"
+       ]],[[
+      *:]],[[
+        v=`expr "X$v" : 'X\(.*[^:]\)'`
+        lib_path="${v}:."
+       ]],[[
+      ?*]],[[
+        lib_path="${v}"
+      ]],[[
+        lib_path="."
+      ]])[
 }
 
 push_code () {
@@ -852,71 +886,91 @@ arg_count=0
 while test "$#" -gt 0 ; do
     arg_count=$((arg_count+1))
     conflicts="$1"]
-    AS_CASE(
-      [[$1]],
-      [[--*=?*]],
-      [[argument=`expr "X$1" : '[^=]*=\(.*\)'`]],
-      [[argument=]])
-    AS_CASE(
-      [[$1]],
-      [[+M | --moo]],
-      [[test "$do_runmoo" != MAYBE && conflict "-M|--no-moo"
-        do_runmoo=yes]],
-      [[-M | --no-moo | --no_moo | --nomoo]],
-      [[test "$do_runmoo" != MAYBE && conflict "+M|--moo"
-        do_runmoo=]],
-      [[+S | --shell]],
-      [[test "$do_shconn" != MAYBE && conflict "-S|--no-shell"
-        do_shconn=yes]],
-      [[-S | --no-shell | --no_shell | --noshell]],
-      [[test "$do_shconn" != MAYBE && conflict "+S|--shell"
-        do_shconn=]],
-      [[--moo-exec=* | --moo_exec=* | --mooexec=*]],
-      [[moo_exec="$argument"]],
-      [[-x]],
-      [[test $# -gt 1 || usage "$1: <pathname> missing"
+    AS_CASE([[$1]],[[
+      --*=?*]],[[
+        argument=`expr "X$1" : '[^=]*=\(.*\)'`
+      ]],[[
+        argument=
+      ]])
+    AS_CASE([[$1]],[[
+      +M | --moo]],[[
+        test "$do_runmoo" != MAYBE && conflict "-M|--no-moo"
+        do_runmoo=yes
+       ]],[[
+      -M | --no-moo | --no_moo | --nomoo]],[[
+        test "$do_runmoo" != MAYBE && conflict "+M|--moo"
+        do_runmoo=
+       ]],[[
+      +S | --shell]],[[
+        test "$do_shconn" != MAYBE && conflict "-S|--no-shell"
+        do_shconn=yes
+       ]],[[
+      -S | --no-shell | --no_shell | --noshell]],[[
+        test "$do_shconn" != MAYBE && conflict "+S|--shell"
+        do_shconn=
+       ]],[[
+      --moo-exec=* | --moo_exec=* | --mooexec=*]],[[
+        moo_exec="$argument"
+       ]],[[
+      -x]],[[
+        test $# -gt 1 || usage "$1: <pathname> missing"
         shift
-        moo_exec="$1"]],
-      [[--lib-path=* | --lib_path=* | --libpath=*]],
-      [[push_lib_path "$argument"]],
-      [[-L]],
-      [[test $# -gt 1 || usage "$1: <pathstring> missing"
+        moo_exec="$1"
+       ]],[[
+      --lib-path=* | --lib_path=* | --libpath=*]],[[
+        push_lib_path "$argument"
+       ]],[[
+      -L]],[[
+        test $# -gt 1 || usage "$1: <pathstring> missing"
         shift
-        push_lib_path "$1"]],
-      [[--db=*]],
-      [[template_db="$argument"]],
-      [[-t]],
-      [[test $# -gt 1 || usage "$1: <template> missing"
+        push_lib_path "$1"
+       ]],[[
+      --db=*]],[[
+        template_db="$argument"
+       ]],[[
+      -t]],[[
+        test $# -gt 1 || usage "$1: <template> missing"
         shift
-        template_db="$1"]],
-      [[--dbfile=*]],
-      [[file_db="$argument"]],
-      [[-d]],
-      [[test $# -gt 1 || usage "$1: <basename> missing"
+        template_db="$1"
+       ]],[[
+      --dbfile=*]],[[
+        file_db="$argument"
+       ]],[[
+      -d]],[[
+        test $# -gt 1 || usage "$1: <basename> missing"
         shift
-        file_db="$1"]],
-      [[--address=*]],
-      [[moo_ip="$argument"]],
-      [[-b]],
-      [[test $# -gt 1 || usage "$1: <ip> missing"
+        file_db="$1"
+       ]],[[
+      --address=*]],[[
+        moo_ip="$argument"
+       ]],[[
+      -b]],[[
+        test $# -gt 1 || usage "$1: <ip> missing"
         shift
-        moo_ip="$1"]],
-      [[--no-shell-port | --no_shell_port | --noshellport]],
-      [[shell_port=]],
-      [[--shell-port=* | --shell_port=* | --shellport=*]],
-      [[shell_port="$argument"]],
-      [[--listen=*]],
-      [[push_moo_listeners "$argument"]],
-      [[-p]],
-      [[test $# -gt 1 || usage "$1: <port>[,<listener>] missing"
+        moo_ip="$1"
+       ]],[[
+      --no-shell-port | --no_shell_port | --noshellport]],[[
+        shell_port=
+       ]],[[
+      --shell-port=* | --shell_port=* | --shellport=*]],[[
+        shell_port="$argument"
+       ]],[[
+      --listen=*]],[[
+        push_moo_listeners "$argument"
+       ]],[[
+      -p]],[[
+        test $# -gt 1 || usage "$1: <port>[,<listener>] missing"
         shift
-        push_moo_listeners "$1"]],
-      [[+P | --player]],
-      [[do_player=yes]],
-      [[-P | --no-player | --no_player | --noplayer]],
-      [[do_player=]],
-      [[--]],
-      [[moo_args=
+        push_moo_listeners "$1"
+       ]],[[
+      +P | --player]],[[
+        do_player=yes
+       ]],[[
+      -P | --no-player | --no_player | --noplayer]],[[
+        do_player=
+       ]],[[
+      --]],[[
+        moo_args=
         shift
         while test "$#" -gt 0; do
           test "$moo_args" && moo_args="$moo_args,"
@@ -925,49 +979,67 @@ while test "$#" -gt 0 ; do
           shift
         done
         set --
-        break;]],
-      [[--expr=*]],
-      [[push_code expr "$argument"]],
-      [[-e]],
-      [[test $# -gt 1 || usage "$1: <expression> missing"
+        break;
+       ]],[[
+      --expr=*]],[[
+        push_code expr "$argument"
+       ]],[[
+      -e]],[[
+        test $# -gt 1 || usage "$1: <expression> missing"
         shift
-        push_code expr "$1"]],
-      [[--code-file=* | --code_file=* | --codefile=*]],
-      [[push_code file "$argument"]],
-      [[-f]],
-      [[test $# -gt 1 || usage "$1: <filename> missing"
+        push_code expr "$1"
+       ]],[[
+      --code-file=* | --code_file=* | --codefile=*]],[[
+        push_code file "$argument"
+       ]],[[
+      -f]],[[
+        test $# -gt 1 || usage "$1: <filename> missing"
         shift
-        push_code file "$1"]],
-      [[+H | --shutdown]],
-      [[do_shutdown=yes]],
-      [[-H | --no-shutdown | --no_shutdown | --noshutdown]],
-      [[do_shutdown=]],
-      [[--no-out-db | --no_out_db | --nooutdb]],
-      [[final_db=]],
-      [[--out-db=* | --out_db=* | --outdb=*]],
-      [[final_db="$argument"]],
-      [[-o]],
-      [[test $# -gt 1 || usage "$1: <basename> missing"
+        push_code file "$1"
+       ]],[[
+      +H | --shutdown]],[[
+        do_shutdown=yes
+       ]],[[
+      -H | --no-shutdown | --no_shutdown | --noshutdown]],[[
+        do_shutdown=
+       ]],[[
+      --no-out-db | --no_out_db | --nooutdb]],[[
+        final_db=
+       ]],[[
+      --out-db=* | --out_db=* | --outdb=*]],[[
+        final_db="$argument"
+       ]],[[
+      -o]],[[
+        test $# -gt 1 || usage "$1: <basename> missing"
         shift
-        final_db="$1"]],
-      [[--no-log | --no_log | --nolog]],
-      [[final_log=]],
-      [[--log=*]],
-      [[final_log="$argument"]],
-      [[-l]],
-      [[test $# -gt 1 || usage "$1: <filename> missing"
+        final_db="$1"
+       ]],[[
+      --no-log | --no_log | --nolog]],[[
+        final_log=
+       ]],[[
+      --log=*]],[[
+        final_log="$argument"
+       ]],[[
+      -l]],[[
+        test $# -gt 1 || usage "$1: <filename> missing"
         shift
-        final_log="$1"]],
-      [[-v | +v | --verbose]],
-      [[arg_count=$((arg_count-1))
-        do_verbose=yes]],
-      [[-n | +n | --dry-run | --dry_run | --dryrun]],
-      [[do_dryrun=yes]],
-      [[-h | +h | -[?] | --help]],
-      [[do_help=yes]],
-      [[-V | +V | --version | --about]],
-      [[do_version=yes]],
-      [[usage "unrecognized option:  '$1'" :]])[
+        final_log="$1"
+       ]],[[
+      -v | +v | --verbose]],[[
+        arg_count=$((arg_count-1))
+        do_verbose=yes
+       ]],[[
+      -n | +n | --dry-run | --dry_run | --dryrun]],[[
+        do_dryrun=yes
+       ]],[[
+      -h | +h | -[?] | --help]],[[
+        do_help=yes
+       ]],[[
+      -V | +V | --version | --about]],[[
+        do_version=yes
+      ]],[[
+        usage "unrecognized option:  '$1'" :
+      ]])[
     shift
 done
 
@@ -987,14 +1059,13 @@ fi
 # Flags that can be MAYBE at this point:
 #   do_shutdown, do_runmoo, do_shconn, shell_port, do_player
 ]
-AS_CASE(
-  [[$template_db]],
-  [[Raw*]],
-  [[if test "$do_shconn" = MAYBE && test "$shell_port" = MAYBE ; then
-      do_shconn=
-      shell_port=
+AS_CASE([[$template_db]],[[
+  Raw*]],[[
+    if test "$do_shconn" = MAYBE && test "$shell_port" = MAYBE ; then
+        do_shconn=
+        shell_port=
     fi
-   ]])[
+  ]])[
 
 # set do_runmoo, infer from --dbfile or --db
 #
