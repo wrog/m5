@@ -21,7 +21,7 @@ ENDLEGAL
 ]) || { AS_ECHO(["failed to create doom.in"]); AS_EXIT; }
 m4_pushdef([AS_MESSAGE_LOG_FD],[2])dnl
 cat >> scripts/doom.in <<\__EOF__
-m4_include([scripts/doom.m4])
+m4_include([scripts/doom.m4])dnl
 __EOF__
 m4_popdef([AS_MESSAGE_LOG_FD],[AS_MESSAGE_FD])
 ])dnl -- end of AC_CONFIG_COMMANDS

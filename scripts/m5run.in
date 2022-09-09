@@ -56,6 +56,24 @@ as_nl='
 # splitting by setting IFS to empty value.)
 IFS=" ""	$as_nl"
 
+# as_fn_set_status STATUS
+# -----------------------
+# Set $? to STATUS, without forking.
+as_fn_set_status ()
+{
+  return $1
+} # as_fn_set_status
+
+# as_fn_exit STATUS
+# -----------------
+# Exit the shell with STATUS, even in a "trap 0" or "set -e" context.
+as_fn_exit ()
+{
+  set +e
+  as_fn_set_status $1
+  exit $1
+} # as_fn_exit
+
 # as_fn_arith ARG...
 # ------------------
 # Perform arithmetic evaluation on the ARGs, and store the result in the
@@ -158,10 +176,10 @@ listen_fixed=
 # _listen_$N = listener for listen_fixed[$N]
 # _listen_z$N = $Nth port 0 listener
 
-do_dryrun=
-do_help=
-do_version=
-do_verbose=
+do_dryrun=false
+do_help=false
+do_version=false
+do_verbose=false
 
 cleanup () {
     if test -n "$run_dir" ; then
@@ -181,7 +199,7 @@ die () {
     if test $# -gt 0 ; then
         printf "%s\n" "$@" >&2
     fi
-    exit $s
+    as_fn_exit $s
 }
 
 usage () {
@@ -193,7 +211,7 @@ usage () {
 }
 
 verbose_printf () {
-    if test "$do_verbose"; then
+    if $do_verbose ; then
         printf "$@" 1>&2
     fi
 }
@@ -368,7 +386,7 @@ db_middle () {
                 printf ";\n"
                 ;; #(
             stdin) :
-                if test "$do_dryrun" ; then :
+                if $do_dryrun ; then :
                     printf "\n<< code from standard input >>\n"
                 else
                     cat <&5
@@ -742,20 +760,25 @@ cmd_WORDS () {
 #### informational ##################
 
 version_message() {
-    cat <<EOF
+    if $do_verbose ; then
+        m5_version_major=`expr "X$m5_version" : 'X\([^.]*\)'`
+        m5_version_minor=`expr "X$m5_version" : 'X[^.]*[.]\([^.]*\)'`
+        cat <<EOF
 This is M5, version ${m5_version_major}, subversion ${m5_version_minor} (v$m5_version)
 
 $m5_legal_msg
 
 Complete documentation for M5 is available at https://ipomoea.org/moo/m5
-
 EOF
+    else
+        printf "M5 version %s\n" "$m5_version"
+    fi
 }
 
 help_message () {
     cat <<EOF
 Usage:
-  $0 [options] [-- args...]
+  $as_me [options] [-- args...]
 
 Top-level options:
   +M, -M, --(no-)moo                run a moo server instance [+M=yes]
@@ -800,13 +823,10 @@ describe_for_dryrun () {
     # local v e z
 
     printf "M5 Version:  %s\n" "$m5_version"
-    test "$do_verbose" && printf "  being verbose (-v|--verbose)\n"
-    test "$do_help" && {
-        printf "  print helptext (-h|--help)\n" ; exit
-    }
-    test "$do_version" && {
-        printf "  print version  (-V|--version)\n" ; exit ;
-    }
+    $do_verbose && printf "  be verbose (-v|--verbose)\n"
+    $do_help    && printf "  print helptext (-h|--help)\n"
+    $do_version && printf "  print version  (-V|--version)\n"
+
     printf "\nSome Environment:\n"
     for e in HOME INSIDE_EMACS TERM PWD SHELL PATH M5MOOEXEC M5LIBPATH; do
         eval v=\$$e
@@ -815,6 +835,9 @@ describe_for_dryrun () {
         fi
     done
     printf "\nM5 Library path:  %s\n" "$lib_path"
+    if $do_help || $do_version ; then
+        return
+    fi
     if test -z "$do_runmoo"; then
         printf "\nNOT running a MOO server (-M|--no-moo)\n"
     else
@@ -918,7 +941,7 @@ describe_for_dryrun () {
         printf "\nNOT connecting a shell redirector (-S|--no-shell)\n"
     fi
     printf "\n"
-    if test "$template_db" && test "$do_verbose" ; then :
+    if test "$template_db" && $do_verbose ; then :
         printf "Code being inserted in first verb:\n  "
         db_middle
     fi
@@ -1054,7 +1077,7 @@ conflict () {
 arg_count=0
 
 while test "$#" -gt 0 ; do
-    arg_count=$((arg_count+1))
+    as_fn_arith $arg_count \+ 1 && arg_count=$as_val
     conflicts="$1"
     case $1 in #(
         --*=?*) :
@@ -1090,9 +1113,11 @@ while test "$#" -gt 0 ; do
             moo_exec="$1"
             ;; #(
         --lib-path=* | --lib_path=* | --libpath=*) :
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
             push_lib_path "$argument"
             ;; #(
         -L) :
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
             test $# -gt 1 || usage "$1: <pathstring> missing"
             shift
             push_lib_path "$1"
@@ -1198,17 +1223,25 @@ while test "$#" -gt 0 ; do
             final_log="$1"
             ;; #(
         -v | +v | --verbose) :
-            arg_count=$((arg_count-1))
-            do_verbose=yes
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
+            do_verbose=:
             ;; #(
         -n | +n | --dry-run | --dry_run | --dryrun) :
-            do_dryrun=yes
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
+            do_dryrun=:
             ;; #(
         -h | +h | -[?] | --help) :
-            do_help=yes
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
+            do_help=:
             ;; #(
-        -V | +V | --version | --about) :
-            do_version=yes
+        -V | +V | --version) :
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
+            do_version=:
+            ;; #(
+        --about) :
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
+            do_version=:
+            do_verbose=:
             ;; #(
         *) :
             usage "unrecognized option:  '$1'" :
@@ -1217,17 +1250,26 @@ while test "$#" -gt 0 ; do
     shift
 done
 
-if test "$do_version" ; then
-    version_message
-    exit 0;
+if $do_dryrun && { $do_help || $do_version ; } ; then
+    describe_for_dryrun
+    if test "$arg_count" -gt 0 ; then
+        printf "\n(leave out --version,-V,--help,-h,--about\n"
+        printf " to see what remaining options are doing)\n"
+    fi
+    as_fn_exit 0
 fi
 
-if test "$do_help" || test "$arg_count" -eq 0; then
-    if test "$do_verbose"; then
+if $do_version ; then
+    version_message
+    as_fn_exit 0
+fi
+
+if $do_help; then
+    if $do_verbose ; then
         version_message
     fi
     help_message
-    exit 0;
+    as_fn_exit 0
 fi
 
 # Flags that can be MAYBE at this point:
@@ -1409,9 +1451,9 @@ if test "$do_player" ; then
     test "$final_db" = "-" && conflict "-o|--out-db= standard output"
 fi
 
-if test "$do_dryrun"; then
+if $do_dryrun ; then
     describe_for_dryrun
-    exit 0;
+    as_fn_exit 0
 fi
 
 #### Actually Do Things
@@ -1441,4 +1483,4 @@ if test "$do_runmoo"; then
     # printf "%s\n" '|>> waiting for moo <<|' >&2
     wait
 fi
-exit 0
+as_fn_exit 0

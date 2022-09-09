@@ -97,10 +97,10 @@ m4_define([M5_FOREACH_LISTENER],[[
     done
 ]])dnl
 [
-do_dryrun=
-do_help=
-do_version=
-do_verbose=
+do_dryrun=false
+do_help=false
+do_version=false
+do_verbose=false
 
 cleanup () {
     if test -n "$run_dir" ; then
@@ -119,8 +119,8 @@ die () {
     test $s -eq 0 && s=1
     if test $# -gt 0 ; then
         printf "%s\n" "$@" >&2
-    fi
-    exit $s
+    fi]
+    AS_EXIT([[$s]])[
 }
 
 usage () {
@@ -132,7 +132,7 @@ usage () {
 }
 
 verbose_printf () {
-    if test "$do_verbose"; then
+    if $do_verbose ; then
         printf "$@" 1>&2
     fi
 }
@@ -261,7 +261,7 @@ db_middle () {
         cat "$code_source"
         printf ";\n"
       ]],[
-        AS_IF([[test "$do_dryrun"]],[[
+        AS_IF([[$do_dryrun]],[[
             printf "\n<< code from standard input >>\n"
         ]],[[
             cat <&5
@@ -611,14 +611,19 @@ cmd_WORDS () {
 #### informational ##################
 
 version_message() {
-    cat <<EOF
+    if $do_verbose ; then
+        m5_version_major=`expr "X$m5_version" : 'X\([^.]*\)'`
+        m5_version_minor=`expr "X$m5_version" : 'X[^.]*[.]\([^.]*\)'`
+        cat <<EOF
 This is M5, version ${m5_version_major}, subversion ${m5_version_minor} (v$m5_version)
 
 $m5_legal_msg
 
 Complete documentation for M5 is available at https://ipomoea.org/moo/m5
-
 EOF
+    else
+        printf "M5 version %s\n" "$m5_version"
+    fi
 }]
 m4_rename([AS_HELP_STRING],[_M5_prev_HS])dnl
 m4_define([AS_HELP_STRING],[_M5_prev_HS([$1],[$2],[36])])dnl
@@ -626,7 +631,7 @@ m4_define([AS_HELP_STRING],[_M5_prev_HS([$1],[$2],[36])])dnl
 help_message () {
     cat <<EOF
 Usage:
-  $0 [options] [-- args...]
+  $as_me [options] [-- args...]
 
 Top-level options:]
 AS_HELP_STRING([[+M, -M, --(no-)moo]],[run a moo server instance [+M=yes]])
@@ -675,13 +680,10 @@ describe_for_dryrun () {
     # local v e z
 
     printf "M5 Version:  %s\n" "$m5_version"
-    test "$do_verbose" && printf "  being verbose (-v|--verbose)\n"
-    test "$do_help" && {
-        printf "  print helptext (-h|--help)\n" ; exit
-    }
-    test "$do_version" && {
-        printf "  print version  (-V|--version)\n" ; exit ;
-    }
+    $do_verbose && printf "  be verbose (-v|--verbose)\n"
+    $do_help    && printf "  print helptext (-h|--help)\n"
+    $do_version && printf "  print version  (-V|--version)\n"
+
     printf "\nSome Environment:\n"
     for e in HOME INSIDE_EMACS TERM PWD SHELL PATH M5MOOEXEC M5LIBPATH; do]
         AS_VAR_COPY([[v]],[[$e]])[
@@ -690,6 +692,9 @@ describe_for_dryrun () {
         fi
     done
     printf "\nM5 Library path:  %s\n" "$lib_path"
+    if $do_help || $do_version ; then
+        return
+    fi
     if test -z "$do_runmoo"; then
         printf "\nNOT running a MOO server (-M|--no-moo)\n"
     else
@@ -759,7 +764,7 @@ describe_for_dryrun () {
         printf "\nNOT connecting a shell redirector (-S|--no-shell)\n"
     fi
     printf "\n"]
-    AS_IF([[test "$template_db" && test "$do_verbose"]],[[
+    AS_IF([[test "$template_db" && $do_verbose]],[[
         printf "Code being inserted in first verb:\n  "
           db_middle
     ]])[
@@ -888,8 +893,8 @@ conflict () {
 
 arg_count=0
 
-while test "$#" -gt 0 ; do
-    arg_count=$((arg_count+1))
+while test "$#" -gt 0 ; do]
+    M5_VAR_INCR([[arg_count]])[
     conflicts="$1"]
     AS_CASE([[$1]],[[
       --*=?*]],[[
@@ -922,10 +927,12 @@ while test "$#" -gt 0 ; do
         shift
         moo_exec="$1"
        ]],[[
-      --lib-path=* | --lib_path=* | --libpath=*]],[[
+      --lib-path=* | --lib_path=* | --libpath=*]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
         push_lib_path "$argument"
        ]],[[
-      -L]],[[
+      -L]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
         test $# -gt 1 || usage "$1: <pathstring> missing"
         shift
         push_lib_path "$1"
@@ -1030,35 +1037,52 @@ while test "$#" -gt 0 ; do
         shift
         final_log="$1"
        ]],[[
-      -v | +v | --verbose]],[[
-        arg_count=$((arg_count-1))
-        do_verbose=yes
+      -v | +v | --verbose]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
+        do_verbose=:
        ]],[[
-      -n | +n | --dry-run | --dry_run | --dryrun]],[[
-        do_dryrun=yes
+      -n | +n | --dry-run | --dry_run | --dryrun]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
+        do_dryrun=:
        ]],[[
-      -h | +h | -[?] | --help]],[[
-        do_help=yes
+      -h | +h | -[?] | --help]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
+        do_help=:
        ]],[[
-      -V | +V | --version | --about]],[[
-        do_version=yes
+      -V | +V | --version]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
+        do_version=:
+       ]],[[
+      --about]],[
+        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
+        do_version=:
+        do_verbose=:
       ]],[[
         usage "unrecognized option:  '$1'" :
       ]])[
     shift
 done
 
-if test "$do_version" ; then
-    version_message
-    exit 0;
+if $do_dryrun && { $do_help || $do_version ; } ; then
+    describe_for_dryrun]
+    if test "$arg_count" -gt 0 ; then
+        printf "\n(leave out --version,-V,--help,-h,--about\n"
+        printf " to see what remaining options are doing)\n"
+    fi
+    AS_EXIT(0)[
 fi
 
-if test "$do_help" || test "$arg_count" -eq 0; then
-    if test "$do_verbose"; then
+if $do_version ; then
+    version_message]
+    AS_EXIT(0)[
+fi
+
+if $do_help; then
+    if $do_verbose ; then
         version_message
     fi
-    help_message
-    exit 0;
+    help_message]
+    AS_EXIT(0)[
 fi
 
 # Flags that can be MAYBE at this point:
@@ -1228,9 +1252,9 @@ if test "$do_player" ; then
     test "$final_db" = "-" && conflict "-o|--out-db= standard output"
 fi
 
-if test "$do_dryrun"; then
-    describe_for_dryrun
-    exit 0;
+if $do_dryrun ; then
+    describe_for_dryrun]
+    AS_EXIT(0)[
 fi
 
 #### Actually Do Things
@@ -1259,6 +1283,5 @@ fi
 if test "$do_runmoo"; then
     # printf "%s\n" '|>> waiting for moo <<|' >&2
     wait
-fi
-exit 0
-]
+fi]
+AS_EXIT(0)
