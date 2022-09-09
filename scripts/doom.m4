@@ -27,11 +27,39 @@ final_db=
 final_log=
 do_shutdown=MAYBE
 
-do_stdin_code=
+do_stdin_code=false
 code_count=0
-# _code_what$N = file|expr
-# _code_source$N = filename|expression
-
+# _code_what$N = 'file'|'stdin'|'expr'
+# _code_source$N = actual filename or expression
+]dnl
+m4_define([M5_VAR_INCR],
+  [AS_VAR_ARITH([$1],[[$]$1[ \+ 1]])])dnl
+dnl
+dnl M5_PUSH_CODE([WHAT],[SOURCE])
+dnl   add a new code source
+dnl     WHAT='file'|'stdin'|'expr
+dnl     SOURCE=filename or expression
+dnl
+m4_define([M5_PUSH_CODE],[
+    M5_VAR_INCR([[code_count]])
+    AS_VAR_SET([[_code_what${code_count}]],[$1])
+    AS_VAR_SET([[_code_source${code_count}]],[$2])])dnl
+dnl
+dnl M5_FOREACH_CODE([IF-FILE],[IF-STDIN],[IF-EXPR])
+dnl   iterate over code options, provide
+dnl     $$code_this = $code_source = filename or expression
+dnl
+m4_define([M5_FOREACH_CODE],[[
+    z=1
+    while test "$z" -le "$code_count"  ; do
+        code_this="_code_source$z"]
+        AS_VAR_COPY([[code_source]],[[$code_this]])
+        AS_VAR_COPY([[w]],[[_code_what$z]])
+        AS_CASE([[$w]],[[file]],[$1],[[stdin]],[$2],[[expr]],[$3])
+        M5_VAR_INCR([[z]])[
+    done
+]])dnl
+[
 do_runmoo=MAYBE
 do_shconn=MAYBE
 shell_port=MAYBE
@@ -41,7 +69,34 @@ listen_zcount=0
 listen_fixed=
 # _listen_$N = listener for listen_fixed[$N]
 # _listen_z$N = $Nth port 0 listener
-
+]dnl
+dnl  M5_FOREACH_LISTENER
+dnl    iterate over listeners, provide
+dnl      $port = port number
+dnl      $lname = listener obj(s)
+dnl      $is_shell_port :/false
+dnl
+m4_define([M5_FOREACH_LISTENER],[[
+    for port in $listen_fixed; do]
+        AS_VAR_COPY([[lname]],[[_listen_$port]])[
+        is_shell_port=false
+        test "$shell_port" && test "$shell_port" -eq "$port" &&
+            is_shell_port=:
+        ]$1[
+    done
+    port=0
+    z=1
+    while test "$z" -le "$listen_zcount"; do]
+        AS_VAR_COPY([[lname]],[[_listen_z$z]])[
+        is_shell_port=false
+        test "$shell_port" && test "$shell_port" -eq "$port" &&
+            test "$shell_listener" = "$lname" &&
+            is_shell_port=:
+        ]$1
+        M5_VAR_INCR([[z]])[
+    done
+]])dnl
+[
 do_dryrun=
 do_help=
 do_version=
@@ -181,37 +236,19 @@ db_middle () {
     if test "$moo_port" ; then
         printf "$moo_port,"'"#0"'
         comma=:
-    fi
-    if test "$listen_fixed" || test "$listen_zcount" -gt 0; then
-        for z in $listen_fixed; do
-            lname="$(eval printf "%s" '"$'"_listen_$z"'"')"
-            $comma && printf ','
-            if test "$shell_port" && test "$shell_port" -eq "$z"; then
-                printf 'shell_port='
-            fi
-            printf 'listen('
-            for l in $lname ; do
-                printf '`{%s,o="%s"}[1]!ANY=>1'"' &&" $l $l
-            done
-            printf '%s' "raise(E_PROPNF),$z,1),o"
-            comma=:
+    fi]
+    M5_FOREACH_LISTENER([[
+        $comma && printf ','
+        if $is_shell_port ; then
+            printf 'shell_port='
+        fi
+        printf 'listen('
+        for l in $lname ; do
+            printf '`{%s,o="%s"}[1]!ANY=>1'"' &&" $l $l
         done
-        z=1
-        while test "$z" -le "$listen_zcount"; do
-            lname="$(eval printf "%s" '"$'"_listen_z$z"'"')"
-            $comma && printf ','
-            if test "$shell_port" && test "$shell_listener" = "$lname" && test "$shell_port" -eq 0 ; then
-                printf 'shell_port='
-            fi
-            printf 'listen('
-            for l in $lname ; do
-                printf '`{%s,o="%s"}[1]!ANY=>1'"' &&" $l $l
-            done
-            printf '%s' 'raise(E_PROPNF),0,1),o'
-            comma=:
-            z=$((z+1))
-        done
-    fi
+        printf '%s' "raise(E_PROPNF),$port,1),o"
+        comma=:
+    ]])[
     printf '};run_info[$+1..$]={"listeners",listeners,@shell_port?{"shell_port",shell_port}|{}};'
     printf 'server_log(tostr("ri ",toliteral(run_info)));'
     printf 'if(shell_port)server_log(tostr("shellport ",shell_port));endif '
@@ -219,27 +256,20 @@ db_middle () {
     printf 'except (ANY)`boot_player(player)!ANY'"'"';shutdown();endtry '
     test -n "$do_shutdown" &&
         printf 'try '
-    printf 'args = {%s};' "$moo_args"
-    z=1
-    while test "$z" -le "$code_count"  ; do
-        eval w='"$'"_code_what$z"'"'
-        eval v='"$'"_code_source$z"'"']
-        AS_CASE([[$w]],[[
-          expr]],[[
-            printf "%s" "$v"]],[[
-          file]],[[
-            if test "$v" != "-"; then
-                cat "$v"
-            elif test "$do_dryrun" ; then
-                printf "\n<< code from standard input >>\n"
-            else
-                cat <&5
-                exec 5>&-
-            fi
-          ]])[
-        z=$((z+1))
+    printf 'args = {%s};' "$moo_args"]
+    M5_FOREACH_CODE([[
+        cat "$code_source"
         printf ";\n"
-    done
+      ]],[
+        AS_IF([[test "$do_dryrun"]],[[
+            printf "\n<< code from standard input >>\n"
+        ]],[[
+            cat <&5
+            exec 5>&-
+            printf ";\n"
+      ]])],[[
+        printf "%s\n" "$code_source;"
+      ]])[
     test -n "$do_shutdown" &&
         printf "%s\n" 'finally`boot_player(player)!ANY'"'"';shutdown();endtry '
     printf "\n"
@@ -321,7 +351,7 @@ run_moo () {
     elif test -n "$template_db" ; then
         if $can_dev_stdin ; then
             in_db="/dev/stdin"
-            if test "$do_stdin_code" ; then
+            if $do_stdin_code ; then
                 { cat_db | logged_moo & } 5<&0 0<&-
                 exec 5>&-
             else
@@ -330,7 +360,7 @@ run_moo () {
         else
             in_db="${run_dir}/pipe_d"
             mkfifo -m600 "$in_db" || die
-            if test "$do_stdin_code" ; then
+            if $do_stdin_code ; then
                 { { cat_db >"$in_db" ; rm -f "$in_db" ; } & } 5<&0 0<&-
                 exec 5>&-
             else
@@ -647,14 +677,14 @@ describe_for_dryrun () {
     printf "M5 Version:  %s\n" "$m5_version"
     test "$do_verbose" && printf "  being verbose (-v|--verbose)\n"
     test "$do_help" && {
-        printf "  (print helptext (-h|--help)\n" ; exit
+        printf "  print helptext (-h|--help)\n" ; exit
     }
     test "$do_version" && {
-        printf "  (print version  (-V|--version)\n" ; exit ;
+        printf "  print version  (-V|--version)\n" ; exit ;
     }
     printf "\nSome Environment:\n"
-    for e in HOME INSIDE_EMACS TERM PWD SHELL PATH M5MOOEXEC M5LIBPATH; do
-        v="$(v='$'"$e" ; eval "printf \"%s\" $v")"
+    for e in HOME INSIDE_EMACS TERM PWD SHELL PATH M5MOOEXEC M5LIBPATH; do]
+        AS_VAR_COPY([[v]],[[$e]])[
         if test "$v"; then
             printf "  %s=%s\n" "$e" "$v"
         fi
@@ -696,44 +726,26 @@ describe_for_dryrun () {
             fi
         elif test "$template_db"; then
             printf "\nTemplate database (-t|--db):\n  %s.{top,bot}\n" "$template_db"
-            if test "$listen_fixed" || test "$listen_zcount" -gt 0; then
-                printf "  other listeners (-p|--listen):\n"
-                for z in $listen_fixed; do
-                    lname="$(eval printf "%s" '"$'"_listen_$z"'"')"
-                    if test "$shell_port" && test "$shell_port" -eq "$z"; then
-                        lname="$lname  (shell listener port)"
-                    fi
-                    printf "    %d -> %s\n" "$z" "$lname";
-                done ;
-                z=1
-                while test "$z" -le "$listen_zcount"; do
-                    lname="$(eval printf "%s" '"$'"_listen_z$z"'"')"
-                    if test "$shell_port" && test "$shell_listener" = "$lname" && test "$shell_port" -eq 0 ; then
-                        lname="$lname  (shell listener port)"
-                    fi
-                    printf "    0 -> %s\n" "$lname"
-                    z=$((z+1))
-                done
-            fi
+            is_first=:]
+            M5_FOREACH_LISTENER([[
+                if $is_first ; then
+                    printf "  other listeners (-p|--listen):\n"
+                    is_first=false
+                fi
+                if $is_shell_port ; then
+                    lname="$lname  (shell listener port)"
+                fi
+                printf "    %d -> %s\n" "$port" "$lname"
+            ]])[
             test "$do_player"   && printf "  (+P) adding fake 'player'\n"
-            printf "  args = {%s}\n" "$moo_args"
-            z=1
-            while test "$z" -le "$code_count"  ; do
-                eval w='"$'"_code_what$z"'"'
-                eval v='"$'"_code_source$z"'"']
-                AS_CASE([[$w]],[[
-                  expr]],[[
-                    printf "  (-e) --expr= %s\n" "$v"
-                   ]],[[
-                  file]],[[
-                    if test "$v" = "-"; then
-                        printf "  (-f) --code_file will be read from standard input\n"
-                    else
-                        printf "  (-f) --code_file= %s\n" "$v"
-                    fi
-                  ]])[
-                z=$((z+1))
-            done
+            printf "  args = {%s}\n" "$moo_args"]
+            M5_FOREACH_CODE([[
+                printf "  (-f) --code_file= %s\n" "$code_source"
+            ]],[[
+                printf "  (-f) --code_file will be read from standard input\n"
+            ]],[[
+                printf "  (-e) --expr= %s\n" "$code_source"
+            ]])[
             test "$do_shutdown" && printf "  (+H) adding shutdown()\n"
         fi
     fi
@@ -793,22 +805,16 @@ push_moo_listeners () {
         lname="#0"
       ]])[
 
-    # TODO: convert to M4SH indirect variables
     if test "$lname" = "#0" && test -z "$moo_port"; then
         moo_port="$port"
-    elif test "$port" -eq 0; then
-        listen_zcount=$((listen_zcount+1))
-        eval "_listen_z${listen_zcount}"='"$lname"'
+    elif test "$port" -eq 0; then]
+        M5_VAR_INCR([[listen_zcount]])
+        AS_VAR_SET([[_listen_z${listen_zcount}]],[["$lname"]])[
+    elif] AS_VAR_TEST_SET([[_listen_$port]])[ ; then
+        usage "--listen|-p:  multiple listeners at $port" ; return
     else
-        if test "$(eval printf "%s" '$'"_listen_$port")"; then
-            usage "--listen|-p:  multiple listeners at $port" ; return
-        fi
-        eval "_listen_$port"='"$lname"'
-        if test -z "$listen_fixed"; then
-            listen_fixed="$port"
-        else
-            listen_fixed="$listen_fixed $port"
-        fi
+        listen_fixed="$listen_fixed $port"]
+        AS_VAR_SET([[_listen_$port]],[["$lname"]])[
     fi
 }
 
@@ -862,16 +868,15 @@ push_lib_path () {
 }
 
 push_code () {
-    code_count=$((code_count+1))
     if test "$1" = 'file' && test "$2" = '-' ; then
-        if test "$do_stdin_code" ; then
-            usage "only one -f|--code-file can be standard input"
-        else
-            do_stdin_code="$code_count"
-        fi
-    fi
-    eval "_code_what${code_count}="'"$'1'"'
-    eval "_code_source${code_count}="'"$'2'"'
+        $do_stdin_code &&
+          usage "only one -f|--code-file can be standard input"
+        do_stdin_code=:
+        w=stdin
+    else
+        w="$1"
+    fi]
+    M5_PUSH_CODE([["$w"]],[["$2"]])[
 }
 
 conflicts=
@@ -1172,10 +1177,10 @@ elif test "$template_db" ; then
             do_player=yes
         fi
     fi
-
+    ]
     # add shell port to listeners if not there already
     #
-    lname="$(eval printf "%s" '$'"_listen_${shell_port}")"
+    AS_VAR_COPY([[lname]],[[_listen_${shell_port}]])[
     if test "$shell_port" && test "$shell_port" -gt 0 && test "$lname"; then
         shell_listener="$lname"
     elif test "$shell_port"; then
@@ -1192,17 +1197,11 @@ elif test "$template_db" ; then
     fi
 
     # resolve filenames
-    z=1
-    while test "$z" -le "$code_count"  ; do
-        eval w='"$'"_code_what$z"'"'
-        eval v='"$'"_code_source$z"'"'
-        if test "$w" = 'file' && test "$v" != '-' ; then
-            lib_find "$v" '.m5 .moo' ||
-                die "-f|--code-file not found: $v"
-            eval "_code_source${z}="'"$'full'"'
-        fi
-        z=$((z+1))
-    done
+    ]
+    M5_FOREACH_CODE([[
+        lib_find "$code_source" '.m5 .moo' ||
+            die "-f|--code-file not found: $code_source"]
+        AS_VAR_SET([[$code_this]],[["$full"]])],[],[])[
     lib_template_find "$template_db" ||
         die "-t|--db not found: $template_db"
     template_db="$full"
