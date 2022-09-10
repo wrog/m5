@@ -140,7 +140,7 @@ verbose_printf () {
 }
 
 gen_auth_code () {
-    auth_code=$(dd if=/dev/urandom count=1 ibs=28 status=none | shasum -b -a 224) || die;
+    auth_code=$(dd if=/dev/urandom count=1 ibs=28 status=none | shasum -b -a 224) || die
     auth_code=`expr "X$auth_code" : 'X\([^ ]*\)'`
 }
 
@@ -165,7 +165,7 @@ lib_find () {
         AS_CASE([[$base]],[[
           *$ext]],[[
             exts=
-            break;
+            break
           ]])[
     done]
     AS_CASE([[$base]],[[
@@ -190,13 +190,13 @@ lib_find () {
                     test -r "$full" || die "not readable: $full"
                     break 2
                 fi
-            done;
+            done
             full=
         done
         IFS=$save_IFS
       ]])[
-    test "$full" || return 1;
-    return 0;
+    test "$full" || return 1
+    return 0
 }
 
 lib_template_find () {]
@@ -212,7 +212,7 @@ lib_template_find () {]
     if test ! -f "$full.bot" || test ! -r "$full.bot" ; then
         die "file not found: $full.bot"
     fi
-    return 0;
+    return 0
 }
 
 db_middle () {
@@ -379,7 +379,7 @@ wait_error=
 
 wait_log () {
     # local toss fst snd thd goal
-    test "$moo_log_pipe" || return 0;
+    test "$moo_log_pipe" || return 0
     if $do_shconn ; then
         goal="shellport"
     elif $do_player ; then
@@ -434,7 +434,7 @@ wait_log () {
                ]],[[
               SHUTDOWN:]],[[
                 if test "$goal" = "$fst"; then
-                    goal= ;
+                    goal=
                 fi
                 wait_error="premature shutdown"
                 break
@@ -443,8 +443,8 @@ wait_log () {
         { cat - >/dev/null 0<&5 5<&- & } 5<&0
         exec 5>&-
     } <"$moo_log_pipe"
-    test "$goal" && return 1;
-    return 0;
+    test "$goal" && return 1
+    return 0
 }
 
 sh_connect () {
@@ -664,7 +664,8 @@ AS_HELP_STRING([[-l, --(no-)log=<filename>]],[retain moo server log file [no]])
 AS_HELP_STRING([[-v, +v, --verbose]],[be extra chatty on stderr])
 AS_HELP_STRING([[-n, +n, --dry-run]],[validate command line and exit])
 AS_HELP_STRING([[-h, +h, -?, --help]],[print this text and exit])
-AS_HELP_STRING([[-V, +V, --version, --about]],[print version info and exit])
+AS_HELP_STRING([[-V, +V, --version]],[print version info and exit])
+AS_HELP_STRING([[    --about]],[print detailed version info and exit])
 
 [ short options cannot be combined, parameters are required]
 
@@ -886,7 +887,7 @@ push_code () {
 
 conflicts=
 conflict () {
-    usage "conflicting options:  $conflicts vs. $1";
+    usage "conflicting options:  $conflicts vs. $1"
 }
 
 #### Gather command line args
@@ -987,7 +988,7 @@ while test "$#" -gt 0 ; do]
           shift
         done
         set --
-        break;
+        break
        ]],[[
       --expr=*]],[[
         push_code expr "$argument"
@@ -1191,7 +1192,7 @@ if test "$file_db" ; then
 
     # resolve filename
     if test "$file_db" != "-"; then
-        lib_find "$file_db" .db || die "--dbfile|-d not found: $file_db";
+        lib_find "$file_db" .db || die "--dbfile|-d not found: $file_db"
         file_db="$full"
     fi
 
@@ -1243,15 +1244,15 @@ else
     # no moo rules out a whole lot of activities
     conflicts="--no-moo|-M"
 
-    test "$final_log" && conflict "-l|--log";
-    test "$final_db"  && conflict "-o|--out-db";
+    test "$final_log" && conflict "-l|--log"
+    test "$final_db"  && conflict "-o|--out-db"
     if test "$moo_port" || test "$listen_zcount" -gt 0 || test "$listen_fixed"; then
         conflict "-p|--listen"
     fi
     test "$moo_args"    && conflict "-- args..."
-    test "$template_db" && conflict "-t|--db";
-    test "$file_db"     && conflict "-d|--dbfile";
-    test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr";]
+    test "$template_db" && conflict "-t|--db"
+    test "$file_db"     && conflict "-d|--dbfile"
+    test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr"]
     AS_CASE([[$do_shutdown]],[[
       exit*]],[[do_shutdown=false]],[[
       conflict "+H|-H|--(no)-shutdown"]])
