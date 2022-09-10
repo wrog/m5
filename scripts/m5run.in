@@ -16,6 +16,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ENDLEGAL
 )"
 m5_version="@VERSION@"
+prefix="@prefix@"
+bindir="@bindir@"
+pkgdatadir="@pkgdatadir@"
 
 ## ------------------------ ##
 ## Stolen from m4sh AS_INIT ##

@@ -2,8 +2,10 @@ dist_bin_SCRIPTS = m5run doom doom2
 EXTRA_DIST = m5run.in doom.in doom2.in
 
 do_subst = \
-    sed -e 's,[@]datadir[@],$(datadir),g' \
-	-e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
+    sed -e 's,[@]prefix[@],$(prefix),g' \
+        -e 's,[@]bindir[@],$(bindir),g' \
+        -e 's,[@]datadir[@],$(datadir),g' \
+        -e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
         -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
         -e 's,[@]VERSION[@],$(VERSION),g' \
         -e 's,[@]NETCAT[@],$(NETCAT),g' \

@@ -11,6 +11,8 @@ m4_include([../LICENSE])
 ENDLEGAL
 )"
 [m5_version]="@VERSION@"
+[prefix]="@prefix@"
+[bindir]="@bindir@"
 [pkgdatadir]="@pkgdatadir@"
 ])dnl
 AS_ME_PREPARE[]dnl
