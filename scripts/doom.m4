@@ -25,7 +25,6 @@ temp_db=
 ckpt_db=
 final_db=
 final_log=
-do_shutdown=MAYBE
 
 do_stdin_code=false
 code_count=0
@@ -62,9 +61,11 @@ m4_define([M5_FOREACH_CODE],[[
 [
 do_runmoo=MAYBE
 do_shconn=MAYBE
+do_player='exit 68'
+do_shutdown='exit 69'
+
 shell_port=MAYBE
 shell_listener='$shell_listener'
-do_player=MAYBE
 listen_zcount=0
 listen_fixed=
 # _listen_$N = listener for listen_fixed[$N]
@@ -228,7 +229,7 @@ db_middle () {
          test "$shell_port" -eq "$moo_port" ; then
         printf "%s" "shell_port = listeners()[1][2];"
     fi
-    if test "$do_player"; then
+    if $do_player ; then
         printf "%s" 'npl=create(#-1);set_verb_code(npl,add_verb(npl,{#0,"rxd","do_login_command"},{"this","none","this"}),{"if(argstr==\"\")","return;",tostr("elseif(argstr!=\"",auth_code,"\")"),"boot_player(player);return;","endif","port=toint(substitute(\"%1\",match(connection_name(player),\"^port %([0-9]+%)\",1)));","unlisten(port);","for p in(connected_players(1))","if(p!=player)","boot_player(p);","endif","endfor","recycle(this);","reset_max_object();","mx=toobj(toint(this)-1);","while(max_object()<mx)","recycle(create(#-1));","endwhile",tostr("resume(",task_id(),",player);")});pport=listen(npl,0,0);server_log(tostr("playerport ",pport));player=suspend();'
     fi
     comma=false
@@ -254,8 +255,7 @@ db_middle () {
     printf 'if(shell_port)server_log(tostr("shellport ",shell_port));endif '
 
     printf 'except (ANY)`boot_player(player)!ANY'"'"';shutdown();endtry '
-    test -n "$do_shutdown" &&
-        printf 'try '
+    $do_shutdown && printf 'try '
     printf 'args = {%s};' "$moo_args"]
     M5_FOREACH_CODE([[
         cat "$code_source"
@@ -270,7 +270,7 @@ db_middle () {
       ]])],[[
         printf "%s\n" "$code_source;"
       ]])[
-    test -n "$do_shutdown" &&
+    $do_shutdown &&
         printf "%s\n" 'finally`boot_player(player)!ANY'"'"';shutdown();endtry '
     printf "\n"
 }
@@ -381,7 +381,7 @@ wait_log () {
     test "$moo_log_pipe" || return 0;
     if test "$do_shconn"; then
         goal="shellport"
-    elif test "$do_player"; then
+    elif $do_player ; then
         goal="playerport"
     elif test "$moo_port"; then
         goal="LISTEN:"
@@ -742,7 +742,7 @@ describe_for_dryrun () {
                 fi
                 printf "    %d -> %s\n" "$port" "$lname"
             ]])[
-            test "$do_player"   && printf "  (+P) adding fake 'player'\n"
+            $do_player && printf "  (+P) adding fake 'player'\n"
             printf "  args = {%s}\n" "$moo_args"]
             M5_FOREACH_CODE([[
                 printf "  (-f) --code_file= %s\n" "$code_source"
@@ -751,7 +751,7 @@ describe_for_dryrun () {
             ]],[[
                 printf "  (-e) --expr= %s\n" "$code_source"
             ]])[
-            test "$do_shutdown" && printf "  (+H) adding shutdown()\n"
+            $do_shutdown && printf "  (+H) adding shutdown()\n"
         fi
     fi
 
@@ -976,10 +976,10 @@ while test "$#" -gt 0 ; do]
         push_moo_listeners "$1"
        ]],[[
       +P | --player]],[[
-        do_player=yes
+        do_player=:
        ]],[[
       -P | --no-player | --no_player | --noplayer]],[[
-        do_player=
+        do_player=false
        ]],[[
       --]],[[
         moo_args=
@@ -1010,10 +1010,10 @@ while test "$#" -gt 0 ; do]
         push_code file "$1"
        ]],[[
       +H | --shutdown]],[[
-        do_shutdown=yes
+        do_shutdown=:
        ]],[[
       -H | --no-shutdown | --no_shutdown | --noshutdown]],[[
-        do_shutdown=
+        do_shutdown=false
        ]],[[
       --no-out-db | --no_out_db | --nooutdb]],[[
         final_db=
@@ -1085,7 +1085,7 @@ if $do_help; then
     AS_EXIT(0)[
 fi
 
-# Flags that can be MAYBE at this point:
+# Flags that can still be unset at this point:
 #   do_shutdown, do_runmoo, do_shconn, shell_port, do_player
 ]
 AS_CASE([[$template_db]],[[
@@ -1162,11 +1162,14 @@ fi
 # do_shutdown, do_player need to be set
 #
 if test "$file_db" ; then
-    conflicts="-d|--dbfile"
-    test "$do_shutdown" = yes && conflict "+H|--do-shutdown"
-    test "$do_player" = yes   && conflict "+P|--player"
-    do_shutdown=
-    do_player=
+    conflicts="-d|--dbfile"]
+    AS_CASE([[$do_shutdown]],[[
+      :]],[[conflict "+H|--do-shutdown"]],[[
+      do_shutdown=false]])
+    AS_CASE([[$do_player]],[[
+      :]],[[conflict "+P|--player"]],[[
+      do_player=false]])[
+
     test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr"
     test "$moo_args"    && conflict "--"
 
@@ -1185,23 +1188,7 @@ if test "$file_db" ; then
         file_db="$full"
     fi
 
-elif test "$template_db" ; then
-
-    if test "$do_player" = MAYBE ; then
-        if test "$shell_port" ||
-                test "$listen_fixed" ||
-                test "$moo_port" ||
-                test "$listen_zcount" -gt 0 ||
-                test "$final_log" ||
-                test "$final_db" ; then
-            do_player=
-        else
-            # lonely moo detected, send help
-            #
-            do_player=yes
-        fi
-    fi
-    ]
+elif test "$template_db" ; then]
     # add shell port to listeners if not there already
     #
     AS_VAR_COPY([[lname]],[[_listen_${shell_port}]])[
@@ -1209,19 +1196,34 @@ elif test "$template_db" ; then
         shell_listener="$lname"
     elif test "$shell_port"; then
         push_moo_listeners "${shell_port},shell_listener"
-    fi
+    fi]
+
+    AS_CASE([[$do_player]],[[
+      exit*]],[[
+        if test "$shell_port" ||
+                test "$listen_fixed" ||
+                test "$moo_port" ||
+                test "$listen_zcount" -gt 0 ||
+                test "$final_log" ||
+                test "$final_db" ; then
+            do_player=false
+        else
+            # lonely moo detected, send help
+            do_player=:
+        fi
+      ]])
 
     # shutdown if no listeners
-    if test "$do_shutdown" = MAYBE ; then
+    AS_CASE([[$do_shutdown]],[[
+      exit*]],[[
         if test "$moo_port" || test "$listen_fixed" || test "$listen_zcount" -gt 0; then
-            do_shutdown=
+            do_shutdown=false
         else
-            do_shutdown=yes
+            do_shutdown=:
         fi
-    fi
+    ]])
 
     # resolve filenames
-    ]
     M5_FOREACH_CODE([[
         lib_find "$code_source" '.m5 .moo' ||
             die "-f|--code-file not found: $code_source"]
@@ -1242,12 +1244,16 @@ else
     test "$moo_args"    && conflict "-- args..."
     test "$template_db" && conflict "-t|--db";
     test "$file_db"     && conflict "-d|--dbfile";
-    test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr";
-    test "$do_shutdown" != MAYBE  && conflict "+H|-H|--(no)-shutdown";
-    test "$do_player"   != MAYBE  && conflict "+P|-P|--(no)-player";
+    test "$code_count" -gt 0 && conflict "-f|--code-file|-e|--expr";]
+    AS_CASE([[$do_shutdown]],[[
+      exit*]],[[do_shutdown=false]],[[
+      conflict "+H|-H|--(no)-shutdown"]])
+    AS_CASE([[$do_player]],[[
+      exit*]],[[do_player=false]],[[
+      conflict "+P|-P|--(no)-player"]])[
 fi
 
-if test "$do_player" ; then
+if $do_player ; then
     conflicts="--player|+P"
     test "$final_db" = "-" && conflict "-o|--out-db= standard output"
 fi
@@ -1262,7 +1268,7 @@ fi
 make_run_dir
 if test "$do_runmoo"; then
     moo_log_pipe=
-    if test "$do_shconn" || test "$do_player"; then
+    if test "$do_shconn" || $do_player ; then
         moo_log_pipe="${run_dir}/pipe_l${moo_n}"
         mkfifo -m600 "$moo_log_pipe" || die "mkfifo for log"
     fi
