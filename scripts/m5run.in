@@ -165,10 +165,11 @@ code_count=0
 # _code_what$N = 'file'|'stdin'|'expr'
 # _code_source$N = actual filename or expression
 
-do_runmoo=MAYBE
-do_shconn=MAYBE
+do_runmoo='exit 65'
+do_shconn='exit 66'
 do_player='exit 68'
 do_shutdown='exit 69'
+do_softfail_shconn=false
 
 shell_port=MAYBE
 shell_listener='$shell_listener'
@@ -510,7 +511,7 @@ wait_error=
 wait_log () {
     # local toss fst snd thd goal
     test "$moo_log_pipe" || return 0;
-    if test "$do_shconn"; then
+    if $do_shconn ; then
         goal="shellport"
     elif $do_player ; then
         goal="playerport"
@@ -824,9 +825,7 @@ describe_for_dryrun () {
     if $do_help || $do_version ; then
         return
     fi
-    if test -z "$do_runmoo"; then
-        printf "\nNOT running a MOO server (-M|--no-moo)\n"
-    else
+    if $do_runmoo ; then
         test "$moo_exec" || moo_exec=' ??'
         printf "\nRunning a MOO server (+M|--moo):\n  (-x) --moo-exec=%s\n" "$moo_exec"
         if test "$final_db" ; then
@@ -916,13 +915,14 @@ describe_for_dryrun () {
             done
             $do_shutdown && printf "  (+H) adding shutdown()\n"
         fi
+    else
+        printf "\nNOT running a MOO server (-M|--no-moo)\n"
     fi
 
-    if test "$do_shconn"; then
+    if $do_shconn ; then
         printf "\nConnecting a shell redirector (+S|--shell):\n  --shell_port=%s\n" "$shell_port"
-        if test -z "$do_runmoo"; then
+        $do_runmoo ||
             printf "  (-b) --address=%s\n" "$moo_ip"
-        fi
     else
         printf "\nNOT connecting a shell redirector (-S|--no-shell)\n"
     fi
@@ -1075,20 +1075,36 @@ while test "$#" -gt 0 ; do
     esac
     case $1 in #(
         +M | --moo) :
-            test "$do_runmoo" != MAYBE && conflict "-M|--no-moo"
-            do_runmoo=yes
+            case $do_runmoo in #(
+              false) :
+                conflict "-M|--no-moo" ;; #(
+              *) :
+                do_runmoo=: ;;
+            esac
             ;; #(
         -M | --no-moo | --no_moo | --nomoo) :
-            test "$do_runmoo" != MAYBE && conflict "+M|--moo"
-            do_runmoo=
+            case $do_runmoo in #(
+              :) :
+                conflict "+M|--moo" ;; #(
+              *) :
+                do_runmoo=false ;;
+            esac
             ;; #(
         +S | --shell) :
-            test "$do_shconn" != MAYBE && conflict "-S|--no-shell"
-            do_shconn=yes
+            case $do_shconn in #(
+              false) :
+                conflict "-S|--no-shell" ;; #(
+              *) :
+                do_shconn=: ;;
+            esac
             ;; #(
         -S | --no-shell | --no_shell | --noshell) :
-            test "$do_shconn" != MAYBE && conflict "+S|--shell"
-            do_shconn=
+            case $do_shconn in #(
+              :) :
+                conflict "+S|--shell" ;; #(
+              *) :
+                do_shconn=false ;;
+            esac
             ;; #(
         --moo-exec=* | --moo_exec=* | --mooexec=*) :
             moo_exec="$argument"
@@ -1263,11 +1279,16 @@ fi
 
 case $template_db in #(
     Raw*) :
-        if test "$do_shconn" = MAYBE && test "$shell_port" = MAYBE ; then
-            do_shconn=
-            shell_port=
-        fi
-        ;; #(
+      case $do_shconn in #(
+        exit*) :
+          if test "$shell_port" = MAYBE ; then
+              do_shconn=false
+              shell_port=
+          fi
+          ;; #(
+        *) : ;;
+      esac
+      ;; #(
     *) : ;;
 esac
 
@@ -1276,20 +1297,37 @@ esac
 if test "$file_db" ; then
     conflicts="--dbfile|-d"
     test "$template_db" && conflict "--db|-t"
-    test -z "$do_runmoo" && conflict "--no-moo|-M"
-    do_runmoo=yes
+    case $do_runmoo in #(
+      false) :
+        conflict "--no-moo|-M"
+        ;; #(
+      *) :
+        do_runmoo=:
+        ;;
+    esac
 elif test "$template_db" ; then
     conflicts="--db|-t"
-    test -z "$do_runmoo" && conflict "--no-moo|-M"
-    do_runmoo=yes
-elif test "$do_runmoo" = MAYBE ; then
-    do_runmoo=
+    case $do_runmoo in #(
+      false) :
+        conflict "--no-moo|-M"
+        ;; #(
+      *) :
+        do_runmoo=:
+        ;;
+    esac
 else
-    test "$do_runmoo" && usage "--moo|+M requires database (--db|-t or --dbfile|-d)"
+    case $do_runmoo in #(
+      :) :
+        usage "--moo|+M requires database (--db|-t or --dbfile|-d)"
+        ;; #(
+      *) :
+        do_runmoo=false
+        ;;
+    esac
 fi
 
 # make sure --log and --out-db are doable
-if test "do_runmoo" ; then
+if $do_runmoo ; then
     if test "$final_db" && test "$final_db" != "-"; then
         test -w "$(dirname "$final_db")"  ||
             die "--out-db not writable:  $final_db"
@@ -1304,35 +1342,45 @@ fi
 #
 if test -z "$shell_port" ; then
     conflicts="--no-shell-port"
-    if test "$do_shconn" = MAYBE ; then
-        do_shconn=
-    elif test "$do_shconn" ; then
+    case $do_shconn in #(
+      :) :
         conflict "--shell|+S"
-    fi
-    test "$do_runmoo" ||
+        ;; #(
+      *) :
+        do_shconn=false
+        ;;
+    esac
+    $do_runmoo ||
         usage "--no-shell and (--no-moo / no database) ?"
 elif test "$shell_port" = MAYBE ; then
-    test "$do_runmoo" ||
+    $do_runmoo ||
         usage "specific --shell-port required if --no-moo|-M"
-    if test -z "$do_shconn" ; then
+    case $do_shconn in #(
+      false) :
         shell_port=
-    elif test "$do_shconn" = MAYBE ; then
-        # TODO is this what we want?
-        do_shconn=IMPLICIT
+        ;; #(
+      exit*) :
+        do_softfail_shconn=:
+        do_shconn=:
         shell_port=0
-    else
+        ;; #(
+      *) :
+        do_shconn=:
         shell_port=0
-    fi
+        ;;
+    esac
 elif test "$shell_port" -eq 0 ; then
-    test "$do_runmoo" ||
+    $do_runmoo ||
         usage "specific --shell-port required if --no-moo|-M"
 fi
-if test "$do_shconn" = MAYBE ; then
-    do_shconn=yes
-elif test -z "$do_shconn" ; then
-    test -z "$do_runmoo" &&
-        usage "--no-shell and (--no-moo / no database) ?"
-fi
+case $do_shconn in #(
+  exit*) :
+    do_shconn=: ;; #(
+  *) :
+    ;;
+esac
+$do_shconn || $do_runmoo ||
+    usage "--no-shell and (--no-moo / no database) ?"
 
 # do_shutdown, do_player need to be set
 #
@@ -1392,7 +1440,9 @@ elif test "$template_db" ; then
             # lonely moo detected, send help
             do_player=:
         fi
-      ;;
+        ;; #(
+      *) :
+        ;;
     esac
 
     # shutdown if no listeners
@@ -1403,6 +1453,8 @@ elif test "$template_db" ; then
         else
             do_shutdown=:
         fi
+        ;; #(
+      *) :
         ;;
     esac
 
@@ -1462,27 +1514,27 @@ fi
 #### Actually Do Things
 
 make_run_dir
-if test "$do_runmoo"; then
+if $do_runmoo ; then
     moo_log_pipe=
-    if test "$do_shconn" || $do_player ; then
+    if $do_shconn || $do_player ; then
         moo_log_pipe="${run_dir}/pipe_l${moo_n}"
         mkfifo -m600 "$moo_log_pipe" || die "mkfifo for log"
     fi
     run_moo
     wait_log || {
         # kill "$moo_pid"
-        if test "$do_shconn" = IMPLICIT && test "$wait_error" = "premature shutdown"; then
-            do_shconn=
+        if $do_softfail_shconn && test "$wait_error" = "premature shutdown"; then
+            do_shconn=false
         else
             die "$wait_error"
         fi
     }
 fi
-if test "$do_shconn"; then
+if $do_shconn ; then
     sh_connect "$moo_ip" "$shell_port"
     do_commands
 fi
-if test "$do_runmoo"; then
+if $do_runmoo ; then
     # printf "%s\n" '|>> waiting for moo <<|' >&2
     wait
 fi
