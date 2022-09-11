@@ -1,6 +1,6 @@
 dnl -*- Autoconf -*-
 [
-lib_path="${M5LIBPATH:-/home/moo/src/git/m5/lib}"
+lib_path="${M5LIBPATH}"
 moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
 can_dev_stdin=false
@@ -144,6 +144,14 @@ gen_auth_code () {
     auth_code=`expr "X$auth_code" : 'X\([^ ]*\)'`
 }
 
+# _m5_dirname(FILENAME) does
+#   _m5_dir="$(dirname(FILENAME))"
+#   portably.  Apparently this is Hard.
+#
+_m5_dirname () {
+    _m5_dir="`]AS_DIRNAME([["$1"]])[`"
+}
+
 make_run_dir () {
     if test -z "$run_dir" ; then]
         AS_TMPDIR([m5.],[.])[
@@ -154,6 +162,24 @@ make_run_dir () {
     else
         cu_run_dir=
     fi
+}
+
+lib_default () {
+    test "$lib_path" && return;
+    _m5_dirname "$as_myself"]
+    AS_CASE([[$_m5_dir]],[[
+      # installed where we are supposed to be
+      $bindir]],[[
+        lib_path="$pkgdatadir"
+       ]],[[
+      # installed somewhere else
+      *[\\/]bin]],[[
+        lib_path="$_m5_dir/../share/m5"
+       ]],[[
+      # use the source, luke
+      *[\\/]scripts]],[[
+        lib_path="$_m5_dir/../lib"
+       ]])[
 }
 
 lib_find () {
@@ -828,6 +854,15 @@ push_lib_path () {
     # local v
     v="${1}"]
     AS_CASE([[$v]],[[
+      +:*]],[[
+        lib_default
+        test "$lib_path" || v=`expr "X$v" : 'X[^:]*:\(.*\)'`
+       ]],[[
+      *:+]],[[
+        lib_default
+        test "$lib_path" || v=`expr "X$v" : 'X\(.*\):'`
+       ]])
+    AS_CASE([[$v]],[[
       +::*[!:]*]],[[
         v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
         lib_path="${lib_path}:.:${v}"
@@ -1060,6 +1095,8 @@ while test "$#" -gt 0 ; do]
     shift
 done
 
+lib_default
+
 if $do_dryrun && { $do_help || $do_version ; } ; then
     describe_for_dryrun]
     if test "$arg_count" -gt 0 ; then
@@ -1128,11 +1165,13 @@ fi
 # make sure --log and --out-db are doable
 if $do_runmoo ; then
     if test "$final_db" && test "$final_db" != "-"; then
-        test -w "$(dirname "$final_db")"  ||
+        _m5_dirname "$final_db"
+        test -w "$_m5_dir" ||
             die "--out-db not writable:  $final_db"
     fi
     if test "$final_log" && test "$final_log" != "-"; then
-        test -w "$(dirname "$final_log")" ||
+        _m5_dirname "$final_log"
+        test -w "$_m5_dir" ||
             die "--log not writable:  $final_log"
     fi
 fi

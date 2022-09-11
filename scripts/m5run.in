@@ -42,6 +42,45 @@ else
 esac
 fi
 
+
+as_nl='
+'
+export as_nl
+# Printing a long string crashes Solaris 7 /usr/bin/printf.
+as_echo='\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'
+as_echo=$as_echo$as_echo$as_echo$as_echo$as_echo
+as_echo=$as_echo$as_echo$as_echo$as_echo$as_echo$as_echo
+# Prefer a ksh shell builtin over an external printf program on Solaris,
+# but without wasting forks for bash or zsh.
+if test -z "$BASH_VERSION$ZSH_VERSION" \
+    && (test "X`print -r -- $as_echo`" = "X$as_echo") 2>/dev/null; then
+  as_echo='print -r --'
+  as_echo_n='print -rn --'
+elif (test "X`printf %s $as_echo`" = "X$as_echo") 2>/dev/null; then
+  as_echo='printf %s\n'
+  as_echo_n='printf %s'
+else
+  if test "X`(/usr/ucb/echo -n -n $as_echo) 2>/dev/null`" = "X-n $as_echo"; then
+    as_echo_body='eval /usr/ucb/echo -n "$1$as_nl"'
+    as_echo_n='/usr/ucb/echo -n'
+  else
+    as_echo_body='eval expr "X$1" : "X\\(.*\\)"'
+    as_echo_n_body='eval
+      arg=$1;
+      case $arg in #(
+      *"$as_nl"*)
+	expr "X$arg" : "X\\(.*\\)$as_nl";
+	arg=`expr "X$arg" : ".*$as_nl\\(.*\\)"`;;
+      esac;
+      expr "X$arg" : "X\\(.*\\)" | tr -d "$as_nl"
+    '
+    export as_echo_n_body
+    as_echo_n='sh -c $as_echo_n_body as_echo'
+  fi
+  export as_echo_body
+  as_echo='sh -c $as_echo_body as_echo'
+fi
+
 # The user is always right.
 if test "${PATH_SEPARATOR+set}" != set; then
   PATH_SEPARATOR=:
@@ -50,14 +89,39 @@ if test "${PATH_SEPARATOR+set}" != set; then
       PATH_SEPARATOR=';'
   }
 fi
-as_nl='
-'
+
+
 # IFS
 # We need space, tab and new line, in precisely that order.  Quoting is
 # there to prevent editors from complaining about space-tab.
 # (If _AS_PATH_WALK were called with IFS unset, it would disable word
 # splitting by setting IFS to empty value.)
 IFS=" ""	$as_nl"
+
+# Find who we are.  Look in the path if we contain no directory separator.
+as_myself=
+case $0 in #((
+  *[\\/]* ) as_myself=$0 ;;
+  *) as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    test -r "$as_dir/$0" && as_myself=$as_dir/$0 && break
+  done
+IFS=$as_save_IFS
+
+     ;;
+esac
+# We did not find ourselves, most probably we were run as `sh COMMAND'
+# in which case we are not to be found in the path.
+if test "x$as_myself" = x; then
+  as_myself=$0
+fi
+if test ! -f "$as_myself"; then
+  $as_echo "$as_myself: error: cannot find myself; rerun with an absolute file name" >&2
+  exit 1
+fi
 
 # as_fn_set_status STATUS
 # -----------------------
@@ -95,6 +159,17 @@ else
 fi # as_fn_arith
 
 
+# as_fn_error STATUS ERROR
+# ------------------------
+# Output "`basename $0`: error: ERROR" to stderr. Then exit the script with
+# STATUS, using 1 if that was 0.
+as_fn_error ()
+{
+  as_status=$1; test $as_status -eq 0 && as_status=1
+  $as_echo "$as_me: error: $2" >&2
+  as_fn_exit $as_status
+} # as_fn_error
+
 if expr a : '\(a\)' >/dev/null 2>&1 &&
    test "X`expr 00001 : '.*\(...\)'`" = X001; then
   as_expr=expr
@@ -106,12 +181,6 @@ if (basename -- /) >/dev/null 2>&1 && test "X`basename -- / 2>&1`" = "X/"; then
   as_basename=basename
 else
   as_basename=false
-fi
-
-if (as_dir=`dirname -- /` && test "X$as_dir" = X/) >/dev/null 2>&1; then
-  as_dirname=dirname
-else
-  as_dirname=false
 fi
 
 as_me=`$as_basename -- "$0" ||
@@ -133,11 +202,18 @@ $as_echo X/"$0" |
 	  }
 	  s/.*/./; q'`
 
+
+if (as_dir=`dirname -- /` && test "X$as_dir" = X/) >/dev/null 2>&1; then
+  as_dirname=dirname
+else
+  as_dirname=false
+fi
+
 ## ------------------- ##
 ## End of stolen stuff ##
 ## ------------------- ##
 
-lib_path="${M5LIBPATH:-/home/moo/src/git/m5/lib}"
+lib_path="${M5LIBPATH}"
 moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
 can_dev_stdin=false
@@ -226,6 +302,36 @@ gen_auth_code () {
     auth_code=`expr "X$auth_code" : 'X\([^ ]*\)'`
 }
 
+# _m5_dirname(FILENAME) does
+#   _m5_dir="$(dirname(FILENAME))"
+#   portably.  Apparently this is Hard.
+#
+_m5_dirname () {
+    _m5_dir="`$as_dirname -- "$1" ||
+$as_expr X"$1" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$1" : 'X\(//\)[^/]' \| \
+	 X"$1" : 'X\(//\)$' \| \
+	 X"$1" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$1" |
+    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)[^/].*/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\).*/{
+	    s//\1/
+	    q
+	  }
+	  s/.*/./; q'`"
+}
+
 make_run_dir () {
     if test -z "$run_dir" ; then
         # Create a (secure) tmp directory for tmp files.
@@ -243,6 +349,29 @@ make_run_dir () {
     else
         cu_run_dir=
     fi
+}
+
+lib_default () {
+    test "$lib_path" && return;
+    _m5_dirname "$as_myself"
+    case $_m5_dir in #(
+      # installed where we are supposed to be
+      $bindir) :
+        lib_path="$pkgdatadir"
+        ;; #(
+
+      # installed somewhere else
+      *[\\/]bin) :
+        lib_path="$_m5_dir/../share/m5"
+        ;; #(
+
+      # use the source, luke
+      *[\\/]scripts) :
+        lib_path="$_m5_dir/../lib"
+        ;; #(
+      *) :
+        ;;
+    esac
 }
 
 lib_find () {
@@ -996,6 +1125,18 @@ push_lib_path () {
     # local v
     v="${1}"
     case $v in #(
+      +:*) :
+        lib_default
+        test "$lib_path" || v=`expr "X$v" : 'X[^:]*:\(.*\)'`
+        ;; #(
+      *:+) :
+        lib_default
+        test "$lib_path" || v=`expr "X$v" : 'X\(.*\):'`
+        ;; #(
+      *) :
+        ;;
+    esac
+    case $v in #(
         +::*[!:]*) :
             v=`expr "X$v" : 'X.:*\(.*[^:]\)'`
             lib_path="${lib_path}:.:${v}"
@@ -1256,6 +1397,8 @@ while test "$#" -gt 0 ; do
     shift
 done
 
+lib_default
+
 if $do_dryrun && { $do_help || $do_version ; } ; then
     describe_for_dryrun
     if test "$arg_count" -gt 0 ; then
@@ -1333,11 +1476,13 @@ fi
 # make sure --log and --out-db are doable
 if $do_runmoo ; then
     if test "$final_db" && test "$final_db" != "-"; then
-        test -w "$(dirname "$final_db")"  ||
+        _m5_dirname "$final_db"
+        test -w "$_m5_dir" ||
             die "--out-db not writable:  $final_db"
     fi
     if test "$final_log" && test "$final_log" != "-"; then
-        test -w "$(dirname "$final_log")" ||
+        _m5_dirname "$final_log"
+        test -w "$_m5_dir" ||
             die "--log not writable:  $final_log"
     fi
 fi
