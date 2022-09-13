@@ -900,14 +900,16 @@ Usage:
   $as_me [options] [-- args...]
 
 Top-level options:
-  +M, -M, --(no-)moo                run a moo server instance [+M=yes]
-  +S, -S, --(no-)shell              connect a shell instance [+S=yes*]
+  +M, -M, -(-no)-moo                run a moo server instance [+M=yes]
+  +S, -S, -(-no)-shell              connect a shell instance [+S=yes*]
 
 File options:
   -x, --moo-exec=<pathname>         moo server executable [*]
   -L, --lib-path=<pathstring>       library/db file search path [*]
   -t, --db=<template>               use moo template database
   -d, --dbfile=<basename>           use moo file database
+  -o, --(no-)out-db=<basename>      retain moo database output [no]
+  -l, --(no-)log=<filename>         retain moo server log file [no]
 
 Network options:
   -b, --address=<ip>                listen/connect address [127.0.0.2]
@@ -915,22 +917,18 @@ Network options:
   -p, --listen=<port>[,<listener>]  add moo listening port
 
 First Verb options (template databases only):
-  +P, -P, --(no-)player             first verb gets 'player' [-P=no*]
+  +P, -P, -(-no)-player             first verb gets 'player' [-P=no*]
       --                            first verb gets remaining 'args'
   -e, --expr=<expression>           insert expression into first verb
   -f, --code-file=<filename>        insert file into first verb
-  +H, -H, --(no-)shutdown           shutdown after first verb [-H=no*]
-
-Output options:
-  -o, --(no-)out-db=<basename>      retain moo database output [no]
-  -l, --(no-)log=<filename>         retain moo server log file [no]
+  +H, -H, -(-no)-shutdown           shutdown after first verb [-H=no*]
 
 Informational options:
   -v, +v, --verbose                 be extra chatty on stderr
   -n, +n, --dry-run                 validate command line and exit
   -h, +h, -?, --help                print this text and exit
   -V, +V, --version                 print version info and exit
-      --about                       print detailed version info and exit
+          --about                   print detailed version info and exit
 
  short options cannot be combined, parameters are required
 
@@ -1224,32 +1222,36 @@ while test "$#" -gt 0 ; do
               false) :
                 conflict "-M|--no-moo" ;; #(
               *) :
-                do_runmoo=: ;;
+                ;;
             esac
+            do_runmoo=:
             ;; #(
         -M | --no-moo | --no_moo | --nomoo) :
             case $do_runmoo in #(
               :) :
                 conflict "+M|--moo" ;; #(
               *) :
-                do_runmoo=false ;;
+                ;;
             esac
+            do_runmoo=false
             ;; #(
         +S | --shell) :
             case $do_shconn in #(
               false) :
                 conflict "-S|--no-shell" ;; #(
               *) :
-                do_shconn=: ;;
+                ;;
             esac
+            do_shconn=:
             ;; #(
         -S | --no-shell | --no_shell | --noshell) :
             case $do_shconn in #(
               :) :
                 conflict "+S|--shell" ;; #(
               *) :
-                do_shconn=false ;;
+                ;;
             esac
+            do_shconn=false
             ;; #(
         --moo-exec=* | --moo_exec=* | --mooexec=*) :
             moo_exec="$argument"
@@ -1264,9 +1266,9 @@ while test "$#" -gt 0 ; do
             push_lib_path "$argument"
             ;; #(
         -L) :
-            as_fn_arith $arg_count \- 1 && arg_count=$as_val
             test $# -gt 1 || usage "$1: <pathstring> missing"
             shift
+            as_fn_arith $arg_count \- 1 && arg_count=$as_val
             push_lib_path "$1"
             ;; #(
         --db=*) :
@@ -1284,6 +1286,28 @@ while test "$#" -gt 0 ; do
             test $# -gt 1 || usage "$1: <basename> missing"
             shift
             file_db="$1"
+            ;; #(
+        --no-out-db | --no_out_db | --nooutdb) :
+            final_db=
+            ;; #(
+        --out-db=* | --out_db=* | --outdb=*) :
+            final_db="$argument"
+            ;; #(
+        -o) :
+            test $# -gt 1 || usage "$1: <basename> missing"
+            shift
+            final_db="$1"
+            ;; #(
+        --no-log | --no_log | --nolog) :
+            final_log=
+            ;; #(
+        --log=*) :
+            final_log="$argument"
+            ;; #(
+        -l) :
+            test $# -gt 1 || usage "$1: <filename> missing"
+            shift
+            final_log="$1"
             ;; #(
         --address=*) :
             moo_ip="$argument"
@@ -1307,10 +1331,23 @@ while test "$#" -gt 0 ; do
             shift
             push_moo_listeners "$1"
             ;; #(
-        +P | --player) :
+        +P | --player)
+            :
+            case $do_player in #(
+                false) :
+                    conflict "-P|--no-player" ;; #(
+                *) :
+                    ;;
+            esac
             do_player=:
             ;; #(
         -P | --no-player | --no_player | --noplayer) :
+            case $do_player in #(
+                :) :
+                    conflict "+P|--player" ;; #(
+                *) :
+                    ;;
+            esac
             do_player=false
             ;; #(
         --) :
@@ -1342,32 +1379,22 @@ while test "$#" -gt 0 ; do
             push_code file "$1"
             ;; #(
         +H | --shutdown) :
+            case $do_shutdown in #(
+                false) :
+                    conflict "-H|--no-shutdown" ;; #(
+                *) :
+                    ;;
+            esac
             do_shutdown=:
             ;; #(
         -H | --no-shutdown | --no_shutdown | --noshutdown) :
+            case $do_shutdown in #(
+                :) :
+                    conflict "+H|--shutdown" ;; #(
+                *) :
+                    ;;
+            esac
             do_shutdown=false
-            ;; #(
-        --no-out-db | --no_out_db | --nooutdb) :
-            final_db=
-            ;; #(
-        --out-db=* | --out_db=* | --outdb=*) :
-            final_db="$argument"
-            ;; #(
-        -o) :
-            test $# -gt 1 || usage "$1: <basename> missing"
-            shift
-            final_db="$1"
-            ;; #(
-        --no-log | --no_log | --nolog) :
-            final_log=
-            ;; #(
-        --log=*) :
-            final_log="$argument"
-            ;; #(
-        -l) :
-            test $# -gt 1 || usage "$1: <filename> missing"
-            shift
-            final_log="$1"
             ;; #(
         -v | +v | --verbose) :
             as_fn_arith $arg_count \- 1 && arg_count=$as_val

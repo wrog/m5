@@ -7,7 +7,6 @@ aclocal.m4
 Makefile
 Makefile.in
 scripts/m5run
-scripts/doom*
 doc/stamp-vti
 doc/version.texi
 doc/*.info

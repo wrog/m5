@@ -1,6 +1,6 @@
 dnl -*- Autoconf -*-
-[
-lib_path="${M5LIBPATH}"
+
+[lib_path="${M5LIBPATH}"
 moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
 can_dev_stdin=false
@@ -33,6 +33,8 @@ code_count=0
 ]dnl
 m4_define([M5_VAR_INCR],
   [AS_VAR_ARITH([$1],[[$]$1[ \+ 1]])])dnl
+m4_define([M5_VAR_DECR],
+  [AS_VAR_ARITH([$1],[[$]$1[ \- 1]])])dnl
 dnl
 dnl M5_PUSH_CODE([WHAT],[SOURCE])
 dnl   add a new code source
@@ -651,55 +653,20 @@ EOF
     else
         printf "M5 version %s\n" "$m5_version"
     fi
-}]
-m4_rename([AS_HELP_STRING],[_M5_prev_HS])dnl
-m4_define([AS_HELP_STRING],[_M5_prev_HS([$1],[$2],[36])])dnl
-[
+}
+
 help_message () {
     cat <<EOF
 Usage:
-  $as_me [options] [-- args...]
+  $as_me [options] [-- args...]]dnl
+M5_HELP_OPTION_LINES
 
-Top-level options:]
-AS_HELP_STRING([[+M, -M, --(no-)moo]],[run a moo server instance [+M=yes]])
-AS_HELP_STRING([[+S, -S, --(no-)shell]],[connect a shell instance [+S=yes*]])
+[ short options cannot be combined, parameters are required
 
-[File options:]
-AS_HELP_STRING([[-x, --moo-exec=<pathname>]],[moo server executable [*]])
-AS_HELP_STRING([[-L, --lib-path=<pathstring>]],[library/db file search path [*]])
-AS_HELP_STRING([[-t, --db=<template>]],[use moo template database])
-AS_HELP_STRING([[-d, --dbfile=<basename>]],[use moo file database])
-
-[Network options:]
-AS_HELP_STRING([[-b, --address=<ip>]],[listen/connect address [127.0.0.2]])
-AS_HELP_STRING([[    --(no-)shell-port=<port>]],[moo<->shell port [0*]])
-AS_HELP_STRING([[-p, --listen=<port>[,<listener>]]],[add moo listening port])
-
-[First Verb options (template databases only):]
-AS_HELP_STRING([[+P, -P, --(no-)player]],[first verb gets 'player' [-P=no*]])
-AS_HELP_STRING([[    --]],[first verb gets remaining 'args'])
-AS_HELP_STRING([[-e, --expr=<expression>]],[insert expression into first verb])
-AS_HELP_STRING([[-f, --code-file=<filename>]],[insert file into first verb])
-AS_HELP_STRING([[+H, -H, --(no-)shutdown]],[shutdown after first verb [-H=no*]])
-
-[Output options:]
-AS_HELP_STRING([[-o, --(no-)out-db=<basename>]],[retain moo database output [no]])
-AS_HELP_STRING([[-l, --(no-)log=<filename>]],[retain moo server log file [no]])
-
-[Informational options:]
-AS_HELP_STRING([[-v, +v, --verbose]],[be extra chatty on stderr])
-AS_HELP_STRING([[-n, +n, --dry-run]],[validate command line and exit])
-AS_HELP_STRING([[-h, +h, -?, --help]],[print this text and exit])
-AS_HELP_STRING([[-V, +V, --version]],[print version info and exit])
-AS_HELP_STRING([[    --about]],[print detailed version info and exit])
-
-[ short options cannot be combined, parameters are required]
-
-[ * = defaults this way most of the time, but..., see Info page
+ * = defaults this way most of the time, but..., see Info page
 
 EOF
 }]
-m4_rename_force([_M5_prev_HS],[AS_HELP_STRING])dnl
 dnl m4_define([printf],[pppprintf])
 dnl -- uncomment to purposefully screw up
 dnl -- improperly quoted m4
@@ -938,160 +905,9 @@ while test "$#" -gt 0 ; do]
       ]],[[
         argument=
       ]])
-    AS_CASE([[$1]],[[
-      +M | --moo]],[
-        AS_CASE([[$do_runmoo]],[[false]],[[conflict "-M|--no-moo"]],[[do_runmoo=:]])
-       ],[[
-      -M | --no-moo | --no_moo | --nomoo]],[
-        AS_CASE([[$do_runmoo]],[[:]],[[conflict "+M|--moo"]],[[do_runmoo=false]])
-       ],[[
-      +S | --shell]],[
-        AS_CASE([[$do_shconn]],[[false]],[[conflict "-S|--no-shell"]],[[do_shconn=:]])
-       ],[[
-      -S | --no-shell | --no_shell | --noshell]],[
-        AS_CASE([[$do_shconn]],[[:]],[[conflict "+S|--shell"]],[[do_shconn=false]])
-       ],[[
-      --moo-exec=* | --moo_exec=* | --mooexec=*]],[[
-        moo_exec="$argument"
-       ]],[[
-      -x]],[[
-        test $# -gt 1 || usage "$1: <pathname> missing"
-        shift
-        moo_exec="$1"
-       ]],[[
-      --lib-path=* | --lib_path=* | --libpath=*]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        push_lib_path "$argument"
-       ]],[[
-      -L]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        test $# -gt 1 || usage "$1: <pathstring> missing"
-        shift
-        push_lib_path "$1"
-       ]],[[
-      --db=*]],[[
-        template_db="$argument"
-       ]],[[
-      -t]],[[
-        test $# -gt 1 || usage "$1: <template> missing"
-        shift
-        template_db="$1"
-       ]],[[
-      --dbfile=*]],[[
-        file_db="$argument"
-       ]],[[
-      -d]],[[
-        test $# -gt 1 || usage "$1: <basename> missing"
-        shift
-        file_db="$1"
-       ]],[[
-      --address=*]],[[
-        moo_ip="$argument"
-       ]],[[
-      -b]],[[
-        test $# -gt 1 || usage "$1: <ip> missing"
-        shift
-        moo_ip="$1"
-       ]],[[
-      --no-shell-port | --no_shell_port | --noshellport]],[[
-        shell_port=
-       ]],[[
-      --shell-port=* | --shell_port=* | --shellport=*]],[[
-        shell_port="$argument"
-       ]],[[
-      --listen=*]],[[
-        push_moo_listeners "$argument"
-       ]],[[
-      -p]],[[
-        test $# -gt 1 || usage "$1: <port>[,<listener>] missing"
-        shift
-        push_moo_listeners "$1"
-       ]],[[
-      +P | --player]],[[
-        do_player=:
-       ]],[[
-      -P | --no-player | --no_player | --noplayer]],[[
-        do_player=false
-       ]],[[
-      --]],[[
-        moo_args=
-        shift
-        while test "$#" -gt 0; do
-          test "$moo_args" && moo_args="$moo_args,"
-          x="$1"
-          moo_args="$moo_args\"$(printf "%s" "$x" | sed 's/\([\\"]\)/\\\1/g')\""
-          shift
-        done
-        set --
-        break
-       ]],[[
-      --expr=*]],[[
-        push_code expr "$argument"
-       ]],[[
-      -e]],[[
-        test $# -gt 1 || usage "$1: <expression> missing"
-        shift
-        push_code expr "$1"
-       ]],[[
-      --code-file=* | --code_file=* | --codefile=*]],[[
-        push_code file "$argument"
-       ]],[[
-      -f]],[[
-        test $# -gt 1 || usage "$1: <filename> missing"
-        shift
-        push_code file "$1"
-       ]],[[
-      +H | --shutdown]],[[
-        do_shutdown=:
-       ]],[[
-      -H | --no-shutdown | --no_shutdown | --noshutdown]],[[
-        do_shutdown=false
-       ]],[[
-      --no-out-db | --no_out_db | --nooutdb]],[[
-        final_db=
-       ]],[[
-      --out-db=* | --out_db=* | --outdb=*]],[[
-        final_db="$argument"
-       ]],[[
-      -o]],[[
-        test $# -gt 1 || usage "$1: <basename> missing"
-        shift
-        final_db="$1"
-       ]],[[
-      --no-log | --no_log | --nolog]],[[
-        final_log=
-       ]],[[
-      --log=*]],[[
-        final_log="$argument"
-       ]],[[
-      -l]],[[
-        test $# -gt 1 || usage "$1: <filename> missing"
-        shift
-        final_log="$1"
-       ]],[[
-      -v | +v | --verbose]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        do_verbose=:
-       ]],[[
-      -n | +n | --dry-run | --dry_run | --dryrun]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        do_dryrun=:
-       ]],[[
-      -h | +h | -[?] | --help]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        do_help=:
-       ]],[[
-      -V | +V | --version]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        do_version=:
-       ]],[[
-      --about]],[
-        AS_VAR_ARITH([[arg_count]],[[$arg_count \- 1]])[
-        do_version=:
-        do_verbose=:
-      ]],[[
+    AS_CASE([[$1]],M5_OPTION_CASES[[
         usage "unrecognized option:  '$1'" :
-      ]])[
+    ]])[
     shift
 done
 

@@ -10,6 +10,10 @@ AC_SUBST([CONFIG_SHELL])
 AC_CONFIG_FILES([Makefile scripts/Makefile doc/Makefile])
 AC_CONFIG_COMMANDS([scripts/doom.in],
   [m4_pushdef([AS_MESSAGE_FD],[1])dnl
+m4_include([scripts/optshell.m4])dnl
+m4_divert_push([KILL])
+m4_include([scripts/options.m4])dnl
+m4_divert_pop([KILL])
 AS_INIT_GENERATED([scripts/doom.in], [[#
 m5_legal_msg="]AS_ESCAPE([$(cat <<])['ENDLEGAL']
 m4_include([AUTHOR])
