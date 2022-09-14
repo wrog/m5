@@ -215,7 +215,7 @@ This option can only be used with template databases (@option{-t}).
 ]
 dnl --
 dnl
-M5_OPTION_END(  [--],
+M5_OPTION_END(  [--], [[<args>]],
   [first verb gets remaining 'args'],[[[
     moo_args=
     shift
@@ -229,7 +229,7 @@ M5_OPTION_END(  [--],
     break
   ]]])dnl
 [
-Include, in the first verb, an assignment to @code{args} that gathers all remaining words of the command line after this one.  None of these words will be treated as @command{m5run} options even if they would otherwise be valid as such.
+Include, in the first verb, an assignment to @code{args} that gathers all remaining words of the command line after the @option{--}.  None of these words will be treated as @command{m5run} options even if they would otherwise be valid as such.
 
 If @option{--} is @emph{not} present, then the the first verb begins with @code{args = @{@}} and unrecognized command line words will be treated as errors.
 

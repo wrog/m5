@@ -918,7 +918,7 @@ Network options:
 
 First Verb options (template databases only):
   +P, -P, -(-no)-player             first verb gets 'player' [-P=no*]
-      --                            first verb gets remaining 'args'
+      -- <args>...                  first verb gets remaining 'args'
   -e, --expr=<expression>           insert expression into first verb
   -f, --code-file=<filename>        insert file into first verb
   +H, -H, -(-no)-shutdown           shutdown after first verb [-H=no*]

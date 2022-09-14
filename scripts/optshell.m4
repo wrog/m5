@@ -128,17 +128,17 @@ m4_append([M5_OPTION_CASES],[[
     $6[ "$][1"
   ]],],[])])])dnl
 dnl
-dnl  M5_OPTION_END([--],[helpmsg],[code])
+dnl  M5_OPTION_END([--],[argsname],[helpmsg],[code])
 dnl    -- indicates end of options
 dnl    code should do something useful with remaining arguments
 dnl
 m4_define([M5_OPTION_END],
 [m4_append([M5_HELP_OPTION_LINES],
-  [AS_HELP_STRING([[    $1]],[$2],M5_HELP_WIDTH)],[
+  [AS_HELP_STRING([[    $1 ]$2[...]],[$3],M5_HELP_WIDTH)],[
 ])dnl
 m4_append([M5_OPTION_CASES],[
   --,
-    $3,])])dnl
+    $4,])])dnl
 dnl
 dnl =========
 dnl utilities

@@ -91,13 +91,13 @@ m4_define([M5_OPTION_PUSH],
 [@item --]$2[=@var{]M5_PARAM([$3])[}]m4_ifval([$1],[[
 @itemx -$1 @var{]M5_PARAM([$3])[}]],[])])dnl
 dnl
-dnl  M5_OPTION_END([--],[helpmsg],[code])
+dnl  M5_OPTION_END([--],[argsname],[helpmsg],[code])
 dnl    -- indicates end of options
 dnl    and remaining arguments are getting swept up
 dnl
 m4_define([M5_OPTION_END],
 [_M5_BEGIN_TABLE()dnl
-[@item $1]])dnl
+[@item $1 @var{]M5_PARAM([$2])[@dots{}}]])dnl
 dnl
 dnl  generate texinfo
 dnl
