@@ -7,4 +7,4 @@ AM_MAKEINFOHTMLFLAGS = --output html --split=section --css-ref=common.css
 html-local: $(HTMLS)/common.css
 
 $(HTMLS)/common.css:
-	ln -s ../common.css $(HTMLS)
+	ln -sf $(abs_srcdir)/common.css $(HTMLS)
