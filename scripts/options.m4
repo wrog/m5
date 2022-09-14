@@ -157,7 +157,7 @@ Specifying @option{--shell-port=@var{p}} with @option{-S|--no-shell} is specific
 If @option{-[-no]-shell-port} is unspecified, the default is @option{--shell-port=0}, @strong{unless}:
 @itemize
 @item
-@option{-[-no]-shell} is also unspecified, in which case it is @emph{not} an error for the @moo server to fail to report that it is shell listening; in this situation we quietly revert to @option{--no-shell-port} and no connection attempt is made; or@htmlbrbr
+@option{-[-no]-shell} is also unspecified, in which case it is @emph{not} an error for the @moo server to fail to report that it is shell listening; in this situation we quietly revert to @option{--no-shell-port} and no connection attempt will be made; or@htmlbrbr
 @item
 we are not running a @moo at all (@option{-M|--no-moo}), in which case a @option{--shell-port=@var{p}} with @var{p} > 0 is @strong{required}, this being the separate redirector part of the separate redirector scenario, which looks like this
 @example
@@ -190,7 +190,7 @@ For file databases, this option may be given at most once, and @samp{#0} is the 
 
 For template databases, this option may be given multiple times and the results are cumulative.  The first such option that specifies @samp{#0} as its listener is passed to the @moo server command line; if there is no such option the @moo server's original port is @code{unlisten()}ed in @code{$server_started} and nothing will ever get a chance to connect to it.
 
-If multiple @option{-p|--listen} options are present, there must at most one for any given non-zero port number.  For port 0, arbitrarily many listeners are allowed, since port 0 just means, ``Choose a random port,'' and the kernel takes care of making them all be different.
+If multiple @option{-p|--listen} options are present, there must be at most one for any given non-zero port number.  For port 0, arbitrarily many listeners are allowed, since port 0 just means, ``Choose a random port,'' and the kernel takes care of making them all be different.
 
 If you specify both @option{-p|--listen=@var{port},@var{listener}} and @option{--shell-port=@var{port}} for the same non-zero @var{port}, this forces the shell listener be @var{listener} (i.e., rather than the hardwired @code{shell_listener}).@footnote{Yes, this is esoteric and weird.  We may rethink this behavior at some point.  Normally you do not want to change the shell listener, but you might if you, say, want to try out a more advanced shell listener@dots{}}
 ]dnl
@@ -269,7 +269,7 @@ M5_OPTION_BOOLEAN(  [H], [shutdown],
 [
 Bracket the sequence of expressions/files included in the first verb via @option{-e|--expr} and @option{-f|--code-file} options with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately after that sequence either successfully finishes executing or something in it raises an error.
 
-Default is usually @option{--no-shutdown|-H}, the exception being when there are no listening points (@samp{+p}), i.e., no way (other than signals) to get a shutdown to happen, in which case @option{--shutdown|+H} is set by default.
+Default is usually @option{--no-shutdown|-H}, the exception being when there are no listening points (@samp{-p|--listen}), i.e., no way (other than signals) to get a shutdown to happen, in which case @option{--shutdown|+H} is set by default.
 
 This option can only be used with template databases (@option{-t}).
 ]dnl
