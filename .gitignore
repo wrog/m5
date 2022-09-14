@@ -9,6 +9,7 @@ Makefile.in
 scripts/m5run
 doc/stamp-vti
 doc/version.texi
+doc/m5runopt.texi
 doc/*.info
 doc/*.txt
 doc/M5manual.html
