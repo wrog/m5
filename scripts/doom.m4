@@ -185,12 +185,12 @@ gen_auth_code () {
     auth_code=`expr "X$auth_code" : 'X\([^ ]*\)'`
 }
 
-# _m5_dirname(FILENAME) does
-#   _m5_dir="$(dirname(FILENAME))"
+# get_dirname(FILENAME) does
+#   found_dirname="$(dirname(FILENAME))"
 #   portably.  Apparently this is Hard.
 #
-_m5_dirname () {
-    _m5_dir="`]AS_DIRNAME([["$1"]])[`"
+get_dirname () {
+    found_dirname="`]AS_DIRNAME([["$1"]])[`"
 }
 
 make_run_dir () {
@@ -207,19 +207,19 @@ make_run_dir () {
 
 lib_default () {
     test "$lib_path" && return;
-    _m5_dirname "$as_myself"]
-    AS_CASE([[$_m5_dir]],[[
-      # installed where we are supposed to be
+    get_dirname "$as_myself"]
+    AS_CASE([[$found_dirname]],[[
+      # installed as expected
       $bindir]],[[
         lib_path="$pkgdatadir"
        ]],[[
-      # installed somewhere else
+      # installed with a different prefix
       *[\\/]bin]],[[
-        lib_path="$_m5_dir/../share/m5"
+        lib_path="${found_dirname}/../share/m5"
        ]],[[
       # use the source, luke
       *[\\/]scripts]],[[
-        lib_path="$_m5_dir/../lib"
+        lib_path="${found_dirname}/../lib"
        ]])[
 }
 
@@ -1025,13 +1025,13 @@ fi
 # make sure --log and --out-db are doable
 if $do_runmoo ; then
     if test "$final_db" && test "$final_db" != "-"; then
-        _m5_dirname "$final_db"
-        test -w "$_m5_dir" ||
+        get_dirname "$final_db"
+        test -w "$found_dirname" ||
             die "--out-db not writable:  $final_db"
     fi
     if test "$final_log" && test "$final_log" != "-"; then
-        _m5_dirname "$final_log"
-        test -w "$_m5_dir" ||
+        get_dirname "$final_log"
+        test -w "$found_dirname" ||
             die "--log not writable:  $final_log"
     fi
 fi
