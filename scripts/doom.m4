@@ -50,12 +50,12 @@ code_count=0
 # _code_what$N = 'file'|'stdin'|'expr'
 # _code_source$N = actual filename or expression
 ]dnl
-dnl M5_PUSH_CODE([WHAT],[SOURCE])
+dnl M5_ADD_CODE([WHAT],[SOURCE])
 dnl   add a new code source
 dnl     WHAT='file'|'stdin'|'expr
 dnl     SOURCE=filename or expression
 dnl
-m4_define([M5_PUSH_CODE],[
+m4_define([M5_ADD_CODE],[
     M5_VAR_INCR([[code_count]])
     AS_VAR_SET([[_code_what${code_count}]],[$1])
     AS_VAR_SET([[_code_source${code_count}]],[$2])])dnl
@@ -940,7 +940,7 @@ push_code () {
     else
         w="$1"
     fi]
-    M5_PUSH_CODE([["$w"]],[["$2"]])[
+    M5_ADD_CODE([["$w"]],[["$2"]])[
 }
 
 conflicts=
