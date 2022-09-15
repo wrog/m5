@@ -223,11 +223,26 @@ lib_default () {
        ]])[
 }
 
+# lib_find BASE EXT_LIST
+#
+#   BASE = base file name or full file name
+#   EXT_LIST = list of extensions ".foo .bar"
+#              implicitly includes '' at the end
+#
+#   searches $lib_path for BASE.ext for each ext in EXT_LIST,
+#   unless BASE already ends with one of them,
+#   in which case we just look for BASE
+#
+#   death if file exists but is not readable
+#
+#   $?=1 if not found (so that && and || work)
+#   $?=0 and full_path=/path/to/BASE, or
+#
 lib_find () {
     # local base exts save_IFS dir ext
     base="$1"
     exts="$2"
-    full=
+    full_path=
     for ext in $exts ; do]
         AS_CASE([[$base]],[[
           *$ext]],[[
@@ -238,12 +253,12 @@ lib_find () {
     AS_CASE([[$base]],[[
       *[\\/]*]],[[
         for ext in $exts ''; do
-            full="$base$ext"
-            if test -f "$full" ; then
-                test -r "$full" || die "not readable: $full"
+            full_path="$base$ext"
+            if test -f "$full_path" ; then
+                test -r "$full_path" || die "not readable: $full_path"
                 break
             fi
-            full=
+            full_path=
         done
       ]],[[
         save_IFS=$IFS
@@ -252,32 +267,41 @@ lib_find () {
             IFS=$save_IFS
             test -z "$dir" && dir=.
             for ext in $exts ''; do
-                full="$dir/$base$ext"
-                if test -f "$full" ; then
-                    test -r "$full" || die "not readable: $full"
+                full_path="$dir/$base$ext"
+                if test -f "$full_path" ; then
+                    test -r "$full_path" || die "not readable: $full_path"
                     break 2
                 fi
             done
-            full=
+            full_path=
         done
         IFS=$save_IFS
       ]])[
-    test "$full" || return 1
+    test "$full_path" || return 1
     return 0
 }
 
+# lib_template_find TEMPLATE
+#
+#   search for TEMPLATE.db.top or TEMPLATE.top
+#   death if .top does not have corresponding .bot
+#
+#   $?=1 if not found
+#   $?=0 and full_path=/path/to/TEMPLATE[.db]
+#     (so that files are $full_path.top and $full_path.bot)
+#
 lib_template_find () {]
     AS_CASE([[$1]],[[
       *.db]],[[
         lib_find "${1}.top" || return 1
       ]],[[
         lib_find "${1}" ".db.top .top" || return 1
-        test "$full" = "${1}" &&
+        test "$full_path" = "${1}" &&
         die "file not found: $1.[db.]top"
       ]])[
-    full=`expr "X$full" : 'X\(.*\).top'`
-    if test ! -f "$full.bot" || test ! -r "$full.bot" ; then
-        die "file not found: $full.bot"
+    full_path=`expr "X$full_path" : 'X\(.*\).top'`
+    if test ! -f "${full_path}.bot" || test ! -r "${full_path}.bot" ; then
+        die "file not found: ${full_path}.bot"
     fi
     return 0
 }
@@ -1068,7 +1092,7 @@ if test "$file_db" ; then
     # resolve filename
     if test "$file_db" != "-"; then
         lib_find "$file_db" .db || die "--dbfile|-d not found: $file_db"
-        file_db="$full"
+        file_db="$full_path"
     fi
 
 elif test "$template_db" ; then
@@ -1119,10 +1143,10 @@ elif test "$template_db" ; then
     M5_FOREACH_CODE([[
         lib_find "$code_source" '.m5 .moo' ||
             die "-f|--code-file not found: $code_source"]
-        AS_VAR_SET([[$code_this]],[["$full"]])],[],[])[
+        AS_VAR_SET([[$code_this]],[["$full_path"]])],[],[])[
     lib_template_find "$template_db" ||
         die "-t|--db not found: $template_db"
-    template_db="$full"
+    template_db="$full_path"
 
 else
     # no moo rules out a whole lot of activities
