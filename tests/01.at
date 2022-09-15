@@ -76,7 +76,7 @@ AT_CHECK([[# unparsable hello
 
 m5run -t Raw -e '"hello world"(' -l -
 
-]],0,[[]],[[stderr-nolog]],[[]],[[
+]],1,[[]],[[stderr-nolog]],[[]],[[
 
 ${FGREP} ' *** PARSER: Error' stderr || at_failed=:
 

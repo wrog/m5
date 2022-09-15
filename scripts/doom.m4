@@ -66,6 +66,7 @@ do_shconn='exit 66'
 do_player='exit 68'
 do_shutdown='exit 69'
 do_softfail_shconn=false
+shutdown_condition=
 
 shell_port=MAYBE
 shell_listener='$shell_listener'
@@ -268,6 +269,7 @@ db_middle () {
     M5_FOREACH_LISTENER([[
         $comma && printf ','
         if $is_shell_port ; then
+            $do_softfail_shconn && printf "%s" '@`{'
             printf 'shell_port='
         fi
         printf 'listen('
@@ -275,13 +277,15 @@ db_middle () {
             printf '`{%s,o="%s"}[1]!ANY=>1'"' &&" $l $l
         done
         printf '%s' "raise(E_PROPNF),$port,1),o"
+        $is_shell_port && $do_softfail_shconn &&
+            printf "%s" "}!E_PROPNF=>{}'"
         comma=:
     ]])[
     printf '};run_info[$+1..$]={"listeners",listeners,@shell_port?{"shell_port",shell_port}|{}};'
     printf 'server_log(tostr("ri ",toliteral(run_info)));'
     printf 'if(shell_port)server_log(tostr("shellport ",shell_port));endif '
 
-    printf 'except (ANY)`boot_player(player)!ANY'"'"';shutdown();endtry '
+    printf 'except e(ANY)server_log("error "+toliteral(e));`boot_player(player)!ANY'"'"';shutdown();endtry '
     $do_shutdown && printf 'try '
     printf 'args = {%s};' "$moo_args"]
     M5_FOREACH_CODE([[
@@ -298,7 +302,7 @@ db_middle () {
         printf "%s\n" "$code_source;"
       ]])[
     $do_shutdown &&
-        printf "%s\n" 'finally`boot_player(player)!ANY'"'"';shutdown();endtry '
+        printf "%s\n" "finally ${shutdown_condition}\`boot_player(player)!ANY'||shutdown();endtry "
     printf "\n"
 }
 
@@ -935,18 +939,6 @@ fi
 
 # Flags that can still be unset at this point:
 #   do_shutdown, do_runmoo, do_shconn, shell_port, do_player
-]
-dnl  *** TODO *** maybe this can go away now?
-AS_CASE([[$template_db]],[[
-  Raw*]],[
-    AS_CASE([[$do_shconn]],[[
-      exit*]],[[
-        if test "$shell_port" = MAYBE ; then
-            do_shconn=false
-            shell_port=
-        fi
-    ]])
-  ])[
 
 # set do_runmoo, infer from --dbfile or --db
 #
@@ -1049,24 +1041,34 @@ if test "$file_db" ; then
         file_db="$full"
     fi
 
-elif test "$template_db" ; then]
+elif test "$template_db" ; then
+    do_have_explicit_listeners=:
+    if test "$moo_port" || test "$listen_zcount" -gt 0 || test "$listen_fixed" ; then
+        :
+    elif test -z "$shell_port" || $do_softfail_shconn ; then
+        do_have_explicit_listeners=false
+    fi
+
     # add shell port to listeners if not there already
     #
-    AS_VAR_COPY([[lname]],[[_listen_${shell_port}]])[
-    if test "$shell_port" && test "$shell_port" -gt 0 && test "$lname"; then
-        shell_listener="$lname"
-    elif test "$shell_port"; then
-        push_moo_listeners "${shell_port},shell_listener"
+    if test "$shell_port" ; then
+        if test "$shell_port" -eq 0 ; then
+            push_moo_listeners "${shell_port},shell_listener"
+        elif test "$shell_port" = "$moo_port" ; then
+            shell_listener="#0"
+        elif ]AS_VAR_COPY([[lname]],[[_listen_${shell_port}]])[
+          test "$lname" ; then
+            shell_listener="$lname"
+        else
+            push_moo_listeners "${shell_port},shell_listener"
+        fi
     fi]
 
     AS_CASE([[$do_player]],[[
       exit*]],[[
-        if test "$shell_port" ||
-                test "$listen_fixed" ||
-                test "$moo_port" ||
-                test "$listen_zcount" -gt 0 ||
-                test "$final_log" ||
-                test "$final_db" ; then
+        if $do_have_explicit_listeners ||
+           test "$final_log" ||
+           test "$final_db" ; then
             do_player=false
         else
             # lonely moo detected, send help
@@ -1077,10 +1079,9 @@ elif test "$template_db" ; then]
     # shutdown if no listeners
     AS_CASE([[$do_shutdown]],[[
       exit*]],[[
+        do_shutdown=:
         if test "$moo_port" || test "$listen_fixed" || test "$listen_zcount" -gt 0; then
-            do_shutdown=false
-        else
-            do_shutdown=:
+            shutdown_condition='listeners()||'
         fi
     ]])
 
@@ -1128,11 +1129,8 @@ fi
 
 make_run_dir
 if $do_runmoo ; then
-    moo_log_pipe=
-    if $do_shconn || $do_player ; then
-        moo_log_pipe="${run_dir}/pipe_l${moo_n}"
-        mkfifo -m600 "$moo_log_pipe" || die "mkfifo for log"
-    fi
+    moo_log_pipe="${run_dir}/pipe_l${moo_n}"
+    mkfifo -m600 "$moo_log_pipe" || die "mkfifo for log"
     run_moo
     wait_log || {
         # kill "$moo_pid"
