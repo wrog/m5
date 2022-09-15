@@ -1,6 +1,25 @@
 dnl -*- Autoconf -*-
-
-[lib_path="${M5LIBPATH}"
+dnl
+dnl m4 utilities that should probably go elsewhere
+dnl
+dnl  M5_VAR_INCR([[VAR]]) -> ++$VAR
+dnl
+m4_define([M5_VAR_INCR],
+  [AS_VAR_ARITH([$1],[[$]$1[ \+ 1]])])dnl
+dnl
+dnl  M5_VAR_DECR([[VAR]]) -> --$VAR
+dnl
+m4_define([M5_VAR_DECR],
+  [AS_VAR_ARITH([$1],[[$]$1[ \- 1]])])dnl
+dnl
+dnl also assume optshell.m4 and options.m4 have been read
+dnl which are expected to define
+dnl
+dnl   M5_HELP_OPTION_LINES  -- option portion of help_message
+dnl   M5_OPTION_CASES       -- case selectors for the main option parse
+dnl
+[
+lib_path="${M5LIBPATH}"
 moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
 
 can_dev_stdin=false
@@ -31,11 +50,6 @@ code_count=0
 # _code_what$N = 'file'|'stdin'|'expr'
 # _code_source$N = actual filename or expression
 ]dnl
-m4_define([M5_VAR_INCR],
-  [AS_VAR_ARITH([$1],[[$]$1[ \+ 1]])])dnl
-m4_define([M5_VAR_DECR],
-  [AS_VAR_ARITH([$1],[[$]$1[ \- 1]])])dnl
-dnl
 dnl M5_PUSH_CODE([WHAT],[SOURCE])
 dnl   add a new code source
 dnl     WHAT='file'|'stdin'|'expr
@@ -48,15 +62,22 @@ m4_define([M5_PUSH_CODE],[
 dnl
 dnl M5_FOREACH_CODE([IF-FILE],[IF-STDIN],[IF-EXPR])
 dnl   iterate over code options, provide
-dnl     $$code_this = $code_source = filename or expression
+dnl     $code_source = filename, '-', or expression
+dnl     $code_this:
+dnl       AS_VAR_SET([[$code_this]],[new filename/etc...])
+dnl         updates $code_source
 dnl
 m4_define([M5_FOREACH_CODE],[[
     z=1
     while test "$z" -le "$code_count"  ; do
         code_this="_code_source$z"]
         AS_VAR_COPY([[code_source]],[[$code_this]])
+m4_ifval([$2][$3],[dnl
         AS_VAR_COPY([[w]],[[_code_what$z]])
-        AS_CASE([[$w]],[[file]],[$1],[[stdin]],[$2],[[expr]],[$3])
+        AS_CASE([[$w]],[[file]],[$1],[[stdin]],[$2],[[expr]],[$3])dnl
+],[dnl
+        AS_VAR_IF([[_code_what$z]],[[file]],[$1])dnl
+])
         M5_VAR_INCR([[z]])[
     done
 ]])dnl
@@ -75,8 +96,25 @@ listen_fixed=
 # _listen_$N = listener for listen_fixed[$N]
 # _listen_z$N = $Nth port 0 listener
 ]dnl
+dnl  M5_EXIST_LISTENERS
+dnl
+m4_define([M5_EXIST_LISTENERS],
+    [[test "$listen_fixed" || test "$listen_zcount" -gt 0]])dnl
+dnl
+dnl  M5_LISTENER_ADD([[port]],[["$lname"]])
+dnl    push ($port,"$lname") onto listeners list
+dnl
+m4_define([M5_LISTENER_ADD],
+[AS_IF([[test "$]$1[" -eq 0]],
+[  M5_VAR_INCR([[listen_zcount]])
+    AS_VAR_SET([[_listen_z${listen_zcount}]],[$2])],
+[AS_VAR_TEST_SET([[_listen_$]$1])],
+[[  usage "--listen|-p:  multiple listeners at $]$1"],
+[[  listen_fixed="$listen_fixed $]$1"
+    AS_VAR_SET([[_listen_$]$1],[$2])])])dnl
+dnl
 dnl  M5_FOREACH_LISTENER
-dnl    iterate over listeners, provide
+dnl    iterate over listeners list, each iteration gets
 dnl      $port = port number
 dnl      $lname = listener obj(s)
 dnl      $is_shell_port :/false
@@ -251,11 +289,11 @@ db_middle () {
     printf ",\"ckpt_db\",ckpt_db=\"%s\"" "$(printf "%s" "${ckpt_db}" | sed 's/\([\\"]\)/\\\1/g')"
     printf ",\"run_dir\",run_dir=\"%s\"" "$(printf "%s" "${run_dir}" | sed 's/\([\\"]\)/\\\1/g')"
     printf '};'
-    printf 'try shell_port=0;set_verb_code(#0,1,{});'
+    printf 'try shell_port=0;set_verb_code(@%:@0,1,{});'
     if test -z "$moo_port" ; then
         printf "%s" "original_port = listeners()[1][2];unlisten(original_port);"
     elif test "$shell_port" &&
-         test "$shell_listener" = "#0" &&
+         test "$shell_listener" = "@%:@0" &&
          test "$shell_port" -eq "$moo_port" ; then
         printf "%s" "shell_port = listeners()[1][2];"
     fi
@@ -263,7 +301,7 @@ db_middle () {
     comma=false
     printf 'listeners={'
     if test "$moo_port" ; then
-        printf "$moo_port,"'"#0"'
+        printf "$moo_port,"'"@%:@0"'
         comma=:
     fi]
     M5_FOREACH_LISTENER([[
@@ -711,10 +749,10 @@ describe_for_dryrun () {
         fi
         printf "  (-b) --address=%s \n" "$moo_ip"
         if test -z "$moo_port"; then
-            printf "  will unlisten initial #0 listener\n"
+            printf "  will unlisten initial @%:@0 listener\n"
         else
-            printf "  keeping initial #0 listener at port %s\n" "$moo_port"
-            if test "$shell_listener" = "#0" && test "$shell_port" -eq "$moo_port" ; then
+            printf "  keeping initial @%:@0 listener at port %s\n" "$moo_port"
+            if test "$shell_listener" = "@%:@0" && test "$shell_port" -eq "$moo_port" ; then
                 printf "    (= shell listener port)\n"
             fi
         fi
@@ -803,20 +841,12 @@ push_moo_listeners () {
         usage "--listen=|-p: port must be a number: $v"; return
       ]],[[
         port="$v"
-        lname="#0"
-      ]])[
+        lname="@%:@0"
+      ]])
 
-    if test "$lname" = "#0" && test -z "$moo_port"; then
-        moo_port="$port"
-    elif test "$port" -eq 0; then]
-        M5_VAR_INCR([[listen_zcount]])
-        AS_VAR_SET([[_listen_z${listen_zcount}]],[["$lname"]])[
-    elif] AS_VAR_TEST_SET([[_listen_$port]])[ ; then
-        usage "--listen|-p:  multiple listeners at $port" ; return
-    else
-        listen_fixed="$listen_fixed $port"]
-        AS_VAR_SET([[_listen_$port]],[["$lname"]])[
-    fi
+    AS_IF([[test "$lname" = "@%:@0" && test -z "$moo_port"]],
+[[      moo_port="$port"]],
+[M5_LISTENER_ADD([[port]],[["$lname"]])])[
 }
 
 push_lib_path () {
@@ -1027,11 +1057,11 @@ if test "$file_db" ; then
     test "$moo_args"    && conflict "--"
 
     # $moo_port is the only allowed listener
-    if test "$listen_fixed" || test "$listen_zcount" -gt 0; then
+    if] M5_EXIST_LISTENERS; [then
         if test "$moo_port"; then
             usage "-d|--dbfile only allows one -p|--listen"
         else
-            usage "-d|--dbfile only allows #0 as listener"
+            usage "-d|--dbfile only allows @%:@0 as listener"
         fi
     fi
 
@@ -1043,7 +1073,7 @@ if test "$file_db" ; then
 
 elif test "$template_db" ; then
     do_have_explicit_listeners=:
-    if test "$moo_port" || test "$listen_zcount" -gt 0 || test "$listen_fixed" ; then
+    if test "$moo_port" ||] M5_EXIST_LISTENERS [; then
         :
     elif test -z "$shell_port" || $do_softfail_shconn ; then
         do_have_explicit_listeners=false
@@ -1055,7 +1085,7 @@ elif test "$template_db" ; then
         if test "$shell_port" -eq 0 ; then
             push_moo_listeners "${shell_port},shell_listener"
         elif test "$shell_port" = "$moo_port" ; then
-            shell_listener="#0"
+            shell_listener="@%:@0"
         elif ]AS_VAR_COPY([[lname]],[[_listen_${shell_port}]])[
           test "$lname" ; then
             shell_listener="$lname"
@@ -1080,7 +1110,7 @@ elif test "$template_db" ; then
     AS_CASE([[$do_shutdown]],[[
       exit*]],[[
         do_shutdown=:
-        if test "$moo_port" || test "$listen_fixed" || test "$listen_zcount" -gt 0; then
+        if test "$moo_port" ||] M5_EXIST_LISTENERS; [then
             shutdown_condition='listeners()||'
         fi
     ]])
@@ -1100,7 +1130,7 @@ else
 
     test "$final_log" && conflict "-l|--log"
     test "$final_db"  && conflict "-o|--out-db"
-    if test "$moo_port" || test "$listen_zcount" -gt 0 || test "$listen_fixed"; then
+    if test "$moo_port" ||] M5_EXIST_LISTENERS; [then
         conflict "-p|--listen"
     fi
     test "$moo_args"    && conflict "-- args..."

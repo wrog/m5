@@ -1111,16 +1111,18 @@ push_moo_listeners () {
             ;;
     esac
 
-    if test "$lname" = "#0" && test -z "$moo_port"; then
+    if test "$lname" = "#0" && test -z "$moo_port"; then :
         moo_port="$port"
-    elif test "$port" -eq 0; then
-        as_fn_arith $listen_zcount \+ 1 && listen_zcount=$as_val
-        eval "_listen_z${listen_zcount}=\"\$lname\""
-    elif eval \${_listen_$port+:} false ; then
-        usage "--listen|-p:  multiple listeners at $port" ; return
     else
-        listen_fixed="$listen_fixed $port"
-        eval "_listen_$port=\"\$lname\""
+        if test "$port" -eq 0; then :
+            as_fn_arith $listen_zcount \+ 1 && listen_zcount=$as_val
+            eval "_listen_z${listen_zcount}=\"\$lname\""
+        elif eval \${_listen_$port+:} false ; then :
+            usage "--listen|-p:  multiple listeners at $port"
+        else
+            listen_fixed="$listen_fixed $port"
+            eval "_listen_$port=\"\$lname\""
+        fi
     fi
 }
 
@@ -1585,7 +1587,7 @@ if test "$file_db" ; then
 
 elif test "$template_db" ; then
     do_have_explicit_listeners=:
-    if test "$moo_port" || test "$listen_zcount" -gt 0 || test "$listen_fixed" ; then
+    if test "$moo_port" || test "$listen_fixed" || test "$listen_zcount" -gt 0 ; then
         :
     elif test -z "$shell_port" || $do_softfail_shconn ; then
         do_have_explicit_listeners=false
@@ -1598,7 +1600,8 @@ elif test "$template_db" ; then
             push_moo_listeners "${shell_port},shell_listener"
         elif test "$shell_port" = "$moo_port" ; then
             shell_listener="#0"
-        elif eval lname=\$_listen_${shell_port} ; test "$lname" ; then
+        elif eval lname=\$_listen_${shell_port}
+             test "$lname" ; then
             shell_listener="$lname"
         else
             push_moo_listeners "${shell_port},shell_listener"
@@ -1637,15 +1640,11 @@ elif test "$template_db" ; then
     while test "$z" -le "$code_count"  ; do
         code_this="_code_source$z"
         eval code_source=\$$code_this
-        eval w=\$_code_what$z
-        case $w in #(
-          file) :
+        if eval test \"x\$"_code_what$z"\" = x"file"; then :
             lib_find "$code_source" '.m5 .moo' ||
                 die "-f|--code-file not found: $code_source"
-            eval "$code_this=\"\$full\"" ;; #(
-          *) :
-            ;;
-        esac
+            eval "$code_this=\"\$full\""
+        fi
         as_fn_arith $z \+ 1 && z=$as_val
     done
     lib_template_find "$template_db" ||
@@ -1658,7 +1657,7 @@ else
 
     test "$final_log" && conflict "-l|--log"
     test "$final_db"  && conflict "-o|--out-db"
-    if test "$moo_port" || test "$listen_zcount" -gt 0 || test "$listen_fixed"; then
+    if test "$moo_port" || test "$listen_fixed" || test "$listen_zcount" -gt 0 ; then
         conflict "-p|--listen"
     fi
     test "$moo_args"    && conflict "-- args..."
