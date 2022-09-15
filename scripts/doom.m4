@@ -52,7 +52,7 @@ code_count=0
 ]dnl
 dnl M5_ADD_CODE([WHAT],[SOURCE])
 dnl   add a new code source
-dnl     WHAT='file'|'stdin'|'expr
+dnl     WHAT='file'|'stdin'|'expr'
 dnl     SOURCE=filename or expression
 dnl
 m4_define([M5_ADD_CODE],[
@@ -93,16 +93,18 @@ shell_port=MAYBE
 shell_listener='$shell_listener'
 listen_zcount=0
 listen_fixed=
-# _listen_$N = listener for listen_fixed[$N]
-# _listen_z$N = $Nth port 0 listener
+# _listen_$P = listener object(s) for explicit port $P>0
+# _listen_z$N = $Nth port 0 listener object(s)
 ]dnl
 dnl  M5_EXIST_LISTENERS
 dnl
 m4_define([M5_EXIST_LISTENERS],
     [[test "$listen_fixed" || test "$listen_zcount" -gt 0]])dnl
 dnl
-dnl  M5_LISTENER_ADD([[port]],[["$lname"]])
-dnl    push ($port,"$lname") onto listeners list
+dnl  M5_LISTENER_ADD([PORTVAR],[LISTENER])
+dnl    push ($PORTVAR,LISTENER) onto listeners list
+dnl    $PORTVAR is expected to be a nonnegative integer
+dnl    LISTENER is (whitespace separated) list of listener objects
 dnl
 m4_define([M5_LISTENER_ADD],
 [AS_IF([[test "$]$1[" -eq 0]],
@@ -193,6 +195,9 @@ get_dirname () {
     found_dirname="`]AS_DIRNAME([["$1"]])[`"
 }
 
+# make_run_dir
+#   give us this day our temporary directory
+#   and lead us not into temptation
 make_run_dir () {
     if test -z "$run_dir" ; then]
         AS_TMPDIR([m5.],[.])[
@@ -205,6 +210,10 @@ make_run_dir () {
     fi
 }
 
+# lib_default
+#   set lib_path to something useful iff it is still empty
+#   handle the common cases, punt on everything else.
+#
 lib_default () {
     test "$lib_path" && return;
     get_dirname "$as_myself"]
@@ -369,9 +378,8 @@ db_middle () {
 }
 
 
-# catdb TEMPLATE CODE_FILE
-#   write a (small) MOO db to stdout
-#   concatenates template.db.top code_expr code_file[.moo] template.db.bot
+# catdb
+#   insert db_middle into $template_db to produce a file database on stdout
 cat_db () {
     cat "${template_db}.top"
     db_middle
@@ -380,8 +388,10 @@ cat_db () {
 
 # unlogged_moo
 #   run MOO with current db and network parameters, logging to stderr.
-#   (We NEVER used the compiled-in port number; it will be unpredictable
-#   whether some other MOO is trying to the same => intermittant failure.)
+#   (We NEVER used the compiled-in port number; if we did,
+#   concurrent instances of the will fail unpredictably depending on
+#   who's able to grab the port => stupid.)
+#   (We also never use -l logfile.)
 unlogged_moo () {
     # local p
     p="$moo_port"
