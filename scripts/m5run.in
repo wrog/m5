@@ -768,22 +768,18 @@ do_commands () {
         args="$(printf "%s" "$args" | tr -d '\015')"
         ccmd="cmd_$cmd"
         if test "$cmd" = '***' ; then
-            ccmd="cmd_BYE"
+            cmd="BYE"
             args=
         elif test "$cmd" = "??:" ; then
-            ccmd="cmd_ECHO"
+            cmd="ECHO"
         fi
         # printf "|>>%s<<|\n" "$cmd $id $args" >&2
-        case $(type $ccmd 2>/dev/null) in #(
-            # ksh and bash say 'function'
-            # zsh and sh say 'shell function'
-            *' is a'*' 'function*) :
-                eval "$ccmd $id $args"
-                ;; #(
-            *) :
-                result -1 "$id" "unknown: $cmd"
-                ;;
-        esac
+        if eval \${_valid_cmd_$cmd+:} false; then :
+            eval ccmd=\$_valid_cmd_$cmd
+            eval "$ccmd $id $args"
+        else
+            result -1 "$id" "unknown: '$cmd'"
+        fi
     done
     exec 3>&- 4>&-
 }
@@ -810,10 +806,14 @@ result () {
 
 #### available redirection commands
 
+_valid_cmd_BYE=cmd_BYE
+all_cmds="$all_cmds BYE"
 cmd_BYE () {
     exec 3>&-
 }
 
+_valid_cmd_READ=cmd_READ
+all_cmds="$all_cmds READ"
 cmd_READ () {
     # local id port file
     id="$1"
@@ -829,6 +829,8 @@ cmd_READ () {
     } ) &
 }
 
+_valid_cmd_WRITE=cmd_WRITE
+all_cmds="$all_cmds WRITE"
 cmd_WRITE () {
     # local id port file
     id="$1"
@@ -838,6 +840,8 @@ cmd_WRITE () {
       result "$?" "$id" ) &
 }
 
+_valid_cmd_PROC=cmd_PROC
+all_cmds="$all_cmds PROC"
 cmd_PROC () {
     # local id port errs efd
     id="$1"
@@ -859,6 +863,8 @@ cmd_PROC () {
     ) &
 }
 
+_valid_cmd_PROC2=cmd_PROC2
+all_cmds="$all_cmds PROC2"
 cmd_PROC2 () {
     # local id port errs efd
     id="$1"
@@ -881,11 +887,15 @@ cmd_PROC2 () {
     ) &
 }
 
+_valid_cmd_YOUARE=cmd_YOUARE
+all_cmds="$all_cmds YOUARE"
 cmd_YOUARE () {
     echo "YOUARE $1"
     moo_conn="$1"
 }
 
+_valid_cmd_CMD=cmd_CMD
+all_cmds="$all_cmds CMD"
 cmd_CMD () {
     # local id result
     id="$1"
@@ -894,6 +904,8 @@ cmd_CMD () {
     result $? $id "$result"
 }
 
+_valid_cmd_EVAL=cmd_EVAL
+all_cmds="$all_cmds EVAL"
 cmd_EVAL () {
     # local id
     id="$1"
@@ -902,10 +914,14 @@ cmd_EVAL () {
     result $? $id ""
 }
 
+_valid_cmd_ECHO=cmd_ECHO
+all_cmds="$all_cmds ECHO"
 cmd_ECHO () {
     printf "%s\n" "$*"
 }
 
+_valid_cmd_WORDS=cmd_WORDS
+all_cmds="$all_cmds WORDS"
 cmd_WORDS () {
     while test $# -gt 0 ; do
         printf "%s\n" "$1" | cat -A

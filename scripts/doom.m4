@@ -560,27 +560,33 @@ sh_connect () {
     if test -n "$auth_code" ; then
         printf "%s\n" "$auth_code" >&3
     fi
-}
-
+}]
+dnl
+dnl
+dnl M5_DECLARE_COMMAND([CMD]) { ... }
+dnl
+m4_define([M5_DECLARE_COMMAND],
+[AS_VAR_SET([[_valid_cmd_]$1],[[cmd_]$1])[
+all_cmds="$all_cmds ]$1["
+cmd_]$1[ () ]])dnl
+[
 do_commands () {
     # local cmd ccmd id args
     while read -r cmd id args <&4; do
         args="$(printf "%s" "$args" | tr -d '\015')"
         ccmd="cmd_$cmd"
         if test "$cmd" = '***' ; then
-            ccmd="cmd_BYE"
+            cmd="BYE"
             args=
         elif test "$cmd" = "??:" ; then
-            ccmd="cmd_ECHO"
+            cmd="ECHO"
         fi]
         # printf "|>>%s<<|\n" "$cmd $id $args" >&2
-        AS_CASE([[$(type $ccmd 2>/dev/null)]],[[
-            # ksh and bash say 'function'
-            # zsh and sh say 'shell function'
-          *' is a'*' 'function*]],[[
+        AS_VAR_SET_IF([[_valid_cmd_$cmd]],[
+            AS_VAR_COPY([[ccmd]],[[_valid_cmd_$cmd]])[
             eval "$ccmd $id $args"
           ]],[[
-            result -1 "$id" "unknown: $cmd"
+            result -1 "$id" "unknown: '$cmd'"
           ]])[
     done
     exec 3>&- 4>&-
@@ -607,12 +613,12 @@ result () {
 }
 
 #### available redirection commands
-
-cmd_BYE () {
+]
+M5_DECLARE_COMMAND([[BYE]]) [{
     exec 3>&-
-}
+}]
 
-cmd_READ () {
+M5_DECLARE_COMMAND([[READ]]) [{
     # local id port file
     id="$1"
     port="$2"
@@ -625,18 +631,18 @@ cmd_READ () {
         "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null
         result "$?" "$id"
     } ) &
-}
+}]
 
-cmd_WRITE () {
+M5_DECLARE_COMMAND([[WRITE]]) [{
     # local id port file
     id="$1"
     port="$2"
     file="$3"
     ( echo "$auth_code,$id,>" | "$netcat" $nc_keepalive "$moo_ip" "$port" 2>/dev/null >"$file"
       result "$?" "$id" ) &
-}
+}]
 
-cmd_PROC () {
+M5_DECLARE_COMMAND([[PROC]]) [{
     # local id port errs efd
     id="$1"
     port="$2"
@@ -655,9 +661,9 @@ cmd_PROC () {
       } | "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null
       result "$?" "$id"
     ) &
-}
+}]
 
-cmd_PROC2 () {
+M5_DECLARE_COMMAND([[PROC2]]) [{
     # local id port errs efd
     id="$1"
     port="$2"
@@ -677,34 +683,34 @@ cmd_PROC2 () {
           | "$netcat" $nc_close_eof "$moo_ip" "$port" 2>&1 >/dev/null <&5
       result "$?" "$id"
     ) &
-}
+}]
 
-cmd_YOUARE () {
+M5_DECLARE_COMMAND([[YOUARE]]) [{
     echo "YOUARE $1"
     moo_conn="$1"
-}
+}]
 
-cmd_CMD () {
+M5_DECLARE_COMMAND([[CMD]]) [{
     # local id result
     id="$1"
     shift
     result="$("$@" 2>&1 | head -1)"
     result $? $id "$result"
-}
+}]
 
-cmd_EVAL () {
+M5_DECLARE_COMMAND([[EVAL]]) [{
     # local id
     id="$1"
     shift
     eval "$@" >/dev/null 2>&1
     result $? $id ""
-}
+}]
 
-cmd_ECHO () {
+M5_DECLARE_COMMAND([[ECHO]]) [{
     printf "%s\n" "$*"
-}
+}]
 
-cmd_WORDS () {
+M5_DECLARE_COMMAND([[WORDS]]) [{
     while test $# -gt 0 ; do
         printf "%s\n" "$1" | cat -A
         shift
