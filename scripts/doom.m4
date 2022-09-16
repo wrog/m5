@@ -1131,7 +1131,6 @@ elif test "$template_db" ; then
     AS_CASE([[$do_player]],[[
       exit*]],[[
         if $do_have_explicit_listeners ||
-           test "$final_log" ||
            test "$final_db" ; then
             do_player=false
         else
@@ -1144,9 +1143,7 @@ elif test "$template_db" ; then
     AS_CASE([[$do_shutdown]],[[
       exit*]],[[
         do_shutdown=:
-        if test "$moo_port" ||] M5_EXIST_LISTENERS; [then
-            shutdown_condition='listeners()||'
-        fi
+        shutdown_condition='listeners()||'
     ]])
 
     # resolve filenames

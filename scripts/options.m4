@@ -142,31 +142,26 @@ M5_OPTION_NEGVALUE(  [], [shell-port], [[<port>]],
   [moo<->shell port],[0*],
   [[shell_port]])dnl
 [
-This option specifies the port for the shell redirection service (@option{+S},@option{-S}) to connect to, which, in the case where we are also running a @moo server (@option{+M|--moo}), will also be the port at which that server is expected to be listening with the @code{$shell_listener} --- @emph{or} that there will be no such port (i.e., that the @moo server is @emph{not} expected to be running such a listener).
+This option specifies the port for the shell redirection service (@option{+S|--shell}) to connect to.
 
-Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}, that no connection will be attempted, and thus combining @option{--no-shell-port} with @option{+S|--shell} is always an error.
+In the case where we are @emph{not} also running a @moo server (@option{-M|--no-moo}), but instead connecting to a pre-existing server instance, this option is @strong{required} and the port number @emph{must} be non-zero (and, chances are, you will need to specify an @option{-a|--address} as well).
 
-@option{--shell-port=0} means a random port will be selected by the kernel and the redirector will be reading the @moo server log to determine what to connect to.
+In the case where a @moo server @emph{is} being run (@option{+M|--moo}), and both this option and @option{+S|-S|-(-no)-shell} are left unspecified, the default behavior is to expect (or direct in the case of template databases) the @moo server to choose a port randomly, listen with @code{$shell_listener}, advertise this in the server log, and then we read the log and either connect accordingly or quietly give up if no advertisement is seen.  The scenarios for changing this behavior are as follows:
 
-Where possible, the setting of this option will be communicated to the @moo server, however this only works for template databases (@option{-t|--db}); for file databases (@option{-d|--dbfile}), the best we can do is watch the log, hope we guessed correctly, and error-exit if we see the @moo not doing what we expected.
-
-Specifying @option{--shell-port=@var{p}} explicitly with @option{+M|--moo} means it's an error if the @moo server fails to report that it is shell-listening or, in the case of @var{p} > 0, that it has somehow chosen to listen at a different port.
-
-Specifying @option{--shell-port=@var{p}} with @option{-S|--no-shell} is specifically for the case where the @moo server is expected listen but the redirector will be run elsewhere (with @option{-M +S}).  This can only be done with a template database.
-
-If @option{-[-no]-shell-port} is unspecified, the default is @option{--shell-port=0}, @strong{unless}:
 @itemize
 @item
-@option{-[-no]-shell} is also unspecified, in which case it is @emph{not} an error for the @moo server to fail to report that it is shell listening; in this situation we quietly revert to @option{--no-shell-port} and no connection attempt will be made; or@htmlbrbr
+Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}, that no connection will be attempted, but also removes the direction to the @moo server to listen, though the latter only affects template databases.@htmlbrbr
 @item
-we are not running a @moo at all (@option{-M|--no-moo}), in which case a @option{--shell-port=@var{p}} with @var{p} > 0 is @strong{required}, this being the separate redirector part of the separate redirector scenario, which looks like this
-@example
-m5run +M -S --shell-port=6666 -t db  #runs the @moo
-m5run -M +S --shell-port=6666        #runs the redirector
-@end example
-@end itemize
+Combining @option{--no-shell-port} with @option{+S|--shell} makes no sense and is not allowed.@htmlbrbr
+@item
+@option{--shell-port=@var{port}} in the case where @option{@var{port}} > 0 requires the use of that specific port, and it is an error (i.e., non-zero @command{m5run} exit status) for the @moo server to either fail to listen or advertise the wrong port (this can only happen for file databases).
 
-This is one of those options where you probably just want to leave it alone and let it do the Right Thing.
+Combining @option{--shell-port=@var{port}} with @option{-S|--no-shell}, i.e., the direction/expection to listen while suppressing the connection attempt, is what is needed if you want to connect to the shell listener from another process.
+@item
+@option{--shell-port=0} is essentially the default behavior except that here, it is an error for the @moo server to either fail to listen or advertise a port in the log (which, again, will only happen for file databases).
+
+Combining @option{--shell-port=0} with @option{-S|--no-shell}, i.e., choose a port randomly for listening and do not connect to it, is the other way of enabling an external connection, has the advantage that there will never be conflicts over a particular port, however you will need to find some means of communicating the port number (available as @code{@var{shell_port}} in the first verb) to the other process.
+@end itemize
 ]
 dnl ---------------------------------
 dnl  -p|--listen=<port>[,<listener>]
@@ -207,11 +202,11 @@ M5_OPTION_BOOLEAN(  [P], [player],
   [first verb gets 'player'],[-P=no*],
   [[do_player]])dnl
 [
-Include, in the first verb, an assignment to @code{player} such that @code{notify(player,@var{line})} sends @var{line} to @code{stdout} and @code{boot_player(player)} closes @code{stdout}.
+Include, in the first verb, an assignment to @code{player} such that @code{notify(player,@var{line})} sends @var{line} to standard output and @code{boot_player(player)} closes standard output.
 
-Default is @option{--no-player} unless there is no shell connection (@samp{+S}), no listening points (@samp{-p|--listen}), no log file (@samp{-l}), and no output database file (@samp{-o}).  In other words, by default, we only create the fake @code{player} if there is no other way for this @moo to talk to anyone.
+Default is @option{--no-player} unless there is no output database file (@samp{-o}) and no listening points are explicitly specified, whether via @option{-p|--listen} or @option{--shell-port}.  In other words, by default, we only create the fake @code{player} if there is no other way for this @moo to communicate with anyone.
 
-This option can only be used with template databases (@option{-t}).
+@option{+P|--player} can only be used with template databases (@option{-t}) and is not allowed if the output database (@samp{-o|--out-db}) is standard output.
 ]
 dnl --
 dnl
@@ -267,15 +262,15 @@ M5_OPTION_BOOLEAN(  [H], [shutdown],
   [shutdown after first verb], [-H=no*],
   [[do_shutdown]])dnl
 [
-Bracket the sequence of expressions/files included in the first verb via @option{-e|--expr} and @option{-f|--code-file} options with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately after that sequence either successfully finishes executing or something in it raises an error.
+Bracket the sequence of expressions/files included in the first verb via @option{-e|--expr} and @option{-f|--code-file} options with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately when the first verb exits.
 
-Default is usually @option{--no-shutdown|-H}, the exception being when there are no listening points (@samp{-p|--listen}), i.e., no way (other than signals) to get a shutdown to happen, in which case @option{--shutdown|+H} is set by default.
+Default behavior is to shut down @emph{unless} there are one or more listeners active when the first verb exits, whether this be due to explicit @option{-p|--listen} options or @option{-e}/@option{-f} code issuing its own @code{listen()} calls.
 
 This option can only be used with template databases (@option{-t}).
 ]dnl
 _M5_END_TABLE()dnl
 [
-Expressions (@option{-e|--expr}) and files (@option{-f|--code-file}) are inserted in the order they appear on the command line, @emph{after} the setup for the fake player (@option{-P|--player}) and the listening points (@option{-p|--listener}) but (obviously) before any code calling for a shutdown (@option{+H|--shutdown}).
+Expressions (@option{-e|--expr}) and files (@option{-f|--code-file}) are executed in the order they appear on the command line, @emph{after} the setup for the fake player (@option{-P|--player}) and the listening points (@option{-p|--listener}) but (obviously) before any code calling for a shutdown (@option{+H|--shutdown}).
 ]dnl
 dnl ======================================
 M5_HELP_SECTION([Informational])

@@ -1643,7 +1643,6 @@ elif test "$template_db" ; then
     case $do_player in #(
       exit*) :
         if $do_have_explicit_listeners ||
-           test "$final_log" ||
            test "$final_db" ; then
             do_player=false
         else
@@ -1659,9 +1658,7 @@ elif test "$template_db" ; then
     case $do_shutdown in #(
       exit*) :
         do_shutdown=:
-        if test "$moo_port" || test "$listen_fixed" || test "$listen_zcount" -gt 0; then
-            shutdown_condition='listeners()||'
-        fi
+        shutdown_condition='listeners()||'
         ;; #(
       *) :
         ;;
