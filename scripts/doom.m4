@@ -68,18 +68,18 @@ dnl       AS_VAR_SET([[$code_this]],[new filename/etc...])
 dnl         updates $code_source
 dnl
 m4_define([M5_FOREACH_CODE],[[
-    z=1
-    while test "$z" -le "$code_count"  ; do
-        code_this="_code_source$z"]
-        AS_VAR_COPY([[code_source]],[[$code_this]])
+z=1
+while test "$z" -le "$code_count"  ; do
+    code_this="_code_source$z"]
+    AS_VAR_COPY([[code_source]],[[$code_this]])
 m4_ifval([$2][$3],[dnl
-        AS_VAR_COPY([[w]],[[_code_what$z]])
-        AS_CASE([[$w]],[[file]],[$1],[[stdin]],[$2],[[expr]],[$3])dnl
+    AS_VAR_COPY([[w]],[[_code_what$z]])
+    AS_CASE([[$w]],[[file]],[$1],[[stdin]],[$2],[[expr]],[$3])dnl
 ],[dnl
-        AS_VAR_IF([[_code_what$z]],[[file]],[$1])dnl
+    AS_VAR_IF([[_code_what$z]],[[file]],[$1])dnl
 ])
-        M5_VAR_INCR([[z]])[
-    done
+    M5_VAR_INCR([[z]])[
+done
 ]])dnl
 [
 do_runmoo='exit 65'
@@ -99,21 +99,23 @@ listen_fixed=
 dnl  M5_EXIST_LISTENERS
 dnl
 m4_define([M5_EXIST_LISTENERS],
-    [[test "$listen_fixed" || test "$listen_zcount" -gt 0]])dnl
+[[test "$listen_fixed" || test "$listen_zcount" -gt 0]])dnl
 dnl
-dnl  M5_LISTENER_ADD([PORTVAR],[LISTENER])
-dnl    push ($PORTVAR,LISTENER) onto listeners list
+dnl  M5_LISTENER_ADD([PORTVAR],[LISTENERS])
+dnl    push ($PORTVAR,LISTENERS) onto listeners list
 dnl    $PORTVAR is expected to be a nonnegative integer
-dnl    LISTENER is (whitespace separated) list of listener objects
+dnl    LISTENERS is (whitespace separated) list of listener objects
 dnl
-m4_define([M5_LISTENER_ADD],
-[AS_IF([[test "$]$1[" -eq 0]],
-[  M5_VAR_INCR([[listen_zcount]])
-    AS_VAR_SET([[_listen_z${listen_zcount}]],[$2])],
-[AS_VAR_TEST_SET([[_listen_$]$1])],
-[[  usage "--listen|-p:  multiple listeners at $]$1"],
-[[  listen_fixed="$listen_fixed $]$1"
-    AS_VAR_SET([[_listen_$]$1],[$2])])])dnl
+m4_define([M5_LISTENER_ADD],[
+AS_IF([[test "$]$1[" -eq 0]],[
+    M5_VAR_INCR([[listen_zcount]])
+    AS_VAR_SET([[_listen_z${listen_zcount}]],[$2])
+],[AS_VAR_TEST_SET([[_listen_$]$1])],[[
+    usage "--listen|-p:  multiple listeners at $]$1"
+],[[
+    listen_fixed="$listen_fixed $]$1"
+    AS_VAR_SET([[_listen_$]$1],[$2])
+])])dnl
 dnl
 dnl  M5_FOREACH_LISTENER
 dnl    iterate over listeners list, each iteration gets
@@ -122,24 +124,24 @@ dnl      $lname = listener obj(s)
 dnl      $is_shell_port :/false
 dnl
 m4_define([M5_FOREACH_LISTENER],[[
-    for port in $listen_fixed; do]
-        AS_VAR_COPY([[lname]],[[_listen_$port]])[
-        is_shell_port=false
-        test "$shell_port" && test "$shell_port" -eq "$port" &&
-            is_shell_port=:
-        ]$1[
-    done
-    port=0
-    z=1
-    while test "$z" -le "$listen_zcount"; do]
-        AS_VAR_COPY([[lname]],[[_listen_z$z]])[
-        is_shell_port=false
-        test "$shell_port" && test "$shell_port" -eq "$port" &&
-            test "$shell_listener" = "$lname" &&
-            is_shell_port=:
-        ]$1
-        M5_VAR_INCR([[z]])[
-    done
+for port in $listen_fixed; do]
+    AS_VAR_COPY([[lname]],[[_listen_$port]])[
+    is_shell_port=false
+    test "$shell_port" && test "$shell_port" -eq "$port" &&
+        is_shell_port=:
+    ]$1[
+done
+port=0
+z=1
+while test "$z" -le "$listen_zcount"; do]
+    AS_VAR_COPY([[lname]],[[_listen_z$z]])[
+    is_shell_port=false
+    test "$shell_port" && test "$shell_port" -eq "$port" &&
+        test "$shell_listener" = "$lname" &&
+        is_shell_port=:
+    ]$1
+    M5_VAR_INCR([[z]])[
+done
 ]])dnl
 [
 do_dryrun=false
