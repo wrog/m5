@@ -35,3 +35,6 @@ $(TESTSUITE): $(srcdir)/t.at $(srcdir)/package.m4 \
   $(srcdir)/[0-9]*.at
 	$(AUTOTEST) -I '$(srcdir)' -o $@.tmp $@.at
 	mv $@.tmp $@
+
+maintainer-clean-local:
+	rm -rf Makefile.in atconfig package.m4 t

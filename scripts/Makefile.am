@@ -30,3 +30,6 @@ doom2: doom2.in Makefile
 
 doom2.in: $(srcdir)/doom2.m4 $(srcdir)/doom.m4 $(top_builddir)/config.status $(top_srcdir)/LICENSE $(top_srcdir)/AUTHOR
 	$(AUTOM4TE) -l m4sh --include=$(srcdir) $(srcdir)/doom2.m4 > doom2.in
+
+maintainer-clean-local:
+	rm -f Makefile.in doom.in doom2.in $(dist_bin_SCRIPTS)
