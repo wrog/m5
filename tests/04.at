@@ -3,7 +3,7 @@ AT_SETUP([ports] (__file__))[
 
 while : ; do
   addr=`m5run -t Raw -e 'r=1+random(255);s=1+random(254);notify(player,tostr(127,".",0,".",r,".",s))'`
-  lock="/tmp/m5-test-reserve-$addr"
+  lock="${TMPDIR-/tmp}/m5-test-reserve-$addr"
   if mkdir "$lock" 2>/dev/null ; then
     break
   fi
