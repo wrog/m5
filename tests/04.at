@@ -1,6 +1,9 @@
 AT_SETUP([ports] (__file__))[
 ##########################
 
+if : ; then
+  addr=127.0.0.1
+else
 while : ; do
   addr=`m5run -t Raw -e 'r=1+random(255);s=1+random(254);notify(player,tostr(127,".",0,".",r,".",s))'`
   lock="${TMPDIR-/tmp}/m5-test-reserve-$addr"
@@ -8,6 +11,7 @@ while : ; do
     break
   fi
 done
+fi
 
 rmlock () {
   rm -rf "$lock"
