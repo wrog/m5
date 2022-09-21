@@ -332,7 +332,7 @@ db_middle () {
          test "$shell_port" -eq "$moo_port" ; then
         printf "%s" "shell_port = listeners()[1][2];"
     fi
-    $do_player && printf "%s" 'set_verb_code(o=create(@%:@-1),add_verb(o,{@%:@0,"xd","do_login_command"},{a="any",a,a}),{tostr("if(argstr&&(argstr==\"",auth_code,"\"||boot_player(player)))unlisten(toint(substitute(\"%1\",match(connection_name(player),\"^port %([0-9]+%)\",1))));for p in(connected_players(1))p==player||boot_player(p);endfor recycle(this);reset_max_object();m=toobj(toint(this)-1);while(max_object()<m)recycle(create(@%:@-1));endwhile resume(",task_id(),",player);endif")});q=listen(o,0,0);server_log(tostr("playerport ",q));player=suspend();'
+    $do_player && printf "%s" 'set_verb_code(o=create(@%:@-1),add_verb(o,{@%:@0,"xd","do_login_command"},{a="any",a,a}),{tostr("if(argstr&&(argstr==\"",auth_code,"\"||boot_player(player)))unlisten(toint({c=connection_name(player),c[6..index(c,\" from \")-1]}[2]));for p in(connected_players(1))p==player||boot_player(p);endfor recycle(this);reset_max_object();m=toobj(toint(this)-1);while(max_object()<m)recycle(create(@%:@-1));endwhile resume(",task_id(),",player);endif")});q=listen(o,0,0);server_log(tostr("playerport ",q));player=suspend();'
     comma=false
     printf 'listeners={'
     if test "$moo_port" ; then
