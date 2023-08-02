@@ -20,7 +20,7 @@ dnl   M5_OPTION_CASES       -- case selectors for the main option parse
 dnl
 [
 lib_path="${M5LIBPATH}"
-moo_exec="${M5MOOEXEC:-/home/moo/src/git/server/moo}"
+moo_exec="${M5MOOEXEC:-/home/moo/src/git/s2/moo}"
 
 can_dev_stdin=false
 
