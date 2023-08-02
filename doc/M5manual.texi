@@ -219,7 +219,7 @@ Some version of Netcat, any of NMap's @command{ncat}, OpenBSD's @command{netcat}
 @item
 Autoconf and Bison, but @strong{only} if you are trying to build M5 directly from the git source repository.  If you have an up-to-date tarball, you can skip this.
 
-(Note that there may be some warnings if you do not have the @emph{correct} version of Bison, which is currently 3.7.5, much depending on how often the Bison People change their @code{yyparse} algorithm and table formats; I'd like to think that's pretty much @emph{never} these days, but we'll see).  Again, if you have an up-to-date tarball, you can skip this.)
+(There may be some warnings if you do not have the @emph{correct} version of Bison, which is currently 3.7.5, much depending on how often the Bison People change their @code{yyparse} algorithm and table formats; I'd like to think that's pretty much @emph{never} these days, but we'll see).  Again, if you have an up-to-date tarball, you can skip this.)
 
 @item
 A POSIX-compliant shell.  Really, this should be one of the four that the Autoconf People find vaguely acceptable:  @command{bash}, @command{dash}, @command{ksh}, or @command{zsh}.
@@ -285,7 +285,7 @@ Without the @option{-i}, you'll have to run @command{automake --missing} to get 
 As above.
 
 @item make install
-Your call.  This is probably not necessary if your use of M5 is single-purpose (e.g., running the @moo server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.@footnote{Greetings from The Year 1991}
+Optional.  This is not necessary if your use of M5 is single-purpose (e.g., running the @moo server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.@footnote{Greetings from The Year 1991}
 
 With suitable @code{PATH} adjustments M5 should run just fine out of its source directory (@var{srcdir}), though if you're wanting to run @moo server tests, there's a setting in that part of the world you'll have to make.
 
@@ -408,7 +408,7 @@ $ m5run -t Raw -e 'server_log("Hello world!")' -l - 2>&1 | grep ' > '
 
 (You need the @samp{2>&1} because the specifing @samp{-} for the log means it shows up on standard error, not standard output.)
 
-In short, @samp{Raw} exists for (1) really simple tests, and (2) the bootstrap process that builds everything else in M5 (which you really don't need to know about unless you are insane).  The entire menagerie of template databases available is described in @ref{Databases}; typically you'll use the one that exists for your particular purpose, e.g., @samp{Test} to run test suites, @samp{TestGen} to create test suites, and so on@dots{}).
+In short, @samp{Raw} exists for (1) really simple tests, and (2) the bootstrap process that builds everything else in M5 (which only insane people will care about).  The entire menagerie of template databases available is described in @ref{Databases}; typically you'll use the one that exists for your particular purpose, e.g., @samp{Test} to run test suites, @samp{TestGen} to create test suites, and so on@dots{}).
 
 But for general playing around, you'll want to use the @samp{OmgWTF} database that gratuitously has everything installed for no reason.  Pick an unused port, do  (todo:  insert authcode procedure here)
 
@@ -435,7 +435,7 @@ There is no topology; @code{.location} and @code{.contents} are entirely unused.
 @code{fg_ticks/bg_ticks} are, by default, set unbelievably huge and @code{fg_seconds/bg_seconds} are kind of long, too, so be careful with those while loops.  But since you can simultaneously connnect as many times as you want without booting yourself, it's easy enough to @code{;kill_task()} whatever you need to.
 @end itemize
 
-@node @command {m5run} Reference
+@node @command{m5run} Reference
 @chapter @command{m5run} Reference
 
 @quotation
@@ -480,11 +480,15 @@ Some things you might want to know if you are unusually pedantic:
 
 @itemize
 @item
-In cases where an option takes a value parameter, e.g., @option{-l|}@footnote{the vertical bar @option{|} is not actually part of the option name, but rather indicates a choice between @w{@option{-l @var{filename}}} and @option{--log=@var{filename}}, which are intended to mean the same thing, but you probably guessed this already.}@option{--log=@var{filename}}, the value (@option{@var{filename}}) is always @emph{mandatory}, i.e., we do not have any options with optional values.  For situations where some kind of default is appropriate, you'll typically do that by specifying an empty string (@option{--log=} or @w{@option{-l ''}}), though, more often, you'll get the default by not mentioning the option at all.
+Options either take a value parameter or they don't, i.e., if your command line includes an option for which a value is expected, we do not allow you to omit the value.  If you want such an option to take on its default value, then leave it out.  Where an option expects a value parameter, e.g., @option{-l|}@footnote{the vertical bar @option{|} is not actually part of the option name, but rather indicates a choice between @w{@option{-l @var{filename}}} and @option{--log=@var{filename}}, which are intended to mean the same thing, but you probably guessed this already.}@option{--log=@var{filename}}, you must do one of the following:
 
-If you're using the short-option version, e.g., @option{-l}, the value must be a separate word, i.e., @w{@option{-l @var{filename}}}; we explicitly forbid @option{-l@var{filename}} and @option{-l=@var{filename}}.
+@itemize
+@item
+give the short-option, e.g., @option{-l}, in which case the value must be a separate word, i.e., @w{@option{-l @var{filename}}}; we explicitly forbid @option{-l@var{filename}} and @option{-l=@var{filename}}.
 
-For the long-option version, it has to be @option{--log=@var{filename}}, i.e., the two word version @w{@option{--log @var{filename}}} is likewise forbidden.
+@item
+give the long-option, e.g., @option{--log=@var{filename}}; we explicitly forbid doing this as two words (@w{@option{--log @var{filename}}}).
+@end itemize
 
 @item
 The ordering of options does not matter, except for a few stated situations where it does (@option{-e|--expr}, @option{-f|--code-file}, @option{-L|--lib-path}, and @option{--}, which see.)@htmlbrbr
@@ -492,16 +496,18 @@ The ordering of options does not matter, except for a few stated situations wher
 @item
 We use @option{-[-no]-foo}@footnote{The square brackets are to indicate that the @samp{-no} portion of this is optional, and not actually part of the option name, but you knew this already.
 
-We are perhaps being unorothdox in expressing this using @w{@option{-[-no]-foo}} rather than @w{@option{--[no-]foo}}, but it seems preferable to make the option-name portion of this (@samp{foo}) more readable as opposed to emphasizing that this is indeed a long (@samp{--}) option.
+We are perhaps being unorothdox in expressing this as @w{@option{-[-no]-foo}} rather than @w{@option{--[no-]foo}}, but it seems preferable to make the option-name portion of this (@samp{foo}) more readable as opposed to emphasizing that this is indeed a long (@samp{--}) option.
 
 Visual perception is weird.  Film at 11.} to indicate that the long option @option{--foo} may be negated using @option{--no-foo}.
 
-If this option is a straight boolean flag (i.e., there are only two possible settings) then, for the corresponding short option, plus (@samp{+}) will indicate the affirmative setting and minus (@samp{-}) will be equivalent to @samp{no-}.@*For example, @option{+M} is the same as @option{--moo} and @option{-M} is the same as @option{--no-moo}.@footnote{Yes, I believe this violates one of the GNU coding standards for How to Do Options.  It won't be the first time this sort of thing has happened.  Cope.}
+If this option is a straight boolean flag (i.e., there are only two possible settings) then, for the corresponding short option, plus (@samp{+}) will indicate the affirmative setting and minus (@samp{-}) will be equivalent to @samp{no-}.
+
+For example, @option{+M} is the same as @option{--moo} and @option{-M} is the same as @option{--no-moo}.@footnote{Yes, I believe this violates one of the GNU coding standards for How to Do Options.  It won't be the first time this sort of thing has happened.  Cope.}
 
 @item
-We use @option{-[-no]-foo=@var{value}} to mean that @option{--no-foo} --- which @emph{cannot} be given a @var{value} even though @option{--foo} absolutely requires one --- is synonymous with specifying the empty string @option{--foo=''} which, in turn, will have a special meaning that will usually (we hope) be obvious.
+We use @option{-[-no]-foo=@var{value}} to mean that this option takes a value @emph{and} is interpreted in some contexts as a boolean flag, false for the empty string and true for all other strings.  In this case @option{--no-foo} is synonymous with @option{--foo=''} and you are @emph{not} actually allowed to do @option{--no-foo=@var{value}}.
 
-For example, @option{--no-log} means do not write a log file, whereas @option{--log} inherently requires telling us where the log file is supposed to go, but @option{--log=''} @emph{also} means@footnote{Also, note that we're assuming the usual shell quoting mechanisms are in effect, and thus @option{--log=''} is the same as @option{--log=}, which means the value of this option is indeed an empty string, as opposed to a string containing a pair of single quotes, and we're just putting the quotes there for pedagogical reasons, but you probably already knew this, too.} do not write a log file (@dots{} as opposed to, say, attempting to write the log to a file whose name is the empty string, which, if you were unfortunate enough to be on a system where that actually worked, would then be Stupid and Very Annoying).
+Usually the empty string will also have a special meaning.  For example, @option{--no-log} means do not write a log file, whereas @option{--log} inherently requires telling us where the log file is supposed to go, but @option{--log=''} @emph{also} means@footnote{Also, note that we're assuming the usual shell quoting mechanisms are in effect, and thus @option{--log=''} is the same as @option{--log=}, which means the value of this option is indeed an empty string, as opposed to a string containing a pair of single quotes, and we're just putting the quotes there for pedagogical reasons, but you probably already knew this, too.} do not write a log file (@dots{} as opposed to, say, attempting to write the log to a file whose name is the empty string, which, if you were unfortunate enough to be on a system where that actually worked, would then be Stupid and Very Annoying).
 
 @item
 For certain other flags, notably @option{-h} or @option{-?} as alternatives for @option{--help} and other informational flags that preempt most other activity and for which a @option{--no-} version is entirely pointless, we adhere more closely to tradition.

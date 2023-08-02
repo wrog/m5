@@ -43,7 +43,7 @@ M5_HELP_SECTION([File])dnl
 When running a @moo server (@option{+M}) an input database option (@option{-t|--db} or @option{-d|--dbfile}) must be specified, and there can be at most one.
 
 @anchor{std-file}
-Also, some of these allow specifying @samp{-} to mean standard input, standard output, or standard error, depending on context, which you should use if this is the behavior you want.  Meaning do not use @file{/dev/stdin} or @file{/dev/fd/5} if your operating system offers such things; there are enough weird redirections happening behind the scenes that these will probably not work in the way you expect.  Just use @samp{-} and redirect from the outside if you want bits being sent to unorthodox file descriptors.
+Also, some of these allow specifying @samp{-} to mean standard input, standard output, or standard error, depending on context, which you should use if this is the behavior you want.  Meaning do @emph{not} use @file{/dev/stdin} or @file{/dev/fd/2} if your operating system offers such things; there are enough weird redirections happening behind the scenes that these will probably not work in the way you expect.  Just use @samp{-} and redirect from the outside if you want bits being sent to unorthodox file descriptors.
 
 And it is entirely legal to use @samp{-} for multiple options in the same command, e.g., @emph{all} of input database (@option{-d}), output database (@option{-o}) and the server log (@option{-l}) could be @samp{-}, since these are referring to standard input, standard output, and standard error, respectively, each being used only once, there is no conflict.
 ]
@@ -67,14 +67,18 @@ Sets or adds to the M5 Library Path, a list of directories initialized the value
 There are 3 possibilities for @var{pathstring}:
 @itemize
 @item
-A @var{pathstring} beginning with @samp{+:} is appended to the path.
+A @var{pathstring} of the form @file{+:@var{dir1}[:@var{dir2}@dots{}]} appends @file{@var{dir1}[:@var{dir2}@dots{}]} to the existing path.
 @item
-A @var{pathstring} ending with @samp{:+} adds directories to the beginning of the path.
+A @var{pathstring} of the form @file{@var{dir1}[:@var{dir2}@dots{}]:+} prefixes @file{@var{dir1}[:@var{dir2}@dots{}]} to the beginning of the path.
 @item
-Otherwise @var{pathstring} replaces the entire path.
+An otherwise unadorned @file{@var{dir1}[:@var{dir2}@dots{}]} replaces the entire path.
 @end itemize
 
-This option may be given multiple times and the results are cumulative.  All @option{-L|--lib-path} options are collected @emph{first} and considered in the order they appear to determine the (@emph{single}) library path.  The relative order of @option{-L|--lib-path} with respect to any other options does not matter (except for @option{--}, beyond which any further @option{-L|--lib-path} options are not recognized).  The resulting path is then used to resolve all input filenames (@option{-f|--code-file}, @option{-d|--db-file}, @option{-t|--db}), regardless of whether these options occur before or after the @option{-L|--lib-path} options they depend on.
+This option may be given multiple times and the results are cumulative.  All @option{-L|--lib-path} options are collected @emph{first} and considered in the order they appear to determine the (@emph{single}) library path.
+
+The relative order of @option{-L|--lib-path} with respect to any other options does not matter (except for @option{--}, beyond which any further @option{-L|--lib-path} options will not be recognized).
+
+The resulting path is then used to resolve all input filenames (@option{-f|--code-file}, @option{-d|--db-file}, @option{-t|--db}), regardless of whether these options occur before or after the @option{-L|--lib-path} options they depend on.
 ]
 dnl --------------------
 dnl  -t|--db=<template>
@@ -96,7 +100,7 @@ Start the @moo instance using this file database.  The M5 library path (see @opt
 
 Also, @var{basename} can be @file{-}, in which case the file database is read from standard input.
 
-Note that using a file database disables options that are intended only for template databases, i.e., the ones where we say ``This option can only be used with template databases (@option{-t}).''
+Using a file database disables options that are intended only for template databases, i.e., the ones where we say ``This option can only be used with template databases (@option{-t}).''
 ]
 dnl --------------------------------
 dnl  -o|-(-no)-out-db=<basename>
@@ -132,9 +136,7 @@ M5_OPTION_VALUE(  [b], [address], [[<ip>]],
 [
 Use this IP address (default is @samp{127.0.0.2}) for all service bindings.  This will pass @option{-a} to the @moo server executable, and any listening ports created separately in the shell will likewise use this address.
 
-@strong{WARNING}:  Combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and any address that is @emph{not} on your loopback net (@samp{127.*.*.*/localhost}), unless you @strong{completely} trust everyone who has access to the @emph{actual} network that your machine lives on, will essentially be you committing Security Suicide, since this potentially gives, to everyone who can reach your machine via that address, filesystem access on your host with your own permissions.@footnote{And if you totally hate your employer and your employment, you should also be sure to arrange for the @command{m5run} script to be made setuid-root as well, except do this all on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}
-
-(Note that the loopback net, in contrast, is only accessible by local users and processes on the same host machine, so as long as there are none of those that you do not trust --- one hopes this is the case for the hosts where you do development and run test suites --- you should be fine.  And even if there are, there are various measures we take to reduce exposure (@pxref{Security}).
+@strong{WARNING}:  You probably figured this out already, but combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and a @emph{real} network address, ie., something @emph{not} on your loopback net (@samp{127.*.*.*} or @samp{localhost}), unless you @strong{completely} trust everyone who can reach your machine via said network (or you trust your firewall), may qualify you for a Security Darwin Award.@footnote{And if you totally hate your employer and your employment, you can also arrange for the @command{m5run} script to be installed setuid-root on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}  @xref{Security} for more on this.
 ]
 dnl --------------------------
 dnl  -(-no)-shell-port=<port>
@@ -144,7 +146,7 @@ M5_OPTION_NEGVALUE(  [], [shell-port], [[<port>]],
 [
 This option specifies the port for the shell redirection service (@option{+S|--shell}) to connect to.
 
-In the case where we are @emph{not} also running a @moo server (@option{-M|--no-moo}), but instead connecting to a pre-existing server instance, this option is @strong{required} and the port number @emph{must} be non-zero (and, chances are, you will need to specify an @option{-a|--address} as well).
+In the case where we are @emph{not} also running a @moo server (@option{-M|--no-moo}), but instead connecting to a pre-existing server instance, this option is @strong{required} and the port number @emph{must} be non-zero (and, chances are, you will need to specify @option{-b|--address} as well).
 
 In the case where a @moo server @emph{is} being run (@option{+M|--moo}), and both this option and @option{+S|-S|-(-no)-shell} are left unspecified, the default behavior is to expect (or direct in the case of template databases) the @moo server to choose a port randomly, listen with @code{$shell_listener}, advertise this in the server log, and then we read the log and either connect accordingly or quietly give up if no advertisement is seen.  The scenarios for changing this behavior are as follows:
 
@@ -187,7 +189,7 @@ For template databases, this option may be given multiple times and the results 
 
 If multiple @option{-p|--listen} options are present, there must be at most one for any given non-zero port number.  For port 0, arbitrarily many listeners are allowed, since port 0 just means, ``Choose a random port,'' and the kernel takes care of making them all be different.
 
-If you specify both @option{-p|--listen=@var{port},@var{listener}} and @option{--shell-port=@var{port}} for the same non-zero @var{port}, this forces the shell listener be @var{listener} (i.e., rather than the hardwired @code{shell_listener}).@footnote{Yes, this is esoteric and weird.  We may rethink this behavior at some point.  Normally you do not want to change the shell listener, but you might if you, say, want to try out a more advanced shell listener@dots{}}
+A @option{--shell-port} is automatically included on the list of ports to be listened at; you do not normally need to specify @option{-p|--listen} for it as well.  However, if you do have both @option{-p|--listen=@var{port},@var{listener}} and @option{--shell-port=@var{port}} for the same non-zero @var{port}, this will force the shell listener to be @var{listener} (i.e., rather than the usual hardwired @code{shell_listener}).@footnote{Yes, this is esoteric and weird.  We may rethink this behavior at some point.  Normally you do not want to change the shell listener, but you might if you, say, want to try out a more advanced shell listener@dots{}.  On the other hand, you can probably just change the value of @code{$shell_listener} in the database, since you're likely already messing with the database anyway.}
 ]dnl
 dnl ====================================================
 M5_HELP_SECTION( [First Verb], [template databases only])dnl
