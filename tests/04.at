@@ -53,9 +53,9 @@ m5run -b "$addr" -t Raw -p 0,owner -p 3000,owner.owner -p "4000,#0" -f ./setup +
 
 AT_CHECK([[
 
-m5run -b "$addr" -t Raw -p 0,owner -p 3000,owner.owner -p "4000,#0" -f ./setup -e 'notify(player,tostr(suspend()))' +P +S --shell-port=3000 +H
+m5run -b "$addr" -t Raw -p 0,owner -p 3001,owner.owner -p "4001,#0" -f ./setup -e 'notify(player,tostr(suspend()))' +P +S --shell-port=3001 +H
 
-]],0,[[{4000, "#0", 3000, "$owner.owner", 55555, "$owner"}
+]],0,[[{4001, "#0", 3001, "$owner.owner", 55555, "$owner"}
 #-3
 ]],[[]])
 
