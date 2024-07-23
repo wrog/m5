@@ -129,12 +129,12 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 
 @node Introduction
 @chapter Introduction
-
 @quotation
-``The multitronic unit is a *revolution* in computer science.
+``The multitronic unit is a @strong{revolution} in computer science.
 I designed the duotronic elements used in your ship right now,
 and I know they are as archaic as @strong{dinosaurs} compared to the M5.
-A whole new approach!''
+
+``A whole @strong{new} approach!''
 @author Dr. Richard Daystrom
 @end quotation
 
@@ -168,7 +168,6 @@ The capsule summary as to why M5 exists is that the author wanted to build a @mo
 
 @node Installing M5
 @chapter Installing M5
-
 @quotation
 ``When your crew has been removed,@*
 @ the ship's engineering section@*
@@ -179,7 +178,6 @@ The capsule summary as to why M5 exists is that the author wanted to build a @mo
 ``They're not needed.''
 @author conversation between @*Cmdre. Robert Wesley and Capt. James Kirk
 @end quotation
-@htmlbrbr
 
 @menu
 * Prerequisites::  What you need
@@ -199,11 +197,11 @@ All you have to do is sit back and let the machine do the work.''
 @author Cmdre. Robert Wesley
 @end quotation
 
-In theory, @command{configure} will sort most of this out, but you will need:
+The @command{configure} script should be sorting most of this out, but, in any case, you will need:
 
 @itemize
 @item
-An OS that is one of the recent varieties of @unix for which @moo is available.@footnote{As for where @emph{that} is going, figure that trying to maintain suport for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD)@footnote{I really have no idea which, if any, of these matter.@footnote{And nested footnotes confuse TexInfo.  Who knew?}} work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}@htmlbrbr
+An OS that is one of the recent varieties of @unix for which @moo is available.@footnote{As for where @emph{that} is going, figure that trying to maintain support for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD --- I really have no idea which of these matter) work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}
 
 @item
 @anchor{exec-prereq}
@@ -214,7 +212,7 @@ This will need to be one of the post-1.8.2 versions that understands the circa-2
 A quick way to check all of this is to run the executable with @option{+O -a 127.0.0.1}.  If that doesn't immediately die, you're probably in business.  We explicitly make a point @strong{not} to rely on any features that were implemented after 2004 (e.g., 64-bit integers, Unicode, WAIFs, XML support, etc...).
 
 @item
-Some version of Netcat, any of NMap's @command{ncat}, OpenBSD's @command{netcat}, or Hobbit's original version, in increasing order of preference (because for our purposes smaller is better; we're really only using it in the most basic way).@footnote{In theory, there should be a way to make this work with just @file{/dev/tcp} for those shells that understand that (read @code{bash}), but Netcat seems to be sufficiently widely available that this is likely pointless.}@htmlbrbr
+Some version of Netcat, any of NMap's @command{ncat}, OpenBSD's @command{netcat}, or Hobbit's original version, in increasing order of preference (because for our purposes smaller is better; we're really only using it in the most basic way).@footnote{In theory, there should be a way to make this work with just @file{/dev/tcp} for those shells that understand that (read @code{bash}), but Netcat seems to be sufficiently widely available that this is likely pointless.}
 
 @item
 Autoconf and Bison, but @strong{only} if you are trying to build M5 directly from the git source repository.  If you have an up-to-date tarball, you can skip this.
@@ -298,15 +296,14 @@ to install m5 into the @moo source tree, in which case a sufficiently-recent-on-
 @end table
 
 @node Getting Started
-@chapter Getting Started
-
 @quotation
 ``You don't shut a child off@*
-@ when it makes a mistake.@*
-@*
+@ when it makes a mistake.
+
 ``The M5 is growing, learning.''
 @author Dr. Richard Daystrom
 @end quotation
+@chapter Getting Started
 
 @section Hello World
 
@@ -395,7 +392,7 @@ $ m5run -t Raw -f -
 @end example
 
 @noindent
-you will now have something vaguely resembling a @moo interpreter, reading language statements on standard input, presumably compiling them somewhere, running them, and then whatever it outputs (@code{notify()}s) gets spewed back to you on standard output@dots{}
+you will now have something vaguely resembling a @moo interpreter, reading language statements on standard input, presumably compiling them somewhere, running them, and then whatever it outputs (@code{notify()}s) getting spewed back to you on standard output@dots{}
 
 @noindent
 @dots{} though, be warned, this will @strong{not} behave in any way like how you might be used to with a traditional client talking to a @moo server.  For one thing, nothing will happen until the entire body of the verb is received.  Also if you make any typing mistakes, the traceback gets written to the log, which then gets silently tossed down a hole.  Not exactly what we call user-friendly.
@@ -437,12 +434,11 @@ There is no topology; @code{.location} and @code{.contents} are entirely unused.
 
 @node @command{m5run} Reference
 @chapter @command{m5run} Reference
-
 @quotation
 ``Both ships report simulated hits in sufficient quantity and location
 to justify awarding the surprise engagement to Enterprise.
 
-Our compliments to the M5 unit and regards to Captain Dunsail.''
+``Our compliments to the M5 unit and regards to Captain Dunsail.''
 @author Cmdre. Robert Wesley
 @end quotation
 
@@ -480,7 +476,7 @@ Some things you might want to know if you are unusually pedantic:
 
 @itemize
 @item
-Options either take a value parameter or they don't, i.e., if your command line includes an option for which a value is expected, we do not allow you to omit the value.  If you want such an option to take on its default value, then leave it out.  Where an option expects a value parameter, e.g., @option{-l|}@footnote{the vertical bar @option{|} is not actually part of the option name, but rather indicates a choice between @w{@option{-l @var{filename}}} and @option{--log=@var{filename}}, which are intended to mean the same thing, but you probably guessed this already.}@option{--log=@var{filename}}, you must do one of the following:
+Options either take a value parameter or they don't, i.e., if your command line includes an option for which a value is expected, we do not allow you to omit the value.  If you want such an option to take on its default value, then leave it out.  Where an option expects a value parameter, e.g., @option{-l|}@footnote{The vertical bar @option{|} is not actually part of the option name, but rather indicates a choice between @w{@option{-l @var{filename}}} and @option{--log=@var{filename}}, which are intended to mean the same thing, but you probably guessed this already.}@option{--log=@var{filename}}, you must do one of the following:
 
 @itemize
 @item
@@ -491,7 +487,7 @@ give the long-option, e.g., @option{--log=@var{filename}}; we explicitly forbid 
 @end itemize
 
 @item
-The ordering of options does not matter, except for a few stated situations where it does (@option{-e|--expr}, @option{-f|--code-file}, @option{-L|--lib-path}, and @option{--}, which see.)@htmlbrbr
+The ordering of options does not matter, except for a few stated situations where it does (@option{-e|--expr}, @option{-f|--code-file}, @option{-L|--lib-path}, and @option{--}, which see.)
 
 @item
 We use @option{-[-no]-foo}@footnote{The square brackets are to indicate that the @samp{-no} portion of this is optional, and not actually part of the option name, but you knew this already.
@@ -512,7 +508,7 @@ Usually the empty string will also have a special meaning.  For example, @option
 @item
 For certain other flags, notably @option{-h} or @option{-?} as alternatives for @option{--help} and other informational flags that preempt most other activity and for which a @option{--no-} version is entirely pointless, we adhere more closely to tradition.
 
-Meaning they default negative, and mentioning them at all flips them to affirmative, e.g., @option{-h} is the same as @option{--help}, if used it kicks in and that's that.@footnote{Because if we were silly enough to have @option{-h} mean @option{--no-help} and thence require everyone to type @option{+h} in order to be able to actually get help, people would hurt us.}
+Meaning they default negative, and mentioning them at all flips them to affirmative, e.g., @option{-h} is the same as @option{--help}, if used it kicks in and that's that.@footnote{Because if we were silly enough to have @option{-h} mean @option{--no-help} and thence require everyone to type @option{+h} in order to actually get help, people would hurt us.}
 
 @item
 Hyphens within long option names may be globally@footnote{``Globally'' means you do all or nothing on this and you will need to be consistent about it.  Meaning if we see crap like @w{@option{--no_shell-port}} or @w{@option{--noshell-port}}, we will send the ice weasels after you.} omitted or replaced by underscores.  Thus, e.g., @option{--no-shell-port}, @option{--no_shell_port}, and @option{--noshellport} are all equivalent.
@@ -542,7 +538,7 @@ The M5 Library Search Path, which can also be set using @option{-L|--lib-path}, 
 
 The format is the same format as for @code{PATH} --- a colon (@code{:})@footnote{and if we get ever this working in Windows Land, the code @emph{is} actually there to allow semicolons (@code{;}), but we'll see how that goes@dots{}} separated list of directories  --- and searches are performed in exactly the same way.
 
-In theory, this should already be set to the correct directory, @file{@var{srcdir}/lib} if you're running @command{m5run} from its source directory or to the appropriate @file{/usr/@dots{}/share/m5} if you have done a @command{make install} to one of the approved prefixes (i.e., @file{/usr} or @file{/usr/local}, which make @command{m5run} end up in @file{/usr/bin} or @file{/usr/local/bin}, respectively), but if you've done something else, all bets are off and you may need to adjust this.
+Normally, this will already be set to the correct directory, @file{@var{srcdir}/lib} if you're running @command{m5run} from its source directory or to the appropriate @file{/usr/@dots{}/share/m5} if you have done a @command{make install} to one of the approved prefixes (i.e., @file{/usr} or @file{/usr/local}, which make @command{m5run} end up in @file{/usr/bin} or @file{/usr/local/bin}, respectively), but if you've done something else, all bets are off and you may need to adjust this.
 
 Also, depending on personal taste, you may want to add the current directory @file{.} --- @emph{not} included by default --- at the beginning or the end of this path.
 
@@ -589,10 +585,10 @@ somewhere in the code file you load using @option{-f}, but you probably already 
 @node Redirection
 @chapter The Redirection Framework
 @quotation
-@*
 ``It appears, Captain, we have been doing what used to be called 'pursuing a wild goose.'@w{}''
 @author Cmdr. Ucdnprnownzit Spock
 @end quotation
+
 As you may recall, when a @moo verb runs, there is an environment that gets propagated however far down the call stack it might be needed.  Traditionally, this environment is used to list particular objects in the ``room'' that the current command/task is referring to (as originally determined by the parse of the command.
 
 In M5 cores, there is no topology, i.e., no notion of there being ``rooms'', physical ``objects'', or ``containment'', so we repurpose some of this machinery.
@@ -619,11 +615,10 @@ However, this is simply an implementation; user code should not be referring to 
 
 @node Language
 @chapter @moo Language Extensions
-
 @quotation
 You can't understand it.@*
 You're frightened because you can't understand it.@*
-I'm going to show you.  I'm going to show @emph{all} of you.@*
+I'm going to show you.  I'm going to show @strong{all} of you.@*
 @author Dr. Richard Daystrom
 @end quotation
 
@@ -709,7 +704,7 @@ Also note that in this case @code{verb_info(#0,"method)[2]} will henceforth be @
 
 Here is the full list of builtin-call expressions that M5 allows at the base of the left-hand side of an assignment:
 
-@multitable property_info(o,p)xxxxxxxxxxxxxxxx set_property_info(o,p)xxxxx
+@multitable {property_info(o,p)xxxxxxxxxxxxxxxx} {set_property_info(o,p)xxxxx}
 @headitem LValue                @tab Side Effect of LValue@code{=rhs}
 @item @code{property_info(o,@ p)}@ @  @tab @code{set_property_info(o,@ p,@ rhs)}
 @item @code{verb_args(o, m)}    @tab @code{set_verb_args(o, m, rhs)}
@@ -911,9 +906,8 @@ The special variable &? gives the status of the most recent scattering assignmen
 
 @node Macros
 @chapter Macros
-
 @quotation
-``M5 thinks, Captain.''
+``M5 @strong{thinks}, Captain.''
 @author Dr. Richard Daystrom
 @end quotation
 
@@ -922,7 +916,6 @@ The special variable &? gives the status of the most recent scattering assignmen
 
 @node Security
 @chapter Security Considerations
-
 @quotation
 ``I would say, Captain, that M5 is not only capable of taking
 care of this ship, it is also capable of taking care of itself.''
@@ -930,14 +923,13 @@ care of this ship, it is also capable of taking care of itself.''
 @end quotation
 
 @node Legacy @moo Databases
+@chapter M5 and Legacy @moo Databases
 @quotation
-@htmlbrbr
 ``M5's analysis told it@*
 it needed a new power source.@*
 The ensign simply @dots{} got in the way.''
 @author Dr. Richard Daystrom
 @end quotation
-@chapter M5 and Legacy @moo Databases
 
 This section assumes you have an existing @moo database, possibly multiplayer, possibly based on LambdaCore or JHCore, and you wish to install M5 features.
 
@@ -948,20 +940,18 @@ But various subsets can be installed safely.
 (to be continued.)
 
 @node Examples
+@chapter Examples
 @quotation
-@htmlbrbr
 ``Destroyed, Kirk?@*
 No.  We are invincible.@*
 Look what we've done!@*
-Your mighty starships:@*
+Your @strong{mighty starships}:@*
 Four toys to be @strong{crushed} as we choose.''
 @author Dr. Richard Daystrom
 @end quotation
-@chapter Examples
 
 @node Removing M5
 @chapter Removing M5
-
 @quotation
 ``Fantastic machine, the M5:@*
 No @code{OFF} switch!''
@@ -976,7 +966,6 @@ Good luck with that.
 
 @node Function Index
 @unnumbered Function Index
-
 @quotation
 ```Dunsail' is a term used by midshipmen at Starfleet Academy.@*
 It refers to a part that serves no useful purpose.''

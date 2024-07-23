@@ -136,7 +136,7 @@ M5_OPTION_VALUE(  [b], [address], [[<ip>]],
 [
 Use this IP address (default is @samp{127.0.0.2}) for all service bindings.  This will pass @option{-a} to the @moo server executable, and any listening ports created separately in the shell will likewise use this address.
 
-@strong{WARNING}:  You probably figured this out already, but combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and a @emph{real} network address, ie., something @emph{not} on your loopback net (@samp{127.*.*.*} or @samp{localhost}), unless you @strong{completely} trust everyone who can reach your machine via said network (or you trust your firewall), may qualify you for a Security Darwin Award.@footnote{And if you totally hate your employer and your employment, you can also arrange for the @command{m5run} script to be installed setuid-root on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}  @xref{Security} for more on this.
+@strong{WARNING}:  You probably figured this out already, but combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and a @emph{real} network address, ie., something @emph{not} on your loopback net (@samp{127.*.*.*} or @samp{localhost}), unless you @strong{completely} trust everyone who can reach your machine via said network (or you trust your firewall), may qualify you for a Security Darwin Award.@footnote{And if you totally hate your employer along with the general concept of being employed, you can also arrange for the @command{m5run} script to be installed setuid-root on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}  @xref{Security} for more on this.
 ]
 dnl --------------------------
 dnl  -(-no)-shell-port=<port>
@@ -152,17 +152,17 @@ In the case where a @moo server @emph{is} being run (@option{+M|--moo}), and bot
 
 @itemize
 @item
-Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}, that no connection will be attempted, but also removes the direction to the @moo server to listen, though the latter only affects template databases.@htmlbrbr
+Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}, that no connection will be attempted, but also removes the direction to the @moo server to listen, though the latter only affects template databases.
 @item
-Combining @option{--no-shell-port} with @option{+S|--shell} makes no sense and is not allowed.@htmlbrbr
+Combining @option{--no-shell-port} with @option{+S|--shell} makes no sense and is not allowed.
 @item
 @option{--shell-port=@var{port}} in the case where @option{@var{port}} > 0 requires the use of that specific port, and it is an error (i.e., non-zero @command{m5run} exit status) for the @moo server to either fail to listen or advertise the wrong port (this can only happen for file databases).
 
-Combining @option{--shell-port=@var{port}} with @option{-S|--no-shell}, i.e., the direction/expection to listen while suppressing the connection attempt, is what is needed if you want to connect to the shell listener from another process.
+Combining @option{--shell-port=@var{port}} with @option{-S|--no-shell}, i.e., the direction/expectation to listen while suppressing the connection attempt, is what is needed if you want another process to connect to the shell listener.
 @item
 @option{--shell-port=0} is essentially the default behavior except that here, it is an error for the @moo server to either fail to listen or advertise a port in the log (which, again, will only happen for file databases).
 
-Combining @option{--shell-port=0} with @option{-S|--no-shell}, i.e., choose a port randomly for listening and do not connect to it, is the other way of enabling an external connection, has the advantage that there will never be conflicts over a particular port, however you will need to find some means of communicating the port number (available as @code{@var{shell_port}} in the first verb) to the other process.
+Combining @option{--shell-port=0} with @option{-S|--no-shell}, i.e., choose a port randomly for listening and do not connect to it, is the other way of enabling an external connection, has the advantage that there will never be conflicts over a particular port, however you will need to find some means of communicating the port number (available as @code{@var{shell_port}} in first verb) to the other process.
 @end itemize
 ]
 dnl ---------------------------------
@@ -189,12 +189,12 @@ For template databases, this option may be given multiple times and the results 
 
 If multiple @option{-p|--listen} options are present, there must be at most one for any given non-zero port number.  For port 0, arbitrarily many listeners are allowed, since port 0 just means, ``Choose a random port,'' and the kernel takes care of making them all be different.
 
-A @option{--shell-port} is automatically included on the list of ports to be listened at; you do not normally need to specify @option{-p|--listen} for it as well.  However, if you do have both @option{-p|--listen=@var{port},@var{listener}} and @option{--shell-port=@var{port}} for the same non-zero @var{port}, this will force the shell listener to be @var{listener} (i.e., rather than the usual hardwired @code{shell_listener}).@footnote{Yes, this is esoteric and weird.  We may rethink this behavior at some point.  Normally you do not want to change the shell listener, but you might if you, say, want to try out a more advanced shell listener@dots{}.  On the other hand, you can probably just change the value of @code{$shell_listener} in the database, since you're likely already messing with the database anyway.}
+A @option{--shell-port} is automatically included on the list of ports to be listened at; you do not normally need to specify @option{-p|--listen} for it as well.  However, if you do have both @option{-p|--listen=@var{port},@var{listener}} and @option{--shell-port=@var{port}} for the same non-zero @var{port}, this will force the shell listener to be @var{listener} (i.e., rather than the usual hardwired @code{shell_listener}).@footnote{Yes, this behavior is weird, esoteric, and will probably be rethought at some point in the future.  Normally, you do not want to change the shell listener, but you might if you, say, want to try out a more advanced shell listener@dots{}.  On the other hand, you can probably just change the value of @code{$shell_listener} in the database, since you're likely already messing with the database anyway.}
 ]dnl
 dnl ====================================================
 M5_HELP_SECTION( [First Verb], [template databases only])dnl
 [
-A template database is a pair of files in which the @file{.top} file consist of everything from the database header to the beginning of the code for the @dfn{first verb} on @samp{#0} (designated @samp{#0:0} in the file, but referenced as @code{#0:1} from actual code), which is normally either @code{$server_started} or something that is called directly by @code{$server_started}.  The @file{.bot} file consists of everything from the @samp{.} that terminates the first verb to the end of the file.
+A template database is a pair of files in which the @file{.top} file consist of everything from the database header to the beginning of the code for the @dfn{first verb} on @samp{@%:@0} (designated @samp{@%:@0:0} in the file, but referenced as @code{@%:@0:1} from actual code), which, by convention common to all template databases, will either be @code{$server_started} or (if there needs to be some kind of preamble that is guaranteed to run) something that is called directly by @code{$server_started}.  The @file{.bot} file consists of everything from the @samp{.} that terminates the first verb to the end of the file.
 
 Essentially, this @dfn{first verb}, usually left blank, serves as a place for @command{m5run} to insert arbitrary code to make possible the following special effects:.
 ]
@@ -292,7 +292,7 @@ M5_OPTION_INFOBOOLEAN(  [n], [dry-run],
 [
 Validate the full command line and exit.
 
-This includes verifying that any files mentioned actually exist for reading or are writeable in the way you're expecting, and, if we actually get to the point of being able to do anything, output the settings that matter, showing what would happen if @command{m5run} were allowed to preceed beyond this point (which it won't be).
+This includes verifying that any files mentioned actually exist for reading or are writeable in the way you're expecting, and, if we actually get to the point of being able to do anything, outputting the settings that matter, showing what would happen if @command{m5run} were allowed to preceed beyond this point (which it won't be).
 
 This will also show you command line options set implicitly that might not otherwise have been obvious.
 ]
