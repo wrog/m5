@@ -6,8 +6,13 @@ dd { margin-top: -0.7em; }
 // var { font-family: pt mono, monospace; }
 // pre { font-family: pt mono, monospace; margin-bottom:0pt; }
 b { color:blue }
-blockquote { float: right; width: 51%; clear: all; margin-top:-5ex; font-family: sans-serif; font-style: oblique; font-size:90% }
-blockquote + div { float: right; position: relative; width: 51%; clear: all; padding-bottom:4ex; margin-top:-2ex; }
+.quotation { float: right; width: 48%; clear: all; margin-left:1em;
+             font-family: sans-serif; font-style: oblique; font-size:90%;
+             color: #fff; background-color: #777;
+             border: 3px inset black;
+             padding-bottom:3ex;
+}
+.footnote-text { font-size:90%; margin-top: 20px; font-family: sans-serif; }
 .moo { font-variant: small-caps; }
 a:visited , a:link { text-decoration:none; background-color:#fff; padding:3px 1px 0px 3px; border:none }
 a:hover {background-color: black; color: white }

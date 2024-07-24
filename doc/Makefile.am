@@ -3,11 +3,11 @@ M5manual_TEXINFOS = m5runopt.texi
 
 AM_MAKEINFOFLAGS = --fill-column 79 --no-split -DINFO
 AM_MAKEINFOHTML = texi2any --html
-AM_MAKEINFOHTMLFLAGS = --output html --split=section --css-ref=common.css
+AM_MAKEINFOHTMLFLAGS = --output html --split=section --css-ref=common.css --init-file=$(abs_srcdir)/my_html.pm -c HEADER_IN_TABLE=true
 
 all-local: html
 
-html-local: $(HTMLS)/common.css
+html-local: $(HTMLS)/common.css $(srcdir)/my_html.pm
 
 $(HTMLS)/common.css:
 	ln -sf $(abs_srcdir)/common.css $(HTMLS)
