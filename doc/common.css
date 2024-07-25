@@ -1,11 +1,3 @@
-body { background-color : #fff; font-family:garmond; margin:.5in }
-pre { margin-left : 3em; }
-dl { margin-left: 2em; }
-dd { margin-top: -0.7em; }
-// code { font-family: pt mono, monospace; }
-// var { font-family: pt mono, monospace; }
-// pre { font-family: pt mono, monospace; margin-bottom:0pt; }
-b { color:blue }
 .quotation { float: right; width: 48%; clear: all; margin-left:1em;
              font-family: sans-serif; font-style: oblique; font-size:90%;
              color: #fff; background-color: #777;
@@ -14,9 +6,3 @@ b { color:blue }
 }
 .footnote-text { font-size:90%; margin-top: 20px; font-family: sans-serif; }
 .moo { font-variant: small-caps; }
-a:visited , a:link { text-decoration:none; background-color:#fff; padding:3px 1px 0px 3px; border:none }
-a:hover {background-color: black; color: white }
-li { margin: 0.5em 0.5em; }
-pre { font-size: 120%; }
-code { font-size: 120%; }
-samp { font-size: 120%; }
