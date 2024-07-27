@@ -7,6 +7,7 @@ do_subst = \
         -e 's,[@]datadir[@],$(datadir),g' \
         -e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
         -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
         -e 's,[@]VERSION[@],$(VERSION),g' \
         -e 's,[@]NETCAT[@],$(NETCAT),g' \
         -e 's,[@]NETCAT_CLOSE_EOF[@],$(NETCAT_CLOSE_EOF),g' \

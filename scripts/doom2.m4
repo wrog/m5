@@ -11,6 +11,7 @@ m4_include([../LICENSE])
 ENDLEGAL
 )"
 [m5_version]="@VERSION@"
+[m5_website]="@PACKAGE_URL@"
 [prefix]="@prefix@"
 [bindir]="@bindir@"
 [pkgdatadir]="@pkgdatadir@"

@@ -730,7 +730,7 @@ This is M5, version ${m5_version_major}, subversion ${m5_version_minor} (v$m5_ve
 
 $m5_legal_msg
 
-Complete documentation for M5 is available at https://ipomoea.org/moo/m5
+Complete documentation for M5 is available at ${m5_website}
 EOF
     else
         printf "M5 version %s\n" "$m5_version"
