@@ -4,9 +4,9 @@ dnl ================================
 dnl
 M5_HELP_SECTION([Top-level])dnl
 [
-The @command{m5run} shell script normally runs an instance of the @moo server, then optionally creates a redirection service that connects to the @moo's @code{$shell_listener}, and then enables shell command/file redirections from inside the @moo.
+The @command{m5run} shell script normally runs an instance of the @moo{} server, then optionally creates a redirection service that connects to the @moo{}'s @code{$shell_listener}, and then enables shell command/file redirections from inside the @moo{}.
 
-It is also possible to run the redirection facility by itself, connecting it to a pre-existing @moo server instance rather than running a fresh @moo ourselves.
+It is also possible to run the redirection facility by itself, connecting it to a pre-existing @moo{} server instance rather than running a fresh @moo{} ourselves.
 ]
 dnl ---------------
 dnl  +M|-(-no)-moo
@@ -14,7 +14,7 @@ M5_OPTION_BOOLEAN( [M], [moo],
   [run a moo server instance], [+M=yes],
   [[do_runmoo]])dnl
 [
-Launch (or do not launch) an instance of the @moo server.
+Launch (or do not launch) an instance of the @moo{} server.
 
 The default is to launch (@samp{+M}), unless no database (@option{-t|--db} or @option{-d|--dbfile}) is specified, in which case we do not (@samp{-M}).
 ]
@@ -24,13 +24,13 @@ M5_OPTION_BOOLEAN( [S], [shell],
   [connect a shell instance], [+S=yes*],
   [[do_shconn]])dnl
 [
-Connect (or do not connect) a shell redirection service to the @moo's @code{$shell_listener}.
+Connect (or do not connect) a shell redirection service to the @moo{}'s @code{$shell_listener}.
 
-The default for this, if we're running a @moo server (@option{+M}), is to follow the setting for @option{-[-no]-shell-port} (which see), and if that's left blank, then just watch the @moo server log, try to connect if the server says there it's listening at a shell port, and otherwise don't.
+The default for this, if we're running a @moo{} server (@option{+M}), is to follow the setting for @option{-[-no]-shell-port} (which see), and if that's left blank, then just watch the @moo{} server log, try to connect if the server says there it's listening at a shell port, and otherwise don't.
 
 The main utility of this option is to use @option{-S} to prevent a connection attempt in cases where there would otherwise be one, say, in order to let Someone Else connect.  It is quite possible (if I've done this right) that you will never otherwise need to specify this option explicitly.
 
-If we're @emph{not} running a @moo server, then the only thing this command could be doing is running a separate redirection service (@option{+S}), meaning we will connect to a pre-existing @moo server (i.e., we @emph{are} the Somebody Else in the previous paragraph), and this cannot work unless we also explicitly specify the port to connect to using @option{--shell-port=@var{port}} (and possibly also the @option{--address|-b}), which will then imply @option{+S}, so we'll never actually need to say @option{+S} in this case.
+If we're @emph{not} running a @moo{} server, then the only thing this command could be doing is running a separate redirection service (@option{+S}), meaning we will connect to a pre-existing @moo{} server (i.e., we @emph{are} the Somebody Else in the previous paragraph), and this cannot work unless we also explicitly specify the port to connect to using @option{--shell-port=@var{port}} (and possibly also the @option{--address|-b}), which will then imply @option{+S}, so we'll never actually need to say @option{+S} in this case.
 ]dnl
 _M5_END_TABLE()dnl
 [
@@ -40,7 +40,7 @@ Note that, unless you're just getting help (@option{-h},@dots{}), you have to do
 dnl ================================
 M5_HELP_SECTION([File])dnl
 [
-When running a @moo server (@option{+M}) an input database option (@option{-t|--db} or @option{-d|--dbfile}) must be specified, and there can be at most one.
+When running a @moo{} server (@option{+M}) an input database option (@option{-t|--db} or @option{-d|--dbfile}) must be specified, and there can be at most one.
 
 @anchor{std-file}
 Also, some of these allow specifying @samp{-} to mean standard input, standard output, or standard error, depending on context, which you should use if this is the behavior you want.  Meaning do @emph{not} use @file{/dev/stdin} or @file{/dev/fd/2} if your operating system offers such things; there are enough weird redirections happening behind the scenes that these will probably not work in the way you expect.  Just use @samp{-} and redirect from the outside if you want bits being sent to unorthodox file descriptors.
@@ -53,7 +53,7 @@ M5_OPTION_VALUE( [x], [moo-exec], [[<pathname>]],
   [moo server executable], [*],
   [[moo_exec]])dnl
 [
-Use @var{pathname} as the @moo server executable.  @xref{exec-prereq,,Prerequisites}, for more on what this needs to be.  As usual, @env{PATH} is searched if @var{pathname} has no directory separators (i.e., slashes).
+Use @var{pathname} as the @moo{} server executable.  @xref{exec-prereq,,Prerequisites}, for more on what this needs to be.  As usual, @env{PATH} is searched if @var{pathname} has no directory separators (i.e., slashes).
 ]
 dnl ----------------------------
 dnl  -L|--lib-path=<pathstring>
@@ -86,7 +86,7 @@ M5_OPTION_VALUE(  [t], [db], [[<template>]],
   [use moo template database],[],
   [[template_db]])dnl
 [
-Start the @moo instance using this template database.  The M5 Library Path (see @option{-L}) is searched if @var{template} has no directory separators.
+Start the @moo{} instance using this template database.  The M5 Library Path (see @option{-L}) is searched if @var{template} has no directory separators.
 
 Template databases are actually pairs of files.  One of @file{@var{template}.db.top} (if @file{@var{template}} does not already end with @file{.db}) or @file{@var{template}.top} (searched in this order) must exist, and, if found, a corresponding @file{.bot} file (i.e., @file{@var{template}.db.bot} or @file{@var{template}.bot}, respectively) must be present in the same directory.
 ]
@@ -96,7 +96,7 @@ M5_OPTION_VALUE(  [d], [dbfile], [[<basename>]],
   [use moo file database],[],
   [[file_db]])dnl
 [
-Start the @moo instance using this file database.  The M5 library path (see @option{-L}) is searched if @var{basename} has no directory separators.  One of @file{@var{basename}.db} (if @file{@var{basename}} does not already end with @file{.db}) or @file{@var{basename}} is expected to be found.
+Start the @moo{} instance using this file database.  The M5 library path (see @option{-L}) is searched if @var{basename} has no directory separators.  One of @file{@var{basename}.db} (if @file{@var{basename}} does not already end with @file{.db}) or @file{@var{basename}} is expected to be found.
 
 Also, @var{basename} can be @file{-}, in which case the file database is read from standard input.
 
@@ -124,7 +124,7 @@ Write the moo server log to @var{filename}.
 
 The default is @option{--no-log}, meaning the server log is discarded.
 
-If @var{filename} is @samp{-}, then the server log will appear on standard error.@footnote{Yes, this also goes against tradition if you were expecting @samp{-} to mean standard output in this case, but standard error is pretty much always where you want a log anyway, and this way, we reduce the likelihood that an output database and server log will get jumbled together, which will help exactly no one.  Anyway, if you @emph{really} do want the log on standard output, @code{2>&1} isn't that hard.}  Error messages from the redirection service will get mixed in with the @moo server log if you do this.@footnote{And, often, this is what you want.}
+If @var{filename} is @samp{-}, then the server log will appear on standard error.@footnote{Yes, this also goes against tradition if you were expecting @samp{-} to mean standard output in this case, but standard error is pretty much always where you want a log anyway, and this way, we reduce the likelihood that an output database and server log will get jumbled together, which will help exactly no one.  Anyway, if you @emph{really} do want the log on standard output, @code{2>&1} isn't that hard.}  Error messages from the redirection service will get mixed in with the @moo{} server log if you do this.@footnote{And, often, this is what you want.}
 ]dnl
 dnl =======================
 M5_HELP_SECTION([Network])
@@ -134,7 +134,7 @@ M5_OPTION_VALUE(  [b], [address], [[<ip>]],
   [listen/connect address], [127.0.0.2],
   [[moo_ip]])dnl
 [
-Use this IP address (default is @samp{127.0.0.2}) for all service bindings.  This will pass @option{-a} to the @moo server executable, and any listening ports created separately in the shell will likewise use this address.
+Use this IP address (default is @samp{127.0.0.2}) for all service bindings.  This will pass @option{-a} to the @moo{} server executable, and any listening ports created separately in the shell will likewise use this address.
 
 @strong{WARNING}:  You probably figured this out already, but combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and a @emph{real} network address, ie., something @emph{not} on your loopback net (@samp{127.*.*.*} or @samp{localhost}), unless you @strong{completely} trust everyone who can reach your machine via said network (or you trust your firewall), may qualify you for a Security Darwin Award.@footnote{And if you totally hate your employer along with the general concept of being employed, you can also arrange for the @command{m5run} script to be installed setuid-root on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}  @xref{Security} for more on this.
 ]
@@ -146,21 +146,21 @@ M5_OPTION_NEGVALUE(  [], [shell-port], [[<port>]],
 [
 This option specifies the port for the shell redirection service (@option{+S|--shell}) to connect to.
 
-In the case where we are @emph{not} also running a @moo server (@option{-M|--no-moo}), but instead connecting to a pre-existing server instance, this option is @strong{required} and the port number @emph{must} be non-zero (and, chances are, you will need to specify @option{-b|--address} as well).
+In the case where we are @emph{not} also running a @moo{} server (@option{-M|--no-moo}), but instead connecting to a pre-existing server instance, this option is @strong{required} and the port number @emph{must} be non-zero (and, chances are, you will need to specify @option{-b|--address} as well).
 
-In the case where a @moo server @emph{is} being run (@option{+M|--moo}), and both this option and @option{+S|-S|-(-no)-shell} are left unspecified, the default behavior is to expect (or direct in the case of template databases) the @moo server to choose a port randomly, listen with @code{$shell_listener}, advertise this in the server log, and then we read the log and either connect accordingly or quietly give up if no advertisement is seen.  The scenarios for changing this behavior are as follows:
+In the case where a @moo{} server @emph{is} being run (@option{+M|--moo}), and both this option and @option{+S|-S|-(-no)-shell} are left unspecified, the default behavior is to expect (or direct in the case of template databases) the @moo{} server to choose a port randomly, listen with @code{$shell_listener}, advertise this in the server log, and then we read the log and either connect accordingly or quietly give up if no advertisement is seen.  The scenarios for changing this behavior are as follows:
 
 @itemize
 @item
-Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}, that no connection will be attempted, but also removes the direction to the @moo server to listen, though the latter only affects template databases.
+Specifying @option{--no-shell-port} @emph{always} implies @option{-S|--no-shell}, that no connection will be attempted, but also removes the direction to the @moo{} server to listen, though the latter only affects template databases.
 @item
 Combining @option{--no-shell-port} with @option{+S|--shell} makes no sense and is not allowed.
 @item
-@option{--shell-port=@var{port}} in the case where @option{@var{port}} > 0 requires the use of that specific port, and it is an error (i.e., non-zero @command{m5run} exit status) for the @moo server to either fail to listen or advertise the wrong port (this can only happen for file databases).
+@option{--shell-port=@var{port}} in the case where @option{@var{port}} > 0 requires the use of that specific port, and it is an error (i.e., non-zero @command{m5run} exit status) for the @moo{} server to either fail to listen or advertise the wrong port (this can only happen for file databases).
 
 Combining @option{--shell-port=@var{port}} with @option{-S|--no-shell}, i.e., the direction/expectation to listen while suppressing the connection attempt, is what is needed if you want another process to connect to the shell listener.
 @item
-@option{--shell-port=0} is essentially the default behavior except that here, it is an error for the @moo server to either fail to listen or advertise a port in the log (which, again, will only happen for file databases).
+@option{--shell-port=0} is essentially the default behavior except that here, it is an error for the @moo{} server to either fail to listen or advertise a port in the log (which, again, will only happen for file databases).
 
 Combining @option{--shell-port=0} with @option{-S|--no-shell}, i.e., choose a port randomly for listening and do not connect to it, is the other way of enabling an external connection, has the advantage that there will never be conflicts over a particular port, however you will need to find some means of communicating the port number (available as @code{@var{shell_port}} in first verb) to the other process.
 @end itemize
@@ -171,11 +171,11 @@ M5_OPTION_PUSH(  [p], [listen], [[<port>[,<listener>]]],
   [add moo listening port],[],
   [[push_moo_listeners]])dnl
 [
-Have the @moo listen at a specific port.  The @var{listener} portion should be one of
+Have the @moo{} listen at a specific port.  The @var{listener} portion should be one of
 
 @table @code
 @item @var{word}
-naming a property accessible from the system object (@samp{#0} or an ancestor).  Both @code{$@var{word}_listener}, provided @code{$@var{word}} does not already end with @code{_listener}, and then @code{$@var{word}} will be tried, in that order, and if neither exists an error will be raised.  @var{word} must be a period(@samp{.})-separated sequence of valid @moo property names and must @emph{not} begin with a @samp{$} (which is already assumed).
+naming a property accessible from the system object (@samp{#0} or an ancestor).  Both @code{$@var{word}_listener}, provided @code{$@var{word}} does not already end with @code{_listener}, and then @code{$@var{word}} will be tried, in that order, and if neither exists an error will be raised.  @var{word} must be a period(@samp{.})-separated sequence of valid @moo{} property names and must @emph{not} begin with a @samp{$} (which is already assumed).
 @item #@var{n}
 a literal object number,
 @end table
@@ -183,9 +183,9 @@ a literal object number,
 @noindent
 and defaults to @samp{#0}.
 
-For file databases, this option may be given at most once, and @samp{#0} is the only allowed value for @var{listener} (and, being the default, there will then never any point to explicitly specifying a listener object in this case).  In other words, all you can do with file databases is give a single @option{-p @var{port}} which then gets passed straight through to the @moo server command line.
+For file databases, this option may be given at most once, and @samp{#0} is the only allowed value for @var{listener} (and, being the default, there will then never any point to explicitly specifying a listener object in this case).  In other words, all you can do with file databases is give a single @option{-p @var{port}} which then gets passed straight through to the @moo{} server command line.
 
-For template databases, this option may be given multiple times and the results are cumulative.  The first such option that specifies @samp{#0} as its listener is passed to the @moo server command line; if there is no such option the @moo server's original port is @code{unlisten()}ed in @code{$server_started} and nothing will ever get a chance to connect to it.
+For template databases, this option may be given multiple times and the results are cumulative.  The first such option that specifies @samp{#0} as its listener is passed to the @moo{} server command line; if there is no such option the @moo{} server's original port is @code{unlisten()}ed in @code{$server_started} and nothing will ever get a chance to connect to it.
 
 If multiple @option{-p|--listen} options are present, there must be at most one for any given non-zero port number.  For port 0, arbitrarily many listeners are allowed, since port 0 just means, ``Choose a random port,'' and the kernel takes care of making them all be different.
 
@@ -206,7 +206,7 @@ M5_OPTION_BOOLEAN(  [P], [player],
 [
 Include, in the first verb, an assignment to @code{player} such that @code{notify(player,@var{line})} sends @var{line} to standard output and @code{boot_player(player)} closes standard output.
 
-Default is @option{--no-player} unless there is no output database file (@samp{-o}) and no listening points are explicitly specified, whether via @option{-p|--listen} or @option{--shell-port}.  In other words, by default, we only create the fake @code{player} if there is no other way for this @moo to communicate with anyone.
+Default is @option{--no-player} unless there is no output database file (@samp{-o}) and no listening points are explicitly specified, whether via @option{-p|--listen} or @option{--shell-port}.  In other words, by default, we only create the fake @code{player} if there is no other way for this @moo{} to communicate with anyone.
 
 @option{+P|--player} can only be used with template databases (@option{-t}) and is not allowed if the output database (@samp{-o|--out-db}) is standard output.
 ]
@@ -238,7 +238,7 @@ M5_OPTION_PUSH(  [e], [expr], [[<expression>]],
   [insert expression into first verb],[],
   [[push_code expr]])dnl
 [
-Insert this @var{expression} into the first verb.  @var{expression} is expected to be a valid @moo language expression or statement.  Semicolon (@samp{;}) will always be inserted before and afterwards, so there will never be any combining of expressions from different @option{-e} options or different @option{-f} files.
+Insert this @var{expression} into the first verb.  @var{expression} is expected to be a valid @moo{} language expression or statement.  Semicolon (@samp{;}) will always be inserted before and afterwards, so there will never be any combining of expressions from different @option{-e} options or different @option{-f} files.
 
 This option may be given multiple times and the results are cumulative.
 
@@ -250,7 +250,7 @@ M5_OPTION_PUSH(  [f], [code-file], [[<filename>]],
   [insert file into first verb],[],
   [[push_code file]])dnl
 [
-Insert this file into the first verb.  @var{filename} is expected to contain a sequence of valid @moo language statements.
+Insert this file into the first verb.  @var{filename} is expected to contain a sequence of valid @moo{} language statements.
 
 The M5 library path (see @option{-L}) is searched if @var{filename} has no directory separators.
 
@@ -264,7 +264,7 @@ M5_OPTION_BOOLEAN(  [H], [shutdown],
   [shutdown after first verb], [-H=no*],
   [[do_shutdown]])dnl
 [
-Bracket the sequence of expressions/files included in the first verb via @option{-e|--expr} and @option{-f|--code-file} options with a @code{try @dots{} finally shutdown(); endtry} to make the @moo process terminate immediately when the first verb exits.
+Bracket the sequence of expressions/files included in the first verb via @option{-e|--expr} and @option{-f|--code-file} options with a @code{try @dots{} finally shutdown(); endtry} to make the @moo{} process terminate immediately when the first verb exits.
 
 Default behavior is to shut down @emph{unless} there are one or more listeners active when the first verb exits, whether this be due to explicit @option{-p|--listen} options or @option{-e}/@option{-f} code issuing its own @code{listen()} calls.
 

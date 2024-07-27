@@ -6,10 +6,10 @@
 @c Uncomment the following line for two-sided printing.
 @c @setchapternewpage odd
 @include version.texi
-@macro m5version
+@macro mfiveversion
 @value{VERSION}
 @end macro
-@macro m5date
+@macro mfivedate
 @value{UPDATED-MONTH}
 @end macro
 @macro moo
@@ -43,10 +43,12 @@
 @end macro
 @end ifnothtml
 
+@paragraphindent 0
+
 @comment %**end of header (This is for running Texinfo on a region.)
 
 @copying
-This manual is for M5 (version @m5version{}, updated @m5date{})
+This manual is for M5 (version @mfiveversion{}, updated @mfivedate{})
 
 Copyright @copyright{} 2022 Roger F. Crew.  (a.k.a. wRog)
 
@@ -78,8 +80,8 @@ author.
 
 @titlepage
 @title M5 Manual
-@subtitle For M5 Version @m5version@*
-@subtitle @m5date
+@subtitle For M5 Version @mfiveversion{}@*
+@subtitle @mfivedate{}
 @author by Roger Crew
 
 @page
@@ -98,8 +100,8 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 @top M5 Manual
 @ifnothtml
 @format
-                     For M5 Version @m5version
-                          @m5date
+                     For M5 Version @mfiveversion{}
+                          @mfivedate{}
 
                         by Roger Crew
                           aka wRog
@@ -115,11 +117,11 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 * Getting Started::          Getting Started
 * @command{m5run} Reference::  The @command{m5run} Script
 * Redirection::              The Redirection Framework
-* Language::                 @moo Language Extensions
+* Language::                 @moo{} Language Extensions
 * Macros::                   The Macro System
 * Databases::                Available Databases
 * Security::                 Security Considerations
-* Legacy @moo Databases::    Using M5 in Legacy @moo Databases
+* Legacy @moo{} Databases::    Using M5 in Legacy @moo{} Databases
 * Examples::                 Examples
 * Removing M5::              Removing M5
 
@@ -129,6 +131,7 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 
 @node Introduction
 @chapter Introduction
+@float
 @quotation
 ``The multitronic unit is a @strong{revolution} in computer science.
 I designed the duotronic elements used in your ship right now,
@@ -137,37 +140,39 @@ and I know they are as archaic as @strong{dinosaurs} compared to the M5.
 ``A whole @strong{new} approach!''
 @author Dr. Richard Daystrom
 @end quotation
+@end float
 
 What is M5?  Hard to say.
 
-Strictly speaking, M5 is just a name (M4 was already taken).  If you want to think in terms of something that makes it easy to simultaneously run five (5) @moo servers in order to enact one or more vaguely interesting test scenarios, you could imagine that being the inspiration for the name; I certainly won't stop you.
+Strictly speaking, M5 is just a name (M4 was already taken).  If you want to think in terms of something that makes it easy to simultaneously run five (5) @moo{} servers in order to enact one or more vaguely interesting test scenarios, you could imagine that being the inspiration for the name; I certainly won't stop you.
 
 You could also, if you want, think of this as a protest against the ongoing marketing trend of packaging any number of completely unrelated facilities under a single name for basically no reason (cf. Sun Microsystems' Java or Microsoft's .NET). ``M5'' may thus refer to any or all of the following (even if certain items on this list have yet to be fully implemented):
 
 @itemize
 @item
-a shell script (@command{m5run}) for invoking the @moo server, which is probably best thought of as a ridiculously enhanced version of the @command{restart} script that comes packaged with the @moo server sources, that is also, via the magic of @sc{gnu} Autoconf, (we hope) ridiculously portable as well.
+a shell script (@command{m5run}) for invoking the @moo{} server, which is probably best thought of as a ridiculously enhanced version of the @command{restart} script that comes packaged with the @moo{} server sources, that is also, via the magic of @sc{gnu} Autoconf, (we hope) ridiculously portable as well.
 @item
-a set of special-purpose @moo databases
+a set of special-purpose @moo{} databases
 @item
-a redirection facility for the @moo programming/command environment that allows reading/writing to the host filesystem, execution of arbitrary shell commands, and initiating/scripting other @moo server instances (which should be kept far, @emph{far}, away from any multi-user scenarios).
+a redirection facility for the @moo{} programming/command environment that allows reading/writing to the host filesystem, execution of arbitrary shell commands, and initiating/scripting other @moo{} server instances (which should be kept far, @emph{far}, away from any multi-user scenarios).
 @item
 a dessert topping,
 @item
-a set of extensions to the @moo programming language, including a hygenic macro system.
+a set of extensions to the @moo{} programming language, including a hygenic macro system.
 @item
 a floor wax,
 @item
-a testing framework with a specification language for running and generating test scenarios (whose utility for testing things other than the @moo server has yet to be determined).
+a testing framework with a specification language for running and generating test scenarios (whose utility for testing things other than the @moo{} server has yet to be determined).
 @item
 a device for correlating all computer activity aboard a starship to provide the ultimate in vessel operation and control.
 @end itemize
 
 @noindent
-The capsule summary as to why M5 exists is that the author wanted to build a @moo test suite having as little platform reliance as possible, @dots{} and then the author got very badly distracted.  These things happen.
+The capsule summary as to why M5 exists is that the author wanted to build a @moo{} test suite having as little platform reliance as possible, @dots{} and then the author got very badly distracted.  These things happen.
 
 @node Installing M5
 @chapter Installing M5
+@float
 @quotation
 ``When your crew has been removed,@*
 @ the ship's engineering section@*
@@ -178,6 +183,7 @@ The capsule summary as to why M5 exists is that the author wanted to build a @mo
 ``They're not needed.''
 @author conversation between @*Cmdre. Robert Wesley and Capt. James Kirk
 @end quotation
+@end float
 
 @menu
 * Prerequisites::  What you need
@@ -185,27 +191,29 @@ The capsule summary as to why M5 exists is that the author wanted to build a @mo
 @end menu
 
 @noindent
-This is about obtaining the code and building @command{m5run}, its associated libraries, @moo databases, and the testing framework.
+This is about obtaining the code and building @command{m5run}, its associated libraries, @moo{} databases, and the testing framework.
 
-If what you actually want is to install some subset of the M5 facilities into an existing, possibly multi-user @moo database, e.g., the client/server redirection facilities, libraries, language extensions, macros, in order to make them facilities available to the users there, that subject is covered in @ref{Legacy @moo Databases}.  But you will need to do this first, anyway.
+If what you actually want is to install some subset of the M5 facilities into an existing, possibly multi-user @moo{} database, e.g., the client/server redirection facilities, libraries, language extensions, macros, in order to make them facilities available to the users there, that subject is covered in @ref{Legacy @moo{} Databases}.  But you will need to do this first, anyway.
 
 @node Prerequisites
 @section Prerequisites
+@float
 @quotation
 ``You've got a great job, Jim.@*
 All you have to do is sit back and let the machine do the work.''
 @author Cmdre. Robert Wesley
 @end quotation
+@end float
 
 The @command{configure} script should be sorting most of this out, but, in any case, you will need:
 
 @itemize
 @item
-An OS that is one of the recent varieties of @unix for which @moo is available.@footnote{As for where @emph{that} is going, figure that trying to maintain support for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux.  This includes reasonably high hopes for derivatives like Android and the Windows @linux Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD --- I really have no idea which of these matter) work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}
+An OS that is one of the recent varieties of @unix{} for which @moo{} is available.@footnote{As for where @emph{that} is going, figure that trying to maintain support for Pavel's entire OS list is most likely pointless.  We'll be happy enough having things work with modern OSes that still exist and are being vaguely widely used.  In other words, @linux{}.  This includes reasonably high hopes for derivatives like Android and the Windows @linux{} Subsystem.  With a bit of luck, we may find that Darwin/MacOSX (iOS?) and the BSD family (FreeBSD, OpenBSD, NetBSD --- I really have no idea which of these matter) work as well.  Most likely @emph{not} Solaris or HP-UX unless somebody has a machine to test on, and @emph{really} don't hold your breath waiting for IRIX, Ultrix, pre-Solaris SunOS, AIX, XENIX or any of the other relics from the dawn of time.}
 
 @item
 @anchor{exec-prereq}
-A @moo server executable compiled with @option{NETWORK_PROTOCOL=NP_TCP} and @option{OUTBOUND_NETWORK} (0 or 1) @samp{#define}d in @file{options.h}.
+A @moo{} server executable compiled with @option{NETWORK_PROTOCOL=NP_TCP} and @option{OUTBOUND_NETWORK} (0 or 1) @samp{#define}d in @file{options.h}.
 
 This will need to be one of the post-1.8.2 versions that understands the circa-2003 LambdaMOO networking extensions.  Since that happened well after the last official release (1.8.2) in a period where features were propagating haphazardly, you won't necessarily know from the @code{version()} number.  However these extensions were incorporated into all of the branches I know about (LambdaMOO, Codepoint/Unicode, GammaMOO, Waterpoint) and probably others as well.
 
@@ -259,7 +267,7 @@ or, in the absolute worst case, something like
    NETCAT_KEEPALIVE=--my-other-stupidly-named-option-that-does-that}
 @end example
 
-(And yes, making @command{make check} do something useful even if there isn't a @moo server installed is on the agenda.)
+(And yes, making @command{make check} do something useful even if there isn't a @moo{} server installed is on the agenda.)
 
 @subsection Installing from @command{git}
 
@@ -283,19 +291,21 @@ Without the @option{-i}, you'll have to run @command{automake --missing} to get 
 As above.
 
 @item make install
-Optional.  This is not necessary if your use of M5 is single-purpose (e.g., running the @moo server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.@footnote{Greetings from The Year 1991}
+Optional.  This is not necessary if your use of M5 is single-purpose (e.g., running the @moo{} server test suite) or recreational, and pointless if your IT people are paranoid fascists who hate you and won't let you have the root password.@footnote{Greetings from The Year 1991}
 
-With suitable @code{PATH} adjustments M5 should run just fine out of its source directory (@var{srcdir}), though if you're wanting to run @moo server tests, there's a setting in that part of the world you'll have to make.
+With suitable @code{PATH} adjustments M5 should run just fine out of its source directory (@var{srcdir}), though if you're wanting to run @moo{} server tests, there's a setting in that part of the world you'll have to make.
 
 Or you can
 @example
 make install --prefix=@var{moo-srcdir}/m5
 @end example
-to install m5 into the @moo source tree, in which case a sufficiently-recent-on-the-correct-branch @moo server build process (which does not exist yet as of this writing) will then automatically be able to find what it needs.
+to install m5 into the @moo{} source tree, in which case a sufficiently-recent-on-the-correct-branch @moo{} server build process (which does not exist yet as of this writing) will then automatically be able to find what it needs.
 
 @end table
 
 @node Getting Started
+@chapter Getting Started
+@float
 @quotation
 ``You don't shut a child off@*
 @ when it makes a mistake.
@@ -303,7 +313,7 @@ to install m5 into the @moo source tree, in which case a sufficiently-recent-on-
 ``The M5 is growing, learning.''
 @author Dr. Richard Daystrom
 @end quotation
-@chapter Getting Started
+@end float
 
 @section Hello World
 
@@ -321,7 +331,8 @@ We will not spoil the suspense.
 Spelling out all of the defaults that matter in this case, the above command is actually,
 
 @example
-$ m5run +M -t Raw -e 'notify(player, "Hello world!")' -l '' -o '' -S +P +H
+$ m5run +M -t Raw -e 'notify(player, "Hello world!")' \
+  -l '' -o '' -S +P +H
 @end example
 
 @noindent
@@ -337,12 +348,12 @@ This does the following:
 
 @itemize
 @item
-Start a @moo server instance (@samp{+M} or @samp{--moo}).
+Start a @moo{} server instance (@samp{+M} or @samp{--moo}).
 
 Then,
 
 @item
-we read the extremely small, simple, @samp{Raw}@footnote{I would have used the name @samp{Minimal} but that one was already taken.  As you can see, @samp{Raw} is even more minimal than @samp{Minimal}, and I think there is a reaasonable argument that this is the absolute best we can do, it not being possible to have a viable @moo database with zero objects (yes, this has been tried).} template database:  It's one object (@samp{#0}) with a @code{server_started} verb and @emph{nothing else}.
+we read the extremely small, simple, @samp{Raw}@footnote{I would have used the name @samp{Minimal} but that one was already taken.  As you can see, @samp{Raw} is even more minimal than @samp{Minimal}, and I think there is a reaasonable argument that this is the absolute best we can do, it not being possible to have a viable @moo{} database with zero objects (yes, this has been tried).} template database:  It's one object (@samp{#0}) with a @code{server_started} verb and @emph{nothing else}.
 
 Also the verb is blank, which means nothing is going to happen unless you put something in it.
 
@@ -361,7 +372,7 @@ Now, in order to make this work, certain other options need to get defaulted in 
 @end itemize
 
 @noindent
-Now at this point, with no listeners, no log, and no output database, you may be noticing that we essentially have a @moo running in solitary confinement in complete darkness and nobody will ever know it existed.  We must rectify this.
+Now at this point, with no listeners, no log, and no output database, you may be noticing that we essentially have a @moo{} running in solitary confinement in complete darkness and nobody will ever know it existed.  We must rectify this.
 
 @itemize
 @item
@@ -370,7 +381,7 @@ Now at this point, with no listeners, no log, and no output database, you may be
 @dots{} and now we have a way to get text to show up on the shell's standard output, namely @code{notify(player,@var{string})}.
 
 @item
-Finally, since @moo servers normally keep running forever, we need to do something to shut it down at the end of @samp{$server_started}, and that is what @samp{+H} (``halt'') is for.
+Finally, since @moo{} servers normally keep running forever, we need to do something to shut it down at the end of @samp{$server_started}, and that is what @samp{+H} (``halt'') is for.
 @end itemize
 
 @noindent
@@ -392,10 +403,10 @@ $ m5run -t Raw -f -
 @end example
 
 @noindent
-you will now have something vaguely resembling a @moo interpreter, reading language statements on standard input, presumably compiling them somewhere, running them, and then whatever it outputs (@code{notify()}s) getting spewed back to you on standard output@dots{}
+you will now have something vaguely resembling a @moo{} interpreter, reading language statements on standard input, presumably compiling them somewhere, running them, and then whatever it outputs (@code{notify()}s) getting spewed back to you on standard output@dots{}
 
 @noindent
-@dots{} though, be warned, this will @strong{not} behave in any way like how you might be used to with a traditional client talking to a @moo server.  For one thing, nothing will happen until the entire body of the verb is received.  Also if you make any typing mistakes, the traceback gets written to the log, which then gets silently tossed down a hole.  Not exactly what we call user-friendly.
+@dots{} though, be warned, this will @strong{not} behave in any way like how you might be used to with a traditional client talking to a @moo{} server.  For one thing, nothing will happen until the entire body of the verb is received.  Also if you make any typing mistakes, the traceback gets written to the log, which then gets silently tossed down a hole.  Not exactly what we call user-friendly.
 
 That last problem we can fix, and we also won't need the bogus @code{player} anymore, the price being that you have to type that horrible @command{grep} command or wade through lots of lines of server log to get what you want:
 
@@ -414,13 +425,13 @@ $ m5run -t OmgWTF +p "7777,cmd"
 @end example
 
 @noindent
-i.e., run a server listening to port 7777 with @samp{$cmd_listener}, then connect with your favorite client, and go wild in a vaguely familiar @moo player environment where you can type commands and have stuff happen.
+i.e., run a server listening to port 7777 with @samp{$cmd_listener}, then connect with your favorite client, and go wild in a vaguely familiar @moo{} player environment where you can type commands and have stuff happen.
 
 There are a few important differences to know up front, aside from having a new set of commands to learn:
 
 @itemize
 @item
-Player flags are not used.  M5's databases are not intended for multiplayer use.  @code{$do_login_command()} never actually ``connects'' anybody in the sense of the @moo Programmer's Manual.  All tasks start from @code{$do_login_command}.  The built-in parser, @code{$do_command}, and @code{$do_out_of_band_command} are all entirely irrelevant in this world.  @code{$server_options.connect_timeout} is infinite.  @code{;connected_players(1)} always needs that @samp{1} if you want to see anything.
+Player flags are not used.  M5's databases are not intended for multiplayer use.  @code{$do_login_command()} never actually ``connects'' anybody in the sense of the @moo{} Programmer's Manual.  All tasks start from @code{$do_login_command}.  The built-in parser, @code{$do_command}, and @code{$do_out_of_band_command} are all entirely irrelevant in this world.  @code{$server_options.connect_timeout} is infinite.  @code{;connected_players(1)} always needs that @samp{1} if you want to see anything.
 
 @item
 You are @samp{#0}, you own everything, you are @emph{not} a player, but this does not matter (see previous bullet).  Being a wizard and a programmer means you can do everything that matters anyway.
@@ -434,6 +445,7 @@ There is no topology; @code{.location} and @code{.contents} are entirely unused.
 
 @node @command{m5run} Reference
 @chapter @command{m5run} Reference
+@float
 @quotation
 ``Both ships report simulated hits in sufficient quantity and location
 to justify awarding the surprise engagement to Enterprise.
@@ -441,6 +453,7 @@ to justify awarding the surprise engagement to Enterprise.
 ``Our compliments to the M5 unit and regards to Captain Dunsail.''
 @author Cmdre. Robert Wesley
 @end quotation
+@end float
 
 @noindent
 This is the full reference for the @command{m5run} shell script.
@@ -523,12 +536,12 @@ Note that it's probably better to use the corresponding command line options (al
 
 @table @code
 @item M5MOOEXEC
-Path to the @moo server executable that @command{m5run} should invoke.  This can also be set using @option{-x|--moo-exec}.
+Path to the @moo{} server executable that @command{m5run} should invoke.  This can also be set using @option{-x|--moo-exec}.
 
-@xref{exec-prereq,,Prerequisites}, for more on what this needs to be.  Ideally, this will be an executable that is known to work correctly, as opposed to one you might be testing, meaning you usually want this to be different from one you are testing --- never mind that we @emph{do} have to play various games in order to bootstrap the @moo test suite in the situation where @emph{nothing} is known to work yet.
+@xref{exec-prereq,,Prerequisites}, for more on what this needs to be.  Ideally, this will be an executable that is known to work correctly, as opposed to one you might be testing, meaning you usually want this to be different from one you are testing --- never mind that we @emph{do} have to play various games in order to bootstrap the @moo{} test suite in the situation where @emph{nothing} is known to work yet.
 
 @item PATH
-Since @command{m5run} is a shell script, in any situation in which you are making it run arbtrary @unix commands, these will be found using @code{PATH}, as usual.
+Since @command{m5run} is a shell script, in any situation in which you are making it run arbtrary @unix{} commands, these will be found using @code{PATH}, as usual.
 
 Also, if you have opted @emph{not} to actually install M5 --- i.e., you are just leaving everything in the source directory --- @emph{and} you still want to be able to type @command{m5run} to your shell prompt and have that work, then @file{@var{srcdir}/scripts} will need to be on your @code{PATH} somewhere (surprise).
 
@@ -563,7 +576,7 @@ This is where the current checkpoint database gets written to.  Note that checkp
 A temporary directory, mainly for checkpoint databases and random fifos needed by @command{m5run}, but can be used for other things as well.  This directory gets removed when @command{m5run} terminates.
 
 @item auth_code
-The current authorization code, needed to connect to the @moo server on any of the listeners.
+The current authorization code, needed to connect to the @moo{} server on any of the listeners.
 
 @item run_info
 This is a plist (alternating sequence of names and values) containing the other variables.  Thus, e.g.,
@@ -584,12 +597,14 @@ somewhere in the code file you load using @option{-f}, but you probably already 
 
 @node Redirection
 @chapter The Redirection Framework
+@float
 @quotation
 ``It appears, Captain, we have been doing what used to be called 'pursuing a wild goose.'@w{}''
 @author Cmdr. Ucdnprnownzit Spock
 @end quotation
+@end float
 
-As you may recall, when a @moo verb runs, there is an environment that gets propagated however far down the call stack it might be needed.  Traditionally, this environment is used to list particular objects in the ``room'' that the current command/task is referring to (as originally determined by the parse of the command.
+As you may recall, when a @moo{} verb runs, there is an environment that gets propagated however far down the call stack it might be needed.  Traditionally, this environment is used to list particular objects in the ``room'' that the current command/task is referring to (as originally determined by the parse of the command.
 
 In M5 cores, there is no topology, i.e., no notion of there being ``rooms'', physical ``objects'', or ``containment'', so we repurpose some of this machinery.
 
@@ -614,17 +629,19 @@ However, this is simply an implementation; user code should not be referring to 
 (todo)
 
 @node Language
-@chapter @moo Language Extensions
+@chapter @moo{} Language Extensions
+@float
 @quotation
 You can't understand it.@*
 You're frightened because you can't understand it.@*
 I'm going to show you.  I'm going to show @strong{all} of you.@*
 @author Dr. Richard Daystrom
 @end quotation
+@end float
 
-The reader is assumed to already be familiar with the base @moo programming language (@pxref{Top,,Language ,moo, The Lambda@moo Programmer's Manual}).
+The reader is assumed to already be familiar with the base @moo{} programming language (@pxref{Top,,Language ,moo, The Lambda@moo{} Programmer's Manual}).
 
-All of these extensions are designed to cause syntax errors if you attempt to use them in ordinary @moo code.
+All of these extensions are designed to cause syntax errors if you attempt to use them in ordinary @moo{} code.
 
 As a matter of style it should be noted that many of these are low-level constructs that exist mainly to provide needed functionality for the macro system.  They are described here for purposes of documentation, but you are not necessarily encouraged to use them directly.  For most purposes there will exist higher level macros that behave in straightforward ways, do what you need, and make your code easier to read.
 
@@ -663,7 +680,7 @@ Omitting the result will have specific meanings in particular contexts (e.g., tr
 @node LValue Builtin
 @section LValue Builtin Functions
 
-In ordinary @moo code, only variables and property references are allowed in the "lvalue position" at the base of the left-hand side of an assignment expression (i.e., ignoring any additional index or range operators that may be stacked on top of it).
+In ordinary @moo{} code, only variables and property references are allowed in the "lvalue position" at the base of the left-hand side of an assignment expression (i.e., ignoring any additional index or range operators that may be stacked on top of it).
 
 M5 allows certain builtin function references as well.  For example:
 
@@ -704,7 +721,7 @@ Also note that in this case @code{verb_info(#0,"method)[2]} will henceforth be @
 
 Here is the full list of builtin-call expressions that M5 allows at the base of the left-hand side of an assignment:
 
-@multitable {property_info(o,p)xxxxxxxxxxxxxxxx} {set_property_info(o,p)xxxxx}
+@multitable {property_info(o,xp)xxxxxxxxxxxxxxxx} {set_property_info(o,xp,xrhs)xxxxxxx}
 @headitem LValue                @tab Side Effect of LValue@code{=rhs}
 @item @code{property_info(o,@ p)}@ @  @tab @code{set_property_info(o,@ p,@ rhs)}
 @item @code{verb_args(o, m)}    @tab @code{set_verb_args(o, m, rhs)}
@@ -717,7 +734,7 @@ Here is the full list of builtin-call expressions that M5 allows at the base of 
 @node Generalized Scattering
 @section Generalized Scattering
 
-In ordinary @moo code, the targets in a scattering assignment, i.e., the elements of any explicit scatter list appearing on the left side of assignment, whether required, optional, or splices, are all limited to being variables.
+In ordinary @moo{} code, the targets in a scattering assignment, i.e., the elements of any explicit scatter list appearing on the left side of assignment, whether required, optional, or splices, are all limited to being variables.
 
 In contrast, M5 will allow:
 
@@ -750,7 +767,7 @@ is equivalent to
 w = 1; $x = 2; y = @{3@}; z = 4;
 @end example
 
-In a nested scatter, an @code{E_ARGS} error is raised if the value being assigned does not have have matching list structure, just as in ordinary @moo code when the value being assigned is not a list or fails to have the minimum number of elements.
+In a nested scatter, an @code{E_ARGS} error is raised if the value being assigned does not have have matching list structure, just as in ordinary @moo{} code when the value being assigned is not a list or fails to have the minimum number of elements.
 
 @item The @samp{@ampchar{}_} (``don't care'') target.
 The @samp{@ampchar{}_} target indicates that the corresponding list element is to be ignored.  This is equivalent to using a variable that is never referenced later, except it makes one's intent clearer and saves having to make up a variable name that one might then inadvertantly use later.
@@ -906,34 +923,40 @@ The special variable &? gives the status of the most recent scattering assignmen
 
 @node Macros
 @chapter Macros
+@float
 @quotation
 ``M5 @strong{thinks}, Captain.''
 @author Dr. Richard Daystrom
 @end quotation
+@end float
 
 @node Databases
 @chapter Available Databases and Libraries
 
 @node Security
 @chapter Security Considerations
+@float
 @quotation
 ``I would say, Captain, that M5 is not only capable of taking
 care of this ship, it is also capable of taking care of itself.''
 @author Cmdr. Ucdnprnownzit Spock
 @end quotation
+@end float
 
-@node Legacy @moo Databases
-@chapter M5 and Legacy @moo Databases
+@node Legacy @moo{} Databases
+@chapter M5 and Legacy @moo{} Databases
+@float
 @quotation
 ``M5's analysis told it@*
 it needed a new power source.@*
 The ensign simply @dots{} got in the way.''
 @author Dr. Richard Daystrom
 @end quotation
+@end float
 
-This section assumes you have an existing @moo database, possibly multiplayer, possibly based on LambdaCore or JHCore, and you wish to install M5 features.
+This section assumes you have an existing @moo{} database, possibly multiplayer, possibly based on LambdaCore or JHCore, and you wish to install M5 features.
 
-Note that it is @strong{extremely} unlikely you will want to install the entirety of M5 into an existing multiplayer @moo database.  The redirection features will either be pointless (if you're not running your @moo using @code{m5run}) or have significant security implications in that your @moo instance will then potentially be able to do anything with the file system or available devices that the local user running it is allowed to do and your only protection from hostile players invoking them will be most-likely-inadequate security measures available within @moo itself.
+Note that it is @strong{extremely} unlikely you will want to install the entirety of M5 into an existing multiplayer @moo{} database.  The redirection features will either be pointless (if you're not running your @moo{} using @code{m5run}) or have significant security implications in that your @moo{} instance will then potentially be able to do anything with the file system or available devices that the local user running it is allowed to do and your only protection from hostile players invoking them will be most-likely-inadequate security measures available within @moo{} itself.
 
 But various subsets can be installed safely.
 
@@ -941,6 +964,7 @@ But various subsets can be installed safely.
 
 @node Examples
 @chapter Examples
+@float
 @quotation
 ``Destroyed, Kirk?@*
 No.  We are invincible.@*
@@ -949,14 +973,17 @@ Your @strong{mighty starships}:@*
 Four toys to be @strong{crushed} as we choose.''
 @author Dr. Richard Daystrom
 @end quotation
+@end float
 
 @node Removing M5
 @chapter Removing M5
+@float
 @quotation
 ``Fantastic machine, the M5:@*
 No @code{OFF} switch!''
 @author Dr. Leonard McCoy
 @end quotation
+@end float
 
 We do provide @command{make uninstall}.
 
@@ -966,17 +993,20 @@ Good luck with that.
 
 @node Function Index
 @unnumbered Function Index
+@float
 @quotation
 ```Dunsail' is a term used by midshipmen at Starfleet Academy.@*
 It refers to a part that serves no useful purpose.''
 @author Cmdr. Ucdnprnownzit Spock
 @end quotation
+@end float
 
 
 @printindex fn
 
 @node Concept Index
 @unnumbered Concept Index
+@float
 @quotation
 ``20 years of groping to prove the things I've done before are not accidents.
 Seminars and lectures to rows of fools who couldn't begin to understand my systems.
@@ -985,6 +1015,7 @@ and becoming famous building on my work.@*
 Building on @strong{my work}!''
 @author Dr. Richard Daystrom
 @end quotation
+@end float
 
 @printindex cp
 
