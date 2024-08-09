@@ -1,4 +1,5 @@
-dnl -*- Autoconf -*-
+# netcat configuration
+#
 # M5_PROG_NETCAT
 # --------------
 # Try to find a Netcat program.
