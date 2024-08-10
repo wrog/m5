@@ -1,7 +1,7 @@
 m4_define([m5_version],m4_esyscmd([build-aux/git-version-gen .tarball-version]))
 AC_INIT([M5],[m5_version],[bug-m5@wrog.net],[m5],[https://wrog.net/moo/m5])
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-texinfo.tex])
 AC_CONFIG_SRCDIR([lib/Raw.db.top])
 AC_PROG_YACC
