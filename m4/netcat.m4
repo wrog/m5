@@ -2,54 +2,68 @@
 #
 # M5_PROG_NETCAT
 # --------------
-# Try to find a Netcat program.
-# Set the four output variables:
-#   NETCAT - program name (or path, if necessary)
-#   NETCAT_CLOSE_EOF - flags for shutting down on stdin EOF
-#     which is the default for ncat
-#   NETCAT_KEEPALIVE - flags for not shutting down on stdin EOF
-#     which is the default for everything other than ncat
-#   NETCAT_WHICH - which version of netcat this is
-#     if we recognize it, one of
+# Sets up the --with-netcat=NAME|PATH command option
+# Tries to find a Netcat program.
+# Sets output variables accordingly (more detail below)
+#   NETCAT - program name/path
+#   NETCAT_WHICH - if this is a recognized version
+#     ''     -- (not recognized)
 #     'trad' -- Hobbit's original (nc.traditional)
 #     'bsd'  -- OpenBSD version   (nc.openbsd)
 #     'gnu'  -- GNU version
 #     'ncat' -- IMAP's ncat
-#     'socket' --
+#     'socket' -- Nickelsen's socket utility
+#   NETCAT_CLOSE_EOF - how to shutdown on stdin EOF
+#   NETCAT_KEEPALIVE - how to *not* shut down on stdin EOF
 #
-# User may already be pointing us to a netcat with
+# If user is already pointing us to a netcat with
 #   --with-netcat=FILENAME
-# and we'll try to figure out which one it is.
+# we use that and try to figure out which one it is.
 #
-# Or it's already in the cache.
+# Or everything was already set in the cache from
+# the last configure run.
 #
 # Or user has given up on us and
 # and is setting the output variables directly.
 #
-# Or we're doing the full-ass PATH search for
-# something usable.
-#
-#
+# Or the command line is blank and we are doing
+# a full PATH search for something usable.
+
+#--------------------------------
 # _M5_PROG_NETCAT_WHICH([netcat])
-#    which netcat is this?  Filename will not tell us.
-#    Names like 'netcat' and 'nc' typically get remapped.
 #
-m4_define([_M5_PROG_NETCAT_WHICH],[[
-  _m5_match=`"$]$1[" -version 2>&1 | \
+m4_defun_init([_M5_PROG_NETCAT_WHICH],
+[AS_REQUIRE([_M5_PROG_NETCAT_WHICH_PREPARE],[],[M4SH-INIT-FN])],
+[[_m5_fn_netcat_which "]$1["]])
+
+
+m4_defun([_M5_PROG_NETCAT_WHICH_PREPARE],
+[AS_REQUIRE_SHELL_FN([_m5_fn_netcat_which],[
+AS_FUNCTION_DESCRIBE([_m5_fn_netcat_which],[PROG_VAR],
+[Determine which netcat $PROG_VAR (assumed to expand to a name or path) is; i.e., this does the actual work.  Note that we cannot rely on the filename; there are just too many versions out there and names like 'netcat' and 'nc' typically get remapped.])[
+#
+# The following shell vars are set, where possible:
+#    _m5_nc_rank   (higher=more preferred, 0=dont know)
+#    _m5_nc_which  (NETCAT_WHICH)
+#    _m5_nc_cleof  (NETCAT_CLOSE_EOF)
+#    _m5_nc_keepa  (NETCAT_KEEPALIVE)
+]],
+[  AS_VAR_COPY([_m5_nc_prog],[$][1])[
+  _m5_match=`"$_m5_nc_prog" -version 2>&1 | \
     $EGREP -e '^Socket-' -`
   if test "x$_m5_match" != x ; then
     _m5_nc_cleof=-q
     _m5_nc_keepa=
   else
-    _m5_match=`"$]$1[" -h 2>&1 | \
+    _m5_match=`"$_m5_nc_prog" -h 2>&1 | \
     $EGREP -e 'nmap[.]org|OpenBSD|GNU netcat |[@<:@]v' -`
-    _m5_nc_keepa=`"$]$1[" -h 2>&1 | \
+    _m5_nc_keepa=`"$_m5_nc_prog" -h 2>&1 | \
       $EGREP -i -e '(continue) .* 'EOF' .* stdin' -`
     _m5_nc_keepa=`expr "X$_m5_nc_keepa" : 'X *\([^ ]*\)'`
-    _m5_nc_cleof=`"$]$1[" -h 2>&1 | \
+    _m5_nc_cleof=`"$_m5_nc_prog" -h 2>&1 | \
       $EGREP -i -e '(close|shutdown) .* (on|after) 'EOF' (on|from) stdin' -`
     if test "x$_m5_nc_cleof" = x ; then
-      "$]$1[" -h 2>&1 | \
+      "$_m5_nc_prog" -h 2>&1 | \
         $EGREP -i -e '-q secs[ 	]*quit after EOF on stdin' - 1>/dev/null 2>&1 &&
         _m5_nc_cleof='-q 0'
     else
