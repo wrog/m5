@@ -12,6 +12,7 @@ do_subst = \
         -e 's,[@]NETCAT[@],$(NETCAT),g' \
         -e 's,[@]NETCAT_CLOSE_EOF[@],$(NETCAT_CLOSE_EOF),g' \
         -e 's,[@]NETCAT_KEEPALIVE[@],$(NETCAT_KEEPALIVE),g' \
+        -e 's,[@]M5_IP_DEFAULT[@],$(M5_IP_DEFAULT),g' \
         -e 's,[@]M5_MOO_EXEC[@],$(M5_MOO_EXEC),g' \
         -e 's,[@]CONFIG_SHELL[@],$(CONFIG_SHELL),g'
 

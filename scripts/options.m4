@@ -131,10 +131,10 @@ M5_HELP_SECTION([Network])
 dnl -------------------
 dnl  -b|--address=<ip>
 M5_OPTION_VALUE(  [b], [address], [[<ip>]],
-  [listen/connect address], [127.0.0.2],
+  [listen/connect address], [127.x.y.z],
   [[moo_ip]])dnl
 [
-Use this IP address (default is @samp{127.0.0.2}) for all service bindings.  This will pass @option{-a} to the @moo{} server executable, and any listening ports created separately in the shell will likewise use this address.
+Use this IP address for all service bindings; the default is @env{M5_IP_DEFAULT} or, if that was not set, some loopback address randomly chosen during the @samp{./configure} run.  This will pass @option{-a} to the @moo{} server executable, and any listening ports created separately in the shell will likewise use this address.
 
 @strong{WARNING}:  You probably figured this out already, but combining @option{+S} or @option{--shell-port=@var{p}} with @option{-b} and a @emph{real} network address, ie., something @emph{not} on your loopback net (@samp{127.*.*.*} or @samp{localhost}), unless you @strong{completely} trust everyone who can reach your machine via said network (or you trust your firewall), may qualify you for a Security Darwin Award.@footnote{And if you totally hate your employer along with the general concept of being employed, you can also arrange for the @command{m5run} script to be installed setuid-root on one of your company's mission-critical servers, @dots{} though I will readily admit to having put zero effort into making that scenario work properly.  Perhaps I should.}  @xref{Security} for more on this.
 ]

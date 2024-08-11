@@ -1,8 +1,8 @@
 AT_SETUP([ports] (__file__))[
 ##########################
 
-if : ; then
-  addr=127.0.0.1
+if test $M5_IP_LO_BITS -lt 15 ; then
+  addr=$M5_IP_DEFAULT
 else
 while : ; do
   addr=`m5run -t Raw -e 'r=1+random(255);s=1+random(254);notify(player,tostr(127,".",0,".",r,".",s))'`

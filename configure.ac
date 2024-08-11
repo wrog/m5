@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign no-texinfo.tex])
 AC_CONFIG_SRCDIR([lib/Raw.db.top])
 AC_PROG_YACC
 M5_PROG_NETCAT
+M5_IP_LO_SETUP
 AS_VAR_SET_IF([M5_MOO_EXEC],[],
 [  M5_IF_SOURCE_MOO([[M5_MOO_EXEC=${m5_cv_moo_srcdir}moo]])])
 AS_IF([[test "$M5_MOO_EXEC"]],
