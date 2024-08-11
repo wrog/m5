@@ -15,6 +15,7 @@
 #     'socket' -- Nickelsen's socket utility
 #   NETCAT_CLOSE_EOF - how to shutdown on stdin EOF
 #   NETCAT_KEEPALIVE - how to *not* shut down on stdin EOF
+#   NETCAT_LISTEN_FORMAT - how to do a basic listener
 #
 # If user is already pointing us to a netcat with
 #   --with-netcat=FILENAME
@@ -47,6 +48,7 @@ AS_FUNCTION_DESCRIBE([_m5_fn_netcat_which],[PROG_VAR],
 #    _m5_nc_which  (NETCAT_WHICH)
 #    _m5_nc_cleof  (NETCAT_CLOSE_EOF)
 #    _m5_nc_keepa  (NETCAT_KEEPALIVE)
+#    _m5_nc_listen (NETCAT_LISTEN_FORMAT)
 ]],
 [  AS_VAR_COPY([_m5_nc_prog],[$][1])[
   _m5_match=`"$_m5_nc_prog" -version 2>&1 | \
@@ -98,8 +100,16 @@ dnl it is the one everybody has
         _m5_nc_which=socket
         _m5_nc_rank=5
       ]])
-])dnl
-dnl
+    AS_CASE([[$_m5_nc_which]],[[
+      ncat|bsd]],[[
+        _m5_nc_listen_fmt='-l %s %s']],[[
+      gnu|trad]],[[
+        _m5_nc_listen_fmt='-l -s %s -p %s']],[[
+      socket]],[[
+        _m5_nc_listen_fmt='-s -B %s %s']])
+])
+])
+
 AC_DEFUN_ONCE([M5_PROG_NETCAT],[dnl
 dnl
   AC_REQUIRE([AC_PROG_EGREP])dnl
@@ -121,6 +131,13 @@ dnl
   AC_ARG_VAR([NETCAT_KEEPALIVE],
 [Netcat arguments to pass to ensure that Netcat
 does *NOT* shut down upon reaching (local) stdin EOF.
+Set this variable directly only if --with-netcat=PROGRAM
+does not produce the correct settings.])dnl
+dnl
+  AC_ARG_VAR([NETCAT_LISTEN_FORMAT],
+[How to invoke Netcat in "listen mode"; this is
+expected to be a 2-argument format string for printf,
+where the arguments are address and port, in that order.
 Set this variable directly only if --with-netcat=PROGRAM
 does not produce the correct settings.])dnl
 dnl
@@ -147,10 +164,11 @@ dnl
     AS_IF([[test $_m5_nc_rank -le 0]],[
       AC_MSG_ERROR(
 [[Cannot tell which version of Netcat '$NETCAT' is.
-You may need to set NETCAT, NETCAT_KEEPALIVE,
-NETCAT_CLOSE_EOF, and NETCAT_WHICH individually.]])])[
+You may need to set NETCAT, NETCAT_CLOSE_EOF, NETCAT_KEEPALIVE,
+NETCAT_LISTEN_FORMAT, and NETCAT_WHICH individually.]])])[
     m5_cv_NETCAT_close_eof="$_m5_nc_cleof"
     m5_cv_NETCAT_keep_alive="$_m5_nc_keepa"
+    m5_cv_NETCAT_listen_format="$_m5_nc_listen_fmt"
     m5_cv_NETCAT_which="$_m5_nc_which"
 ]],[dnl
 dnl
@@ -162,6 +180,7 @@ dnl    in this case AC_PATH_PROGS_FEATURE_CHECK only does
 dnl   ac_cv_path_NETCAT="$NETCAT"
 [      m5_cv_NETCAT_close_eof="$NETCAT_CLOSE_EOF"
       m5_cv_NETCAT_keep_alive="$NETCAT_KEEPALIVE"
+      m5_cv_NETCAT_listen_format="$NETCAT_LISTEN_FORMAT"
       m5_cv_NETCAT_which="$NETCAT_WHICH"
 ]])
     AC_CACHE_CHECK([for netcat/ncat],[ac_cv_path_NETCAT],dnl
@@ -183,6 +202,7 @@ dnl
           _m5_nc_maxrank="$_m5_nc_rank"
           m5_cv_NETCAT_close_eof="$_m5_nc_cleof"
           m5_cv_NETCAT_keep_alive="$_m5_nc_keepa"
+          m5_cv_NETCAT_listen_format="$_m5_nc_listen_fmt"
           m5_cv_NETCAT_which="$_m5_nc_which"
           test $_m5_nc_rank -ge 3 && ac_path_NETCAT_found=:]])],[dnl
 
@@ -193,10 +213,12 @@ dnl
   [NETCAT="$ac_cv_path_NETCAT"
   NETCAT_CLOSE_EOF="$m5_cv_NETCAT_close_eof"
   NETCAT_KEEPALIVE="$m5_cv_NETCAT_keep_alive"
+  NETCAT_LISTEN_FORMAT="$m5_cv_NETCAT_listen_format"
   NETCAT_WHICH="$m5_cv_NETCAT_which"]
   AC_SUBST([NETCAT])
   AC_SUBST([NETCAT_CLOSE_EOF])
   AC_SUBST([NETCAT_KEEPALIVE])
+  AC_SUBST([NETCAT_LISTEN_FORMAT])
   AC_SUBST([NETCAT_WHICH])
 ])#
 # ------------ end of M5_PROG_NETCAT
