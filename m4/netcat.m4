@@ -222,3 +222,50 @@ dnl
   AC_SUBST([NETCAT_WHICH])
 ])#
 # ------------ end of M5_PROG_NETCAT
+
+
+# M5_NETCAT_TEST_ADDR_PORT( [IP_ADDR], PORT )
+# ------------------------
+# test if IP_ADDR PORT is available for listening
+# return status 0 if yes, 1 if no
+#
+AC_DEFUN([M5_NETCAT_TEST_ADDR_PORT],
+  [AC_REQUIRE([M5_PROG_NETCAT])dnl
+AC_REQUIRE([_M5_NETCAT_TEST_PREPARE])dnl
+[m5_fn_netcat_test_addr_port ]m4_default([$1],[''])[ ]$2[ ]])
+
+
+AC_DEFUN([_M5_NETCAT_TEST_PREPARE],[
+AS_REQUIRE_SHELL_FN([m5_fn_netcat_test_addr_port],[
+AS_FUNCTION_DESCRIBE([m5_fn_netcat_test_addr_port],[ADDR PORT],
+[Check if ADDR PORT can be listened at by running two netcat processes (server and client).  ADDR can be '', in which case the server listens at that port on all available interfaces (0.0.0.0) and hence fails if the port is in use on *any* interface.])
+],
+[[  _m5_nc_port=$][2
+  _m5_nc_string=heeeeey]
+  AS_VAR_IF([1],[],
+[[  _m5_nc_addr=0.0.0.0
+    _m5_nc_send=127.0.0.1]],
+[[  _m5_nc_addr=$][1
+    _m5_nc_send=$][1]])
+  AS_ECHO_N([["  trying $_m5_nc_addr $_m5_nc_port..."]]) >&AS_MESSAGE_LOG_FD[
+#  printf "\nDEBUG: %s" "...listen $_m5_nc_addr; send $_m5_nc_send; port = $_m5_nc_port" >&2
+  { eval `printf "%s $NETCAT_LISTEN_FORMAT 2>&]AS_MESSAGE_LOG_FD[" \
+         '$NETCAT' '$_m5_nc_addr' '$_m5_nc_port'` &
+    eval "( { sleep 0.5 ; kill $! >/dev/null 2>&1; } & )" &
+    } | grep $_m5_nc_string >/dev/null &
+  _m5_nc_server=$!
+  sleep 0.1]
+  AS_ECHO([[$_m5_nc_string]])[ | { $NETCAT $NETCAT_CLOSE_EOF \
+       $_m5_nc_send $_m5_nc_port || kill $_m5_nc_server ; } >/dev/null 2>&1 &
+  _m5_nc_client=$!]
+  AS_IF([[wait $_m5_nc_server]],
+[  AS_ECHO([[success]]) >&AS_MESSAGE_LOG_FD[
+    sync
+    return 0]],
+[  AS_ECHO([[fail]]) >&AS_MESSAGE_LOG_FD[
+    kill $_m5_nc_client >/dev/null 2>&1
+    sync
+    return 1]])])])
+
+
+# ------------ end of M5_NETCAT_TEST_ADDR_PORT
