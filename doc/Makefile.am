@@ -3,7 +3,7 @@ m5_TEXINFOS = m5runopt.texi
 
 AM_MAKEINFOFLAGS = --fill-column 79 --no-split -DINFO
 AM_MAKEINFOHTML = texi2any --html
-AM_MAKEINFOHTMLFLAGS = --output html --split=section \
+AM_MAKEINFOHTMLFLAGS = --split=section \
   --css-ref=https://www.gnu.org/software/gnulib/manual.css \
   --css-ref=common.css \
   --init-file=$(abs_srcdir)/my_html.pm \
