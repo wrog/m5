@@ -76,6 +76,10 @@ author.
 @end quotation
 @end copying
 @ifinfo
+@dircategory Local Packages
+@direntry
+* M5: (M5manual).        Correlate starship computer activity.
+@end direntry
 @end ifinfo
 
 @titlepage
