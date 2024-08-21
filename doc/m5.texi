@@ -1,7 +1,6 @@
 \input texinfo   @c -*-texinfo-*-
 @comment %**start of header (This is for running Texinfo on a region.)
 @c @set INDEX
-@setfilename M5manual.info
 @settitle M5 Manual
 @c Uncomment the following line for two-sided printing.
 @c @setchapternewpage odd
@@ -78,7 +77,7 @@ author.
 @ifinfo
 @dircategory Local Packages
 @direntry
-* M5: (M5manual).        Correlate starship computer activity.
+* M5: (m5).        Correlate starship computer activity.
 @end direntry
 @end ifinfo
 
