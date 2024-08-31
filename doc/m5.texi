@@ -99,6 +99,10 @@ files are @code{pub/M5/M5manual.*}; several different file
 formats are provided, including HTML, Texinfo, plain text, and PDF
 @end titlepage
 
+@summarycontents
+
+@contents
+
 @node Top
 @top M5 Manual
 @ifnothtml
@@ -115,7 +119,6 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 
 @menu
 * Introduction::             What is M5?
-
 * Installing M5::            Installing M5
 * Getting Started::          Getting Started
 * @command{m5run} Reference::  The @command{m5run} Script
@@ -131,6 +134,11 @@ formats are provided, including HTML, Texinfo, plain text, and PDF
 * Function Index::
 * Concept Index::
 @end menu
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+@end detailmenu
 
 @node Introduction
 @chapter Introduction
@@ -318,6 +326,12 @@ to install m5 into the @moo{} source tree, in which case a sufficiently-recent-o
 @end quotation
 @end float
 
+@menu
+* Hello World::  The usual stupidly simple example
+* Explanation of Hello World::  What it actually does
+@end menu
+
+@node Hello World
 @section Hello World
 
 Here, try this:
@@ -329,6 +343,7 @@ $ m5run -t Raw -e 'notify(player, "Hello world!")'
 @noindent
 We will not spoil the suspense.
 
+@node Explanation of Hello World
 @section Explanation of Hello World
 
 Spelling out all of the defaults that matter in this case, the above command is actually,
@@ -1021,9 +1036,5 @@ Building on @strong{my work}!''
 @end float
 
 @printindex cp
-
-@iftex
-@contents
-@end iftex
 
 @bye
