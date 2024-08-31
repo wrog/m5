@@ -961,6 +961,49 @@ care of this ship, it is also capable of taking care of itself.''
 @end quotation
 @end float
 
+Any discussion of security starts with the questions of what needs protecting.  The short answer here is that a stock @moo{} server can
+@itemize
+@item
+exhaust time and space resources on its host machine, which could then be a form of denial-of-service; arguably the easiest issue to address since most operating systems provide a means for setting per-process resource limits,
+@item
+read and modify its own database, which matters if the @moo{} database itself contains information that needs to be protected
+@item
+if @samp{OUTBOUND_NETWORK} is enabled, make arbitrary network connections, which can matter both for a server hosted on a protected intranet but able to receive connections from a wider network with untrusted agents (i.e., where other hosts on the same intranet might otherwise have expected to be in a protected environment), or where one cares about the reputation of the server on the wider network (i.e., if hostile actors can make the server behave in ways that discredit the agency hosting it).
+@end itemize
+
+The main New Thing that @code{m5run} makes possible is direct read-write access to the local filesystem and possibly other capabilities (device access) available to the user under whose permissions the server runs (read: anything you can do with a shell script).
+
+One way of guarding against misuse of these capabilities is a @moo{} database that is proof against connected users executing arbitrary code, where access to the new capabilities is properly restricted to particular special players or only via special objects.  Designing such a database is outside the scope of this manual, but if you believe you have succeeded at this, you may possibly be able to ignore the rest of this page for your own database.
+
+But, since available M5 databases have essentially zero separation of permissions, they are about as @strong{insecure} as it gets once you have an actual connection that execute commands and evaluate arbitrary code, we will be needing bulletproof authentication here.
+
+The zeroth defense is to not @code{listen()}.  No listener means no connections and hence no opportunity for mischief.  The @file{Raw} template is @emph{completely secure} in this respect, at least if you only get output via @code{server_log()}.  Note that once you use the fake @code{player}, that does set up a port for the @code{m5run} shell to connect to, and, even though it only allows one connection and then @code{unlisten()}s, we do have to worry about how to lock it down.
+
+The first defense is the use of addresses on the loopback net, at least in the default settings.  The loopback net, at least, only allows connections to originate from the same host and connection traffic never touches an actual network (and, presumably, a modern, well-designed OS will not allow a non-privileged user to put the loopback net in promiscuous mode or otherwise sniff connection traffic there by, say, installing some wacky device driver).
+
+If you use the @option{-a} option to specify a non-loopback address, making possible inbound connections from an actual network, you will be disabling this first line of defense; much will then depend on what connections your local firewall rules will allow/prevent.
+
+The second issue is that, even confined to the loopback net, we need to guard against race conditions in establishing connections.  A hostile local user listening opportunistically at ports where a client is expected to connect but where the server, due to a slow startup, has not yet issued the requisite @code{listen()} call, could get lucky, have a client connect, be able to grab the first line or so of data, and then succeed in shutting down that listening point before the server's own @code{listen()} takes effect, with no indication that there was ever a prior listener via whom data could leak.  And if those first lines of data contained, say, a credential that could be replayed to establish a seemingly legitimate connection on the server's actual listening point, that could be Bad.
+
+There are several ways to guard against this
+
+@itemize
+@item
+Not @emph{have} hostile local users, e.g., be the only user on a dedicated host.  Many potential problems go away if you do this.
+
+@item
+Not make it possible/easy to anticipate port numbers, e.g., by making copious use of port 0, especially for the shell listener port, where 0 is, in fact, the default.  With port 0, the OS chooses an unused random port, the moo server first issues the @code{listen()} call, then advertises the the port number in the log, which the shell client reads, and only then issues the @code{connect()}.
+
+Conceivably, this could still fail on a multicore system where @code{listen()}s from different cores could be processed out of order and the attacker running on one of the faster cores gets lucky guessing the port.  But, at least, the window of opportunity will be very much smaller.
+
+@item
+Not have credentials for establishing connections that reveal shared secrets or are replayable.  This is addressed by using HMAC@footnote{Admittedly, there is a potential problem in that MD5 is the only hashing function available in the @moo{} server.  Though, as it happens, HMAC_MD5, even 30 years later, has yet to be broken, even if MD5 itself has been thoroughly compromised for all other applications.  To be sure, the Security People still strongly discourage the use of HMAC_MD5 on new applications, since, in theory, someone could find an exploit any day now.  But one can argue @moo{} is not actually new, and also once we have a testing framework in place, we can start releasing server versions that have builtins for any of the SHA functions, at which point it will be easy enough to switch hashing functions, so this is probably good enough for the present.
+
+(Or maybe we will just want to introduce support for SSL connections and be done with this.)}, in which a shared secret is used to hash something without revealing the secret, and by making certain the ``something'' is different for each connection attempt.  The only reliable way to do the latter is to have, on each connection attempt, the server sending a unique nonce which the client responds to by signing it using the secret key (this also solves the race condition unless the attacker gets extremely, extremely lucky and guesses both the port @emph{and} the nonce, at which point we have to assume Murphy is fucking with us).
+@end itemize
+
+It is possible that this last precaution, the use of HMAC_MD5 in a challenge-response mode, even by itself, may be sufficient protection at present against intruders even using a non-loopback address with a predictable/known port number.  But if you believe in layered security, the other measures are worth thinking about.
+
 @node Legacy @moo{} Databases
 @chapter M5 and Legacy @moo{} Databases
 @float
